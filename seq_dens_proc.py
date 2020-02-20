@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 FP = dm.fitting_parameters()
-FP.time_step = 2.0
+FP.time_step = 8.0
 FP.lenght_x = 23.86485
 FP.lenght_z = 17.68620
 FP.r_mol = 0.09584
@@ -14,10 +14,10 @@ FP.simmetry_plane = 12.0
 FP.interpolation_order = 1
 
 # NB: conutour tracking should check whether there are actually kfin-kinit files!!!
-CD = dm.contour_tracking('flow_data4', 50, 400, FP)
+CD = dm.contour_tracking('flow_data5', 1, 400, FP)
 
-# CD.plot_radius()
-# CD.plot_angles()
+CD.plot_radius()
+CD.plot_angles()
 
 dz = 3.0
 rad = 1.0

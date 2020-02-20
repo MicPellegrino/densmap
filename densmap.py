@@ -242,9 +242,9 @@ class contour_data :
         contour_data.spreading_radius = \
             np.array(contour_data.foot_right)-np.array(contour_data.foot_left)
         plt.figure()
-        plt.plot(contour_data.time, contour_data.spreading_radius, 'k-')
+        plt.plot(contour_data.time, contour_data.spreading_radius[:,0], 'k-')
         plt.title('Spreading radius', fontsize=20.0)
-        plt.xlabel('time [ps]', fontsize=20.0)
+        plt.xlabel('t [ps]', fontsize=20.0)
         plt.ylabel('r(t) [nm]', fontsize=20.0)
         plt.show()
         plt.savefig('spreading_radius.eps')
@@ -281,11 +281,16 @@ class contour_data :
         fig_pr, = plt.plot([], [], 'b.', linewidth=1.5)
         plt.xlim(0, crop_x)
         plt.ylim(0, crop_z)
+        plt.title('Droplet Spreading')
+        plt.xlabel('x [nm]')
+        plt.ylabel('z [nm]')
         with writer.saving(fig, "contour_movie.mp4", 250):
             for i in range( len(contour_data.contour) ):
                 dx_l = dz * contour_data.cotangent_left[i]
                 dx_r = dz * contour_data.cotangent_right[i]
                 fig_cont.set_data(contour_data.contour[i][0,:], contour_data.contour[i][1,:])
+                t_label = str(contour_data.time[i])+' ps'
+                textvar = plt.text(1.5, 14.0, t_label)
                 fig_left.set_data([contour_data.foot_left[i][0], contour_data.foot_left[i][0]+dx_l],
                     [contour_data.foot_left[i][1], contour_data.foot_left[i][1]+dz])
                 fig_right.set_data([contour_data.foot_right[i][0], contour_data.foot_right[i][0]+dx_r],
@@ -293,7 +298,7 @@ class contour_data :
                 fig_pl.set_data(contour_data.foot_left[i][0], contour_data.foot_left[i][1])
                 fig_pr.set_data(contour_data.foot_right[i][0], contour_data.foot_right[i][1])
                 writer.grab_frame()
-
+                textvar.remove()
 
 class fitting_parameters :
 
