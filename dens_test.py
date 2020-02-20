@@ -82,8 +82,8 @@ plt.colorbar()
 plt.plot(intf_contour[0,:], intf_contour[1,:], 'k--', linewidth=2.0)
 plt.plot(left_branch[0,:], left_branch[1,:], 'r-', right_branch[0,:], right_branch[1,:], 'g-', linewidth=2.0)
 plt.plot(points_r[0,:], points_r[1,:], 'kx', points_l[0,:], points_l[1,:], 'kx')
-# plt.plot([points_r[0,0], points_r[0,0]+dx_r], [points_r[1,0],points_r[1,0]+dz] , 'g--',
-#     [points_l[0,0], points_l[0,0]+dx_l], [points_l[1,0],points_l[1,0]+dz] , 'r--', linewidth=2.0)
+plt.plot([points_r[0,0], points_r[0,0]+dx_r], [points_r[1,0],points_r[1,0]+dz] , 'g--',
+    [points_l[0,0], points_l[0,0]+dx_l], [points_l[1,0],points_l[1,0]+dz] , 'r--', linewidth=2.0)
 plt.axis('scaled')
 plt.title('Smoothed density output')
 plt.show()

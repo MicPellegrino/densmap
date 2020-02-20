@@ -13,23 +13,31 @@ FP.bulk_location = 5.0
 FP.simmetry_plane = 12.0
 FP.interpolation_order = 1
 
-CD = dm.contour_tracking('flow_data3', 50, 800, FP)
+# NB: conutour tracking should check whether there are actually kfin-kinit files!!!
+CD = dm.contour_tracking('flow_data4', 50, 400, FP)
 
-spreading_radius = np.array(CD.foot_right)-np.array(CD.foot_left)
-mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
-hysteresis = np.absolute(np.array(CD.angle_right)-np.array(CD.angle_left))
-t = np.array(CD.time)
+# CD.plot_radius()
+# CD.plot_angles()
 
-plt.plot(t, spreading_radius, 'k-')
-plt.title('Spreading radius')
-plt.xlabel('time [ps]')
-plt.ylabel('r(t) [nm]')
-plt.show()
+dz = 3.0
+rad = 1.0
+CD.movie_contour(FP.lenght_x, FP.lenght_z, dz, rad)
 
-plt.plot(t, mean_contact_angle, 'b-', label='average')
-plt.plot(t, hysteresis, 'r-', label='hysterisis')
-plt.title('Contact angle')
-plt.xlabel('t [ps]')
-plt.ylabel('theta(t) [nondim.]')
-plt.legend()
-plt.show()
+# spreading_radius = np.array(CD.foot_right)-np.array(CD.foot_left)
+# mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
+# hysteresis = np.absolute(np.array(CD.angle_right)-np.array(CD.angle_left))
+# t = np.array(CD.time)
+
+# plt.plot(t, spreading_radius, 'k-')
+# plt.title('Spreading radius')
+# plt.xlabel('time [ps]')
+# plt.ylabel('r(t) [nm]')
+# plt.show()
+
+# plt.plot(t, mean_contact_angle, 'b-', label='average')
+# plt.plot(t, hysteresis, 'r-', label='hysterisis')
+# plt.title('Contact angle')
+# plt.xlabel('t [ps]')
+# plt.ylabel('theta(t) [deg]')
+# plt.legend()
+# plt.show()

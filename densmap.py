@@ -7,8 +7,10 @@ import math
 import numpy as np
 
 import matplotlib as mpl
+mpl.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import matplotlib.animation as manimation
 
 import scipy as sc
 from scipy import signal
@@ -215,9 +217,6 @@ def read_plainsimple(filename):
 """
 class contour_data :
 
-    def __init__(contour_data):
-        print("[densmap] Initializing contour data structure")
-
     time = []
     contour = []
     branch_left = []
@@ -229,10 +228,74 @@ class contour_data :
     cotangent_left = []
     cotangent_right = []
 
-class fitting_parameters :
+    def __init__(contour_data):
+        print("[densmap] Initializing contour data structure")
 
-    def __init__(fitting_parameters):
-        print("[densmap] Initializing fitting parameters data structure")
+    def save_to_file(contour_data):
+        contour_data.file_angles = 'contact_angles.dat'
+        contour_data.file_feet = 'contact_points.dat'
+        contour_data.file_contout = 'contour.dat'
+        contour_data.file_branches = 'branches.dat'
+        # Think about that ...
+
+    def plot_radius(contour_data):
+        contour_data.spreading_radius = \
+            np.array(contour_data.foot_right)-np.array(contour_data.foot_left)
+        plt.figure()
+        plt.plot(contour_data.time, contour_data.spreading_radius, 'k-')
+        plt.title('Spreading radius', fontsize=20.0)
+        plt.xlabel('time [ps]', fontsize=20.0)
+        plt.ylabel('r(t) [nm]', fontsize=20.0)
+        plt.show()
+        plt.savefig('spreading_radius.eps')
+
+    def plot_angles(contour_data):
+        contour_data.mean_contact_angle = \
+            0.5*(np.array(contour_data.angle_right)+np.array(contour_data.angle_left))
+        contour_data.hysteresis = \
+            np.absolute(np.array(contour_data.angle_right)-np.array(contour_data.angle_left))
+        plt.figure()
+        plt.plot(contour_data.time, contour_data.mean_contact_angle, 'b-', label='average')
+        plt.plot(contour_data.time, contour_data.hysteresis, 'r-', label='hysterisis')
+        plt.title('Contact angle', fontsize=20.0)
+        plt.xlabel('t [ps]', fontsize=20.0)
+        plt.ylabel('theta(t) [deg]', fontsize=20.0)
+        plt.legend()
+        plt.show()
+        plt.savefig('contact_angles.eps')
+
+    def movie_contour(contour_data, crop_x, crop_z, dz, rad):
+        FFMpegWriter = manimation.writers['ffmpeg']
+        metadata = dict(title='Spreading Droplet Contour', artist='Michele Pellegrino',
+            comment='Just the tracked contour of a spreding droplet')
+        writer = FFMpegWriter(fps=30, metadata=metadata)
+        fig = plt.figure()
+        """
+        plt.plot([points_r[0,0], points_r[0,0]+dx_r], [points_r[1,0],points_r[1,0]+dz] , 'g--',
+            [points_l[0,0], points_l[0,0]+dx_l], [points_l[1,0],points_l[1,0]+dz] , 'r--', linewidth=2.0)
+        """
+        fig_cont, = plt.plot([], [], 'k-', linewidth=1.5)
+        fig_left, = plt.plot([], [], 'r-', linewidth=1.0)
+        fig_right, = plt.plot([], [], 'b-', linewidth=1.0)
+        fig_pl, = plt.plot([], [], 'r.', linewidth=1.5)
+        fig_pr, = plt.plot([], [], 'b.', linewidth=1.5)
+        plt.xlim(0, crop_x)
+        plt.ylim(0, crop_z)
+        with writer.saving(fig, "contour_movie.mp4", 250):
+            for i in range( len(contour_data.contour) ):
+                dx_l = dz * contour_data.cotangent_left[i]
+                dx_r = dz * contour_data.cotangent_right[i]
+                fig_cont.set_data(contour_data.contour[i][0,:], contour_data.contour[i][1,:])
+                fig_left.set_data([contour_data.foot_left[i][0], contour_data.foot_left[i][0]+dx_l],
+                    [contour_data.foot_left[i][1], contour_data.foot_left[i][1]+dz])
+                fig_right.set_data([contour_data.foot_right[i][0], contour_data.foot_right[i][0]+dx_r],
+                    [contour_data.foot_right[i][1], contour_data.foot_right[i][1]+dz])
+                fig_pl.set_data(contour_data.foot_left[i][0], contour_data.foot_left[i][1])
+                fig_pr.set_data(contour_data.foot_right[i][0], contour_data.foot_right[i][1])
+                writer.grab_frame()
+
+
+class fitting_parameters :
 
     time_step = 0.0             # [ps]
     lenght_x = 0.0              # [nm]
@@ -243,6 +306,9 @@ class fitting_parameters :
     bulk_location = 0.0         # [nm]
     simmetry_plane = 0.0        # [nm]
     interpolation_order = 1     # [nondim.]
+
+    def __init__(fitting_parameters):
+        print("[densmap] Initializing fitting parameters data structure")
 
 """
     Read input file containing density map
@@ -469,8 +535,8 @@ def detect_contact_angle (
     p_l = np.polyfit( points_l[1,:] , points_l[0,:] , order )
     p_r = np.polyfit( points_r[1,:] , points_r[0,:] , order )
 
-    foot_l = np.polyval( p_l, points_l[1,0] )
-    foot_r = np.polyval( p_r, points_r[1,0] )
+    foot_l = ( np.polyval( p_l, points_l[1,0] ), points_l[1,0] )
+    foot_r = ( np.polyval( p_r, points_r[1,0] ), points_r[1,0] )
 
     cot_l = (p_l[1]+2.0*p_l[0]*points_l[1,0])
     cot_r = (p_r[1]+2.0*p_r[0]*points_r[1,0])
