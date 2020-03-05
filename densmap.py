@@ -7,7 +7,7 @@ import math
 import numpy as np
 
 import matplotlib as mpl
-mpl.use("Agg")
+mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib.animation as manimation
@@ -17,6 +17,11 @@ from scipy import signal
 
 import skimage as sk
 from skimage import measure
+
+"""
+    Circle fitting library (thanks to marian42: https://github.com/marian42/circle-fit.git)
+"""
+import circle_fit as cf
 
 ################################################################################
 ################################################################################
@@ -227,6 +232,10 @@ class contour_data :
     angle_right = []
     cotangent_left = []
     cotangent_right = []
+    circle_rad = []
+    circle_xc = []
+    circle_zc = []
+    circle_res = []
 
     def __init__(contour_data):
         print("[densmap] Initializing contour data structure")
@@ -239,6 +248,7 @@ class contour_data :
         # Think about that ...
 
     def plot_radius(contour_data):
+        mpl.use("Agg")
         contour_data.spreading_radius = \
             np.array(contour_data.foot_right)-np.array(contour_data.foot_left)
         plt.figure()
@@ -248,8 +258,10 @@ class contour_data :
         plt.ylabel('r(t) [nm]', fontsize=20.0)
         plt.show()
         plt.savefig('spreading_radius.eps')
+        mpl.use("TkAgg")
 
     def plot_angles(contour_data):
+        mpl.use("Agg")
         contour_data.mean_contact_angle = \
             0.5*(np.array(contour_data.angle_right)+np.array(contour_data.angle_left))
         contour_data.hysteresis = \
@@ -263,8 +275,10 @@ class contour_data :
         plt.legend()
         plt.show()
         plt.savefig('contact_angles.eps')
+        mpl.use("TkAgg")
 
     def movie_contour(contour_data, crop_x, crop_z, dz, rad):
+        mpl.use("Agg")
         FFMpegWriter = manimation.writers['ffmpeg']
         metadata = dict(title='Spreading Droplet Contour', artist='Michele Pellegrino',
             comment='Just the tracked contour of a spreding droplet')
@@ -279,15 +293,19 @@ class contour_data :
         fig_right, = plt.plot([], [], 'b-', linewidth=1.0)
         fig_pl, = plt.plot([], [], 'r.', linewidth=1.5)
         fig_pr, = plt.plot([], [], 'b.', linewidth=1.5)
+        fig_cir, = plt.plot([], [], 'g-', linewidth=0.75)
         plt.xlim(0, crop_x)
         plt.ylim(0, crop_z)
         plt.title('Droplet Spreading')
         plt.xlabel('x [nm]')
         plt.ylabel('z [nm]')
+        s = np.linspace(0,2*np.pi,250)
         with writer.saving(fig, "contour_movie.mp4", 250):
             for i in range( len(contour_data.contour) ):
                 dx_l = dz * contour_data.cotangent_left[i]
                 dx_r = dz * contour_data.cotangent_right[i]
+                circle_x = contour_data.circle_xc[i] + contour_data.circle_rad[i]*np.cos(s)
+                circle_z = contour_data.circle_zc[i] + contour_data.circle_rad[i]*np.sin(s)
                 fig_cont.set_data(contour_data.contour[i][0,:], contour_data.contour[i][1,:])
                 t_label = str(contour_data.time[i])+' ps'
                 textvar = plt.text(1.5, 14.0, t_label)
@@ -297,8 +315,10 @@ class contour_data :
                     [contour_data.foot_right[i][1], contour_data.foot_right[i][1]+dz])
                 fig_pl.set_data(contour_data.foot_left[i][0], contour_data.foot_left[i][1])
                 fig_pr.set_data(contour_data.foot_right[i][0], contour_data.foot_right[i][1])
+                fig_cir.set_data(circle_x, circle_z)
                 writer.grab_frame()
                 textvar.remove()
+        mpl.use("TkAgg")
 
 class fitting_parameters :
 
@@ -592,6 +612,7 @@ def contour_tracking (
         z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
     foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
         detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+    xc, zc, R, residue = circle_fit(intf_contour, z_th=fit_param.substrate_location)
     CD.time.append( fit_param.time_step*k_init )
     CD.contour.append( intf_contour )
     CD.branch_left.append( left_branch )
@@ -602,6 +623,10 @@ def contour_tracking (
     CD.angle_right.append( theta_r )
     CD.cotangent_left.append( cot_l )
     CD.cotangent_right.append( cot_r )
+    CD.circle_rad.append(R)
+    CD.circle_xc.append(xc)
+    CD.circle_zc.append(zc)
+    CD.circle_res.append(residue)
 
     for k in range(k_init+1, k_end+1) :
         file_name = folder_name+'/flow_'+str(k).zfill(5)+'.dat'
@@ -617,6 +642,7 @@ def contour_tracking (
             z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
         foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
             detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+        xc, zc, R, residue = circle_fit(intf_contour, z_th=fit_param.substrate_location)
         CD.time.append( fit_param.time_step*k )
         CD.contour.append( intf_contour )
         CD.branch_left.append( left_branch )
@@ -627,5 +653,27 @@ def contour_tracking (
         CD.angle_right.append( theta_r )
         CD.cotangent_left.append( cot_l )
         CD.cotangent_right.append( cot_r )
+        CD.circle_rad.append(R)
+        CD.circle_xc.append(xc)
+        CD.circle_zc.append(zc)
+        CD.circle_res.append(residue)
 
     return CD
+
+"""
+    Finds the better circle fitting the droplet contour
+"""
+def circle_fit(intf_contour, z_th=0.0) :
+    M = len(intf_contour[0,:])
+    data_circle_x = []
+    data_circle_z = []
+    for k in range(M) :
+        if intf_contour[1,k] > z_th :
+            data_circle_x.append(intf_contour[0,k])
+            data_circle_z.append(intf_contour[1,k])
+    data_circle_x = np.array(data_circle_x)
+    data_circle_z = np.array(data_circle_z)
+    # t = np.linspace(0,2*np.pi,250)
+    # circle_x = xc + R*np.cos(t)
+    # circle_z = zc + R*np.sin(t)
+    return cf.least_squares_circle(np.stack((data_circle_x, data_circle_z), axis=1))

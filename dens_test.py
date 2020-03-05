@@ -6,8 +6,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
-folder_name = 'flow_data3'
-file_name = 'flow_00250.dat'
+mpl.use('TkAgg')
+
+folder_name = 'flow_data5'
+file_name = 'flow_00010.dat'
 
 # PARAMETERS TO TUNE
 Lx = 23.86485       # [nm]
@@ -47,12 +49,11 @@ smooth_density_array = dm.convolute(density_array, smoother)
 
 # PARAMETERS TO TUNE
 bulk_density = dm.detect_bulk_density(smooth_density_array, density_th=2.0)
-
 intf_contour = dm.detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
 
 # PARAMETERS TO TUNE
-left_branch, right_branch, points_l, points_r = \
-    dm.detect_contact_line(intf_contour, z_min=2.0, z_max=5.0, x_half=12.0)
+# left_branch, right_branch, points_l, points_r = \
+#     dm.detect_contact_line(intf_contour, z_min=2.0, z_max=5.0, x_half=12.0)
 
 # PARAMETERS TO TUNE
 # foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
@@ -71,6 +72,28 @@ left_branch, right_branch, points_l, points_r = \
 
 # dm.contour_tracking('flow_data3', 200, 300, FP)
 
+# CIRCLE FITTING
+
+# import circle_fit as cf
+
+# z_th = 2.0
+# M = len(intf_contour[0,:])
+# data_circle_x = []
+# data_circle_z = []
+# for k in range(M) :
+#     if intf_contour[1,k] > z_th :
+#         data_circle_x.append(intf_contour[0,k])
+#         data_circle_z.append(intf_contour[1,k])
+# data_circle_x = np.array(data_circle_x)
+# data_circle_z = np.array(data_circle_z)
+
+# xc,zc,R,_ = cf.least_squares_circle(np.stack((data_circle_x, data_circle_z), axis=1))
+xc, zc, R, residue = dm.circle_fit(intf_contour, z_th=2.0)
+t = np.linspace(0,2*np.pi,250)
+circle_x = xc + R*np.cos(t)
+circle_z = zc + R*np.sin(t)
+print("Circle fit residue = "+str(residue))
+
 ################################################################################
 #### PLOTTING ##################################################################
 ################################################################################
@@ -80,10 +103,14 @@ left_branch, right_branch, points_l, points_r = \
 plt.pcolor(X, Z, smooth_density_array, cmap=cm.bone)
 plt.colorbar()
 plt.plot(intf_contour[0,:], intf_contour[1,:], 'k--', linewidth=2.0)
-plt.plot(left_branch[0,:], left_branch[1,:], 'r-', right_branch[0,:], right_branch[1,:], 'g-', linewidth=2.0)
-plt.plot(points_r[0,:], points_r[1,:], 'kx', points_l[0,:], points_l[1,:], 'kx')
-plt.plot([points_r[0,0], points_r[0,0]+dx_r], [points_r[1,0],points_r[1,0]+dz] , 'g--',
-    [points_l[0,0], points_l[0,0]+dx_l], [points_l[1,0],points_l[1,0]+dz] , 'r--', linewidth=2.0)
+# plt.plot(data_circle_x, data_circle_z, 'g.', linewidth=2.0)
+plt.plot(circle_x, circle_z, 'r-', linewidth=2.0)
+# plt.plot(left_branch[0,:], left_branch[1,:], 'r-', right_branch[0,:], right_branch[1,:], 'g-', linewidth=2.0)
+# plt.plot(points_r[0,:], points_r[1,:], 'kx', points_l[0,:], points_l[1,:], 'kx')
+# plt.plot([points_r[0,0], points_r[0,0]+dx_r], [points_r[1,0],points_r[1,0]+dz] , 'g--',
+#     [points_l[0,0], points_l[0,0]+dx_l], [points_l[1,0],points_l[1,0]+dz] , 'r--', linewidth=2.0)
 plt.axis('scaled')
+plt.xlim([0,Lx])
+plt.ylim([0,Lz])
 plt.title('Smoothed density output')
 plt.show()
