@@ -8,12 +8,12 @@ from matplotlib import cm
 
 mpl.use('TkAgg')
 
-folder_name = 'flow_data5'
-file_name = 'flow_00010.dat'
+folder_name = 'flow_20nm'
+file_name = 'flow_00100.dat'
 
 # PARAMETERS TO TUNE
-Lx = 23.86485       # [nm]
-Lz = 17.68620       # [nm]
+Lx = 60.00000       # [nm]
+Lz = 35.37240       # [nm]
 
 # ONLY IN CASE IT COMES FROM GMX DENSMAP
 ################################################################################
