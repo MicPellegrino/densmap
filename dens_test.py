@@ -8,7 +8,7 @@ from matplotlib import cm
 
 mpl.use('TkAgg')
 
-folder_name = 'flow_20nm'
+folder_name = 'flow_20nm_adv'
 file_name = 'flow_00100.dat'
 
 # PARAMETERS TO TUNE

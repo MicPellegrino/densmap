@@ -8,13 +8,13 @@ FP.lenght_x = 60.00000
 FP.lenght_z = 35.37240
 FP.r_mol = 0.09584
 FP.max_vapour_density = 2.0
-FP.substrate_location = 1.75
+FP.substrate_location = 1.85
 FP.bulk_location = 10.0
 FP.simmetry_plane = 30.0
 FP.interpolation_order = 2
 
 # NB: conutour tracking should check whether there are actually kfin-kinit files!!!
-CD = dm.contour_tracking('flow_20nm', 1, 375, FP)
+CD = dm.contour_tracking('flow_20nm_adv', 1, 375, FP)
 
 CD.plot_radius()
 CD.plot_angles()
