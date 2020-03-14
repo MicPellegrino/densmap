@@ -264,8 +264,10 @@ class contour_data :
         mpl.use("Agg")
         contour_data.mean_contact_angle = \
             0.5*(np.array(contour_data.angle_right)+np.array(contour_data.angle_left))
+        # contour_data.hysteresis = \
+        #     np.absolute(np.array(contour_data.angle_right)-np.array(contour_data.angle_left))
         contour_data.hysteresis = \
-            np.absolute(np.array(contour_data.angle_right)-np.array(contour_data.angle_left))
+            np.array(contour_data.angle_right)-np.array(contour_data.angle_left)
         plt.figure()
         plt.plot(contour_data.time, contour_data.mean_contact_angle, 'b-', label='average')
         plt.plot(contour_data.time, contour_data.hysteresis, 'r-', label='hysterisis')

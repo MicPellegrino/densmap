@@ -14,7 +14,7 @@ FP.simmetry_plane = 30.0
 FP.interpolation_order = 2
 
 # NB: conutour tracking should check whether there are actually kfin-kinit files!!!
-CD = dm.contour_tracking('flow_20nm_adv', 1, 375, FP)
+CD = dm.contour_tracking('flow_20nm_rec', 1, 375, FP)
 
 CD.plot_radius()
 CD.plot_angles()
@@ -23,10 +23,18 @@ dz = 2.5
 rad = 1.0
 CD.movie_contour(FP.lenght_x, FP.lenght_z, dz, rad)
 
+# Saving what we need
 # spreading_radius = np.array(CD.foot_right)-np.array(CD.foot_left)
 # mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
-# hysteresis = np.absolute(np.array(CD.angle_right)-np.array(CD.angle_left))
-# t = np.array(CD.time)
+# hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
+t = np.array(CD.time)
+spreading_radius = np.array(CD.spreading_radius)
+mean_contact_angle = np.array(CD.mean_contact_angle)
+hysteresis = np.array(CD.hysteresis)
+np.savetxt('time.txt', t)
+np.savetxt('radius.txt', spreading_radius)
+np.savetxt('angle.txt', mean_contact_angle)
+np.savetxt('hysteresis.txt', hysteresis)
 
 # plt.plot(t, spreading_radius, 'k-')
 # plt.title('Spreading radius')
