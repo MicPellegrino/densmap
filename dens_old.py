@@ -14,7 +14,7 @@ from skimage import measure
 
 # filename = 'densmap_q1.dat'
 # filename = 'densmap_q2.dat'
-filename = 'densmap_q3.dat'
+# filename = 'densmap_q3.dat'
 # filename = 'densmap_q4.dat'
 # filename = 'densmap_q5.dat'
 # filename = 'hyst.dat'

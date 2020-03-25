@@ -237,6 +237,12 @@ class contour_data :
     circle_zc = []
     circle_res = []
 
+    # ANGLE FROM CAP FITTING
+    angle_circle = []
+
+    # RADIUS FROM CAP FITTING
+    radius_circle = []
+
     def __init__(contour_data):
         print("[densmap] Initializing contour data structure")
 
@@ -252,10 +258,12 @@ class contour_data :
         contour_data.spreading_radius = \
             np.array(contour_data.foot_right)-np.array(contour_data.foot_left)
         plt.figure()
-        plt.plot(contour_data.time, contour_data.spreading_radius[:,0], 'k-')
+        plt.plot(contour_data.time, contour_data.spreading_radius[:,0], 'k-', label='contour')
+        plt.plot(contour_data.time, contour_data.radius_circle, 'g-', label='cap')
         plt.title('Spreading radius', fontsize=20.0)
         plt.xlabel('t [ps]', fontsize=20.0)
-        plt.ylabel('r(t) [nm]', fontsize=20.0)
+        plt.ylabel('R(t) [nm]', fontsize=20.0)
+        plt.legend()
         plt.show()
         plt.savefig('spreading_radius.eps')
         mpl.use("TkAgg")
@@ -270,7 +278,8 @@ class contour_data :
             np.array(contour_data.angle_right)-np.array(contour_data.angle_left)
         plt.figure()
         plt.plot(contour_data.time, contour_data.mean_contact_angle, 'b-', label='average')
-        plt.plot(contour_data.time, contour_data.hysteresis, 'r-', label='hysterisis')
+        plt.plot(contour_data.time, contour_data.hysteresis, 'r-', label='difference')
+        plt.plot(contour_data.time, contour_data.angle_circle, 'g-', label='cap')
         plt.title('Contact angle', fontsize=20.0)
         plt.xlabel('t [ps]', fontsize=20.0)
         plt.ylabel('theta(t) [deg]', fontsize=20.0)
@@ -279,7 +288,7 @@ class contour_data :
         plt.savefig('contact_angles.eps')
         mpl.use("TkAgg")
 
-    def movie_contour(contour_data, crop_x, crop_z, dz, rad):
+    def movie_contour(contour_data, crop_x, crop_z, dz, rad = 1.0):
         mpl.use("Agg")
         FFMpegWriter = manimation.writers['ffmpeg']
         metadata = dict(title='Spreading Droplet Contour', artist='Michele Pellegrino',
@@ -382,6 +391,24 @@ def read_density_file (
         density_array = density_array[1:-1,1:-1]
 
     return density_array
+
+"""
+    Read velocity field from .dat data
+"""
+def read_velocity_file (
+    filename
+    ) :
+
+    data, info = read_data(filename)
+    # print(data)
+    Nx = info['shape'][0]
+    Nz = info['shape'][1]
+    vel_x = np.array( data['U'] )
+    vel_z = np.array( data['V'] )
+    vel_x = vel_x.reshape((Nx,Nz))
+    vel_z = vel_z.reshape((Nx,Nz))
+
+    return vel_x, vel_z
 
 """
     Crops the array containg density values to the desired values
@@ -631,6 +658,16 @@ def contour_tracking (
     CD.circle_zc.append(zc)
     CD.circle_res.append(residue)
 
+    # ANGLE FROM CAP FITTING
+    h = fit_param.substrate_location
+    cot_circle = (h-zc)/np.sqrt(R*R-(h-zc)**2)
+    theta_circle = np.rad2deg( -np.arctan( cot_circle )+0.5*math.pi )
+    theta_circle = theta_circle + 180*(theta_circle<=0)
+    CD.angle_circle.append(theta_circle)
+
+    # RADIUS FROM CAP FITTING
+    CD.radius_circle.append(2*np.sqrt(R*R-(h-zc)**2))
+
     for k in range(k_init+1, k_end+1) :
         file_name = folder_name+'/flow_'+str(k).zfill(5)+'.dat'
         if k % K_INFO == 0 :
@@ -660,6 +697,15 @@ def contour_tracking (
         CD.circle_xc.append(xc)
         CD.circle_zc.append(zc)
         CD.circle_res.append(residue)
+
+        # ANGLE FROM CAP FITTING
+        cot_circle = (h-zc)/np.sqrt(R*R-(h-zc)**2)
+        theta_circle = np.rad2deg( -np.arctan( cot_circle )+0.5*math.pi )
+        theta_circle = theta_circle + 180*(theta_circle<=0)
+        CD.angle_circle.append(theta_circle)
+
+        # RADIUS FROM CAP FITTING
+        CD.radius_circle.append(2*np.sqrt(R*R-(h-zc)**2))
 
     return CD
 
