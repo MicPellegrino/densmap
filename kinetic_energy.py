@@ -6,12 +6,20 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
-folder_name = '20nm/flow_adv_w5'
-file_name = 'flow_00300.dat'
+# folder_name = '20nm/flow_adv_w5'
+# file_name = 'flow_00300.dat'
+# folder_name = '100nm/third_run'
+# file_name = 'flow_00900.dat'
+folder_name = 'Shear/flow'
+file_name = 'flow_00634.dat'
 
 # PARAMETERS TO TUNE
-Lx = 60.00000       # [nm]
-Lz = 35.37240       # [nm]
+# Lx = 60.00000       # [nm]
+# Lz = 35.37240       # [nm]
+# Lx = 300.00000
+# Lz = 200.44360
+Lx = 149.85000
+Lz = 51.35000
 
 vel_x, vel_z = dm.read_velocity_file(folder_name+'/'+file_name)
 

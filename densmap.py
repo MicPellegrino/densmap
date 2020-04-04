@@ -218,33 +218,52 @@ def read_plainsimple(filename):
 ################################################################################
 
 """
+    Roughness parameter calculation
+"""
+rough_parameter = lambda a : (2.0/np.pi) * np.sqrt(a+1.0) * sc.special.ellipe(a/(a+1.0))
+
+"""
     Class for storing information regarding droplet spreding
 """
 class contour_data :
 
-    time = []
-    contour = []
-    branch_left = []
-    branch_right = []
-    foot_left = []
-    foot_right = []
-    angle_left = []
-    angle_right = []
-    cotangent_left = []
-    cotangent_right = []
-    circle_rad = []
-    circle_xc = []
-    circle_zc = []
-    circle_res = []
-
-    # ANGLE FROM CAP FITTING
-    angle_circle = []
-
-    # RADIUS FROM CAP FITTING
-    radius_circle = []
-
     def __init__(contour_data):
         print("[densmap] Initializing contour data structure")
+        contour_data.time = []
+        contour_data.contour = []
+        contour_data.branch_left = []
+        contour_data.branch_right = []
+        contour_data.foot_left = []
+        contour_data.foot_right = []
+        contour_data.angle_left = []
+        contour_data.angle_right = []
+        contour_data.cotangent_left = []
+        contour_data.cotangent_right = []
+        contour_data.circle_rad = []
+        contour_data.circle_xc = []
+        contour_data.circle_zc = []
+        contour_data.circle_res = []
+        contour_data.angle_circle = []
+        contour_data.radius_circle = []
+
+    def merge(contour_data, new_data):
+        new_time = [  contour_data.time[-1] + t for t in new_data.time]
+        contour_data.time = contour_data.time + new_time
+        contour_data.contour = contour_data.contour + new_data.contour
+        contour_data.branch_left = contour_data.branch_left + new_data.branch_left
+        contour_data.branch_right = contour_data.branch_right + new_data.branch_right
+        contour_data.foot_left = contour_data.foot_left + new_data.foot_left
+        contour_data.foot_right = contour_data.foot_right + new_data.foot_right
+        contour_data.angle_left = contour_data.angle_left + new_data.angle_left
+        contour_data.angle_right = contour_data.angle_right + new_data.angle_right
+        contour_data.cotangent_left = contour_data.cotangent_left + new_data.cotangent_left
+        contour_data.cotangent_right = contour_data.cotangent_right + new_data.cotangent_right
+        contour_data.circle_rad = contour_data.circle_rad + new_data.circle_rad
+        contour_data.circle_xc = contour_data.circle_xc + new_data.circle_xc
+        contour_data.circle_zc = contour_data.circle_zc + new_data.circle_zc
+        contour_data.circle_res = contour_data.circle_res + new_data.circle_res
+        contour_data.angle_circle = contour_data.angle_circle + new_data.angle_circle
+        contour_data.radius_circle = contour_data.radius_circle + new_data.radius_circle
 
     def save_to_file(contour_data):
         contour_data.file_angles = 'contact_angles.dat'
@@ -332,6 +351,16 @@ class contour_data :
                 textvar.remove()
         mpl.use("TkAgg")
 
+def dictionify( file_name, sp = '=' ) :
+    par_dict = dict()
+    par_file = open( file_name, 'r')
+    for line in par_file :
+        line = line.strip().replace(' ','')
+        cols = line.split(sp)
+        par_dict[cols[0]] = cols[1]
+    par_file.close()
+    return par_dict
+
 class fitting_parameters :
 
     time_step = 0.0             # [ps]
@@ -343,9 +372,41 @@ class fitting_parameters :
     bulk_location = 0.0         # [nm]
     simmetry_plane = 0.0        # [nm]
     interpolation_order = 1     # [nondim.]
+    folder_name = ''            # [string]
+    first_stamp = 0             # [int]
+    last_stamp = 0              # [int]
+    dz = 0.0                    # [nm]
 
-    def __init__(fitting_parameters):
+    def __init__(fitting_parameters, par_file=None):
         print("[densmap] Initializing fitting parameters data structure")
+        if par_file != None :
+            par_dict = dictionify(par_file)
+            fitting_parameters.time_step = \
+                float(par_dict['time_step'])
+            fitting_parameters.lenght_x = \
+                float(par_dict['lenght_x'])
+            fitting_parameters.lenght_z = \
+                float(par_dict['lenght_z'])
+            fitting_parameters.r_mol = \
+                float(par_dict['r_mol'])
+            fitting_parameters.max_vapour_density = \
+                float(par_dict['max_vapour_density'])
+            fitting_parameters.substrate_location = \
+                float(par_dict['substrate_location'])
+            fitting_parameters.bulk_location = \
+                float(par_dict['bulk_location'])
+            fitting_parameters.simmetry_plane = \
+                float(par_dict['simmetry_plane'])
+            fitting_parameters.interpolation_order = \
+                int(par_dict['interpolation_order'])
+            fitting_parameters.folder_name = \
+                par_dict['folder_name']
+            fitting_parameters.first_stamp = \
+                int(par_dict['first_stamp'])
+            fitting_parameters.last_stamp = \
+                int(par_dict['last_stamp'])
+            fitting_parameters.dz = \
+                float(par_dict['dz'])
 
 """
     Read input file containing density map
@@ -726,3 +787,18 @@ def circle_fit(intf_contour, z_th=0.0) :
     # circle_x = xc + R*np.cos(t)
     # circle_z = zc + R*np.sin(t)
     return cf.least_squares_circle(np.stack((data_circle_x, data_circle_z), axis=1))
+
+"""
+    Function to obtain equilibrium radius and c.a.
+"""
+def equilibrium_from_density ( filename, smoother, density_th, hx, hz, h ) :
+    density_array = read_density_file(filename, bin='y')
+    smooth_density_array = convolute(density_array, smoother)
+    bulk_density = detect_bulk_density(smooth_density_array, density_th)
+    intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
+    xc, zc, R, residue = circle_fit(intf_contour, h)
+    radius_circle = 2*np.sqrt(R*R-(h-zc)**2)
+    cot_circle = (h-zc)/np.sqrt(R*R-(h-zc)**2)
+    theta_circle = np.rad2deg( -np.arctan( cot_circle )+0.5*math.pi )
+    theta_circle = theta_circle + 180*(theta_circle<=0)
+    return radius_circle, theta_circle
