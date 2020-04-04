@@ -1,0 +1,13 @@
+time_step = 20.0
+lenght_x = 300.00000
+lenght_z = 200.44360
+r_mol = 0.09584
+max_vapour_density = 2.0
+substrate_location = 5.5
+bulk_location = 25.0
+simmetry_plane = 150.0
+interpolation_order = 1
+folder_name = 100nm/first_run
+first_stamp = 1
+last_stamp = 100
+dz = 5.0
