@@ -35,8 +35,8 @@ smoother = dm.smooth_kernel(r_mol, hx, hz)
 n_aver = 10
 
 n_init = 1
-n_fin = 250
-dt = 50.0
+n_fin = 200
+dt = 10.0
 
 n_dump = 10
 print("Producing movie of the kinetic energy")
@@ -68,7 +68,6 @@ with writer.saving(fig, "kinetic_energy.mp4", 250):
             else :
                 smooth_kin_ener += w[k]*tmp
         plt.pcolormesh(X, Z, smooth_kin_ener, cmap=cm.jet)
-        plt.colorbar()
         plt.axis('scaled')
         writer.grab_frame()
         # textvar.remove()
