@@ -31,8 +31,8 @@ h=1.85
 
 # Data structures for radius and contact angle
 corrugation = ['f','w1','w2','w3','w4','w5']
-charges = ['q1','q3','q4','q5']
-q_vals = [0.40, 0.67, 0.74, 0.79]
+charges = ['q1','q2','q3','q4','q5']
+q_vals = [0.40, 0.60, 0.67, 0.74, 0.79]
 a = np.array([0.00, 0.75, 1.00, 1.25, 1.50, 1.75])
 rough_par = dm.rough_parameter(a)
 radius_eq = dict()
@@ -59,6 +59,7 @@ def eq_dens ( filename ) :
 
 # Master folders
 folder_q1 = '20nm'
+folder_q2 = '20nm/CHARGE_2'
 folder_q3 = '20nm/CHARGE_3'
 folder_q4 = '20nm/CHARGE_4'
 folder_q5 = '20nm'
@@ -68,11 +69,13 @@ for q in charges :
 for i in range(len(corrugation)) :
     if i == 0:
         folder_names['q1'][corrugation[i]] = folder_q1+'/flow_sit_f/'
+        folder_names['q2'][corrugation[i]] = folder_q2+'/flat/'
         folder_names['q3'][corrugation[i]] = folder_q3+'/flat/'
         folder_names['q4'][corrugation[i]] = folder_q4+'/flat/'
         folder_names['q5'][corrugation[i]] = folder_q5+'/flow_adv_f/'
     else :
         folder_names['q1'][corrugation[i]] = folder_q1+'/flow_sit_w'+str(i)+'/'
+        folder_names['q2'][corrugation[i]] = folder_q2+'/wave'+str(i)+'/'
         folder_names['q3'][corrugation[i]] = folder_q3+'/wave'+str(i)+'/'
         folder_names['q4'][corrugation[i]] = folder_q4+'/wave'+str(i)+'/'
         folder_names['q5'][corrugation[i]] = folder_q5+'/flow_adv_w'+str(i)+'/'
@@ -99,6 +102,19 @@ for c in corrugation:
     r /= n_mean
     radius_eq['q1'][c] = r
     angle_eq['q1'][c] = theta
+    # Q2
+    print('-> charge: Q2')
+    theta = 0
+    r = 0
+    for i in range(n_mean) :
+        r_temp, theta_temp = eq_dens( \
+            folder_names['q2'][c]+'flow_'+'{:05d}'.format(n_max_hydrophylic-i)+'.dat' )
+        theta += theta_temp
+        r += r_temp
+    theta /= n_mean
+    r /= n_mean
+    radius_eq['q2'][c] = r
+    angle_eq['q2'][c] = theta
     # Q3
     print('-> charge: Q3')
     theta = 0
@@ -198,18 +214,30 @@ for c in corrugation:
     for q in charges:
         wenzel_cosine[c].append( np.cos(np.deg2rad(angle_eq[q][c]) ) )
 
+"""
 plt.plot(young_cosine[1:], wenzel_cosine['f'][1:], 'kh--', markersize=10.0, label='a='+str(a[0]))
 plt.plot(young_cosine[1:], wenzel_cosine['w1'][1:], 'gv--', markersize=10.0, label='a='+str(a[1]))
 plt.plot(young_cosine[1:], wenzel_cosine['w2'][1:], 'rs--', markersize=10.0, label='a='+str(a[2]))
 plt.plot(young_cosine[1:], wenzel_cosine['w3'][1:], 'cd--', markersize=10.0, label='a='+str(a[3]))
 plt.plot(young_cosine[1:], wenzel_cosine['w4'][1:], 'mp--', markersize=10.0, label='a='+str(a[4]))
 plt.plot(young_cosine[1:], wenzel_cosine['w5'][1:], 'b^--', markersize=10.0, label='a='+str(a[5]))
+"""
+plt.plot(young_cosine, wenzel_cosine['f'], 'kh--', markersize=10.0, label='a='+str(a[0]))
+plt.plot(young_cosine, wenzel_cosine['w1'], 'gv--', markersize=10.0, label='a='+str(a[1]))
+plt.plot(young_cosine, wenzel_cosine['w2'], 'rs--', markersize=10.0, label='a='+str(a[2]))
+plt.plot(young_cosine, wenzel_cosine['w3'], 'cd--', markersize=10.0, label='a='+str(a[3]))
+plt.plot(young_cosine, wenzel_cosine['w4'], 'mp--', markersize=10.0, label='a='+str(a[4]))
+plt.plot(young_cosine, wenzel_cosine['w5'], 'b^--', markersize=10.0, label='a='+str(a[5]))
+
 plt.legend(fontsize=20.0)
 plt.title('Verification of Wenzel law', fontsize=20.0)
 plt.xlabel(r'$cos\theta_Y$', fontsize=20.0)
 plt.ylabel(r'$cos\theta_W$', fontsize=20.0)
 plt.xticks(fontsize=20.0)
 plt.yticks(fontsize=20.0)
+plt.axis('scaled')
+plt.xlim([-1,1])
+plt.ylim([-1,1])
 plt.show()
 
 # plt.plot(rough_par, radius_eq_list['q1'], 'kh--', markersize=10.0, label='Q1')

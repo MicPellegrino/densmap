@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 FP = dm.fitting_parameters( par_file='parameters_medium.txt' )
+
 """
 # Medium
 FP.time_step = 8.0
@@ -27,7 +28,7 @@ FP.interpolation_order = 1
 """
 
 # NB: conutour tracking should check whether there are actually kfin-kinit files!!!
-# save_dir = 'Rec/Wave5/'
+
 # CD = dm.contour_tracking('100nm/spreading', 1, 200, FP)
 CD = dm.contour_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP)
 
@@ -38,17 +39,40 @@ dz = FP.dz
 CD.movie_contour(FP.lenght_x, FP.lenght_z, dz)
 
 # SAVING WHAT NEEDED
+
 # spreading_radius = np.array(CD.foot_right)-np.array(CD.foot_left)
 # mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 # hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
+
 t = np.array(CD.time)
-spreading_radius = np.array(CD.spreading_radius)
+spreading_radius = np.array(CD.spreading_radius)[:,0]
 mean_contact_angle = np.array(CD.mean_contact_angle)
 hysteresis = np.array(CD.hysteresis)
 
-# np.savetxt(save_dir+'time.txt', t)
-# np.savetxt(save_dir+'radius_c.txt', spreading_radius)
-# np.savetxt(save_dir+'angle_c.txt', mean_contact_angle)
-# np.savetxt(save_dir+'difference.txt', hysteresis)
-# np.savetxt(save_dir+'radius_r.txt', CD.radius_circle)
-# np.savetxt(save_dir+'angle_r.txt', CD.angle_circle)
+save_dir = 'substrate_loc/3nm/'
+np.savetxt(save_dir+'time.txt', t)
+np.savetxt(save_dir+'radius_c.txt', spreading_radius)
+np.savetxt(save_dir+'angle_c.txt', mean_contact_angle)
+np.savetxt(save_dir+'difference.txt', hysteresis)
+np.savetxt(save_dir+'radius_r.txt', CD.radius_circle)
+np.savetxt(save_dir+'angle_r.txt', CD.angle_circle)
+
+fig, axs = plt.subplots(1, 2)
+axs[0].plot(CD.time, CD.spreading_radius[:,0], 'k-', linewidth=2.5, label='contour')
+axs[0].plot(CD.time, CD.radius_circle, 'g-', linewidth=2.5, label='cap')
+axs[0].set_xlabel('t [ps]', fontsize=20.0)
+axs[0].set_ylabel(r'$R(t)$ [nm]', fontsize=20.0)
+axs[0].tick_params(axis='x', labelsize=20.0)
+axs[0].tick_params(axis='y', labelsize=20.0)
+axs[0].legend(fontsize=20.0)
+axs[0].set_title('Spreading radius', fontsize=20.0)
+axs[1].plot(CD.time, CD.mean_contact_angle, 'b-', linewidth=2.0, label='average')
+axs[1].plot(CD.time, CD.hysteresis, 'r-', linewidth=2.0, label='difference')
+axs[1].plot(CD.time, CD.angle_circle, 'g-', linewidth=2.5, label='cap')
+axs[1].set_xlabel('t [ps]', fontsize=20.0)
+axs[1].set_ylabel(r'$\theta(t)$ [deg]', fontsize=20.0)
+axs[1].tick_params(axis='x', labelsize=20.0)
+axs[1].tick_params(axis='y', labelsize=20.0)
+axs[1].legend(fontsize=20.0)
+axs[1].set_title('Contact angle', fontsize=20.0)
+plt.show()
