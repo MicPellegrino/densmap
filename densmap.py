@@ -307,8 +307,9 @@ class contour_data :
         plt.savefig('contact_angles.eps')
         mpl.use("TkAgg")
 
-    def movie_contour(contour_data, crop_x, crop_z, dz, rad = 1.0):
+    def movie_contour(contour_data, crop_x, crop_z, dz, circle=True, contact_line=True, rad = 1.0):
         mpl.use("Agg")
+        print("[densmap] Producing movie of the interface dynamics")
         FFMpegWriter = manimation.writers['ffmpeg']
         metadata = dict(title='Spreading Droplet Contour', artist='Michele Pellegrino',
             comment='Just the tracked contour of a spreding droplet')
@@ -332,18 +333,21 @@ class contour_data :
             for i in range( len(contour_data.contour) ):
                 dx_l = dz * contour_data.cotangent_left[i]
                 dx_r = dz * contour_data.cotangent_right[i]
-                circle_x = contour_data.circle_xc[i] + contour_data.circle_rad[i]*np.cos(s)
-                circle_z = contour_data.circle_zc[i] + contour_data.circle_rad[i]*np.sin(s)
+                if circle :
+                    circle_x = contour_data.circle_xc[i] + contour_data.circle_rad[i]*np.cos(s)
+                    circle_z = contour_data.circle_zc[i] + contour_data.circle_rad[i]*np.sin(s)
                 fig_cont.set_data(contour_data.contour[i][0,:], contour_data.contour[i][1,:])
                 t_label = str(contour_data.time[i])+' ps'
                 textvar = plt.text(1.5, 14.0, t_label)
-                fig_left.set_data([contour_data.foot_left[i][0], contour_data.foot_left[i][0]+dx_l],
-                    [contour_data.foot_left[i][1], contour_data.foot_left[i][1]+dz])
-                fig_right.set_data([contour_data.foot_right[i][0], contour_data.foot_right[i][0]+dx_r],
-                    [contour_data.foot_right[i][1], contour_data.foot_right[i][1]+dz])
-                fig_pl.set_data(contour_data.foot_left[i][0], contour_data.foot_left[i][1])
-                fig_pr.set_data(contour_data.foot_right[i][0], contour_data.foot_right[i][1])
-                fig_cir.set_data(circle_x, circle_z)
+                if contact_line :
+                    fig_left.set_data([contour_data.foot_left[i][0], contour_data.foot_left[i][0]+dx_l],
+                        [contour_data.foot_left[i][1], contour_data.foot_left[i][1]+dz])
+                    fig_right.set_data([contour_data.foot_right[i][0], contour_data.foot_right[i][0]+dx_r],
+                        [contour_data.foot_right[i][1], contour_data.foot_right[i][1]+dz])
+                    fig_pl.set_data(contour_data.foot_left[i][0], contour_data.foot_left[i][1])
+                    fig_pr.set_data(contour_data.foot_right[i][0], contour_data.foot_right[i][1])
+                if circle :
+                    fig_cir.set_data(circle_x, circle_z)
                 plt.axis('scaled')
                 plt.xlim(0, crop_x)
                 plt.ylim(0, crop_z)
@@ -678,14 +682,16 @@ def contour_tracking (
     folder_name,
     k_init,
     k_end,
-    fit_param
+    fit_param,
+    file_root = '/flow_',
+    contact_line = True
     ) :
 
     # Data structure that will be outputted
     CD = contour_data()
 
     # Read the first density snapshot, in order to get the values needed to contruct the smoothing kernel
-    file_name = folder_name+'/flow_'+str(k_init).zfill(5)+'.dat'
+    file_name = folder_name+file_root+str(k_init).zfill(5)+'.dat'
     print("[densmap] Reading "+file_name)
     density_array = read_density_file(file_name, bin='y')
     Nx = density_array.shape[0]
@@ -698,11 +704,23 @@ def contour_tracking (
     smooth_density_array = convolute(density_array, smoother)
     bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
     intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
-    left_branch, right_branch, points_l, points_r = \
-        detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
-        z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-    foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
-        detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+    if contact_line :
+        left_branch, right_branch, points_l, points_r = \
+            detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+            z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+        foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+            detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+    else :
+        left_branch = np.NaN
+        right_branch = np.NaN
+        points_l = np.NaN
+        points_r = np.NaN
+        foot_l = np.NaN
+        foot_r = np.NaN
+        theta_l = np.NaN
+        theta_r = np.NaN
+        cot_l = np.NaN
+        cot_r = np.NaN
     xc, zc, R, residue = circle_fit(intf_contour, z_th=fit_param.substrate_location)
     CD.time.append( fit_param.time_step*k_init )
     CD.contour.append( intf_contour )
@@ -730,7 +748,7 @@ def contour_tracking (
     CD.radius_circle.append(2*np.sqrt(R*R-(h-zc)**2))
 
     for k in range(k_init+1, k_end+1) :
-        file_name = folder_name+'/flow_'+str(k).zfill(5)+'.dat'
+        file_name = folder_name+file_root+str(k).zfill(5)+'.dat'
         if k % K_INFO == 0 :
             print("[densmap] Reading "+file_name)
         # Loop
@@ -738,11 +756,23 @@ def contour_tracking (
         smooth_density_array = convolute(density_array, smoother)
         bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
         intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
-        left_branch, right_branch, points_l, points_r = \
-            detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
-            z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-        foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
-            detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+        if contact_line :
+            left_branch, right_branch, points_l, points_r = \
+                detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+            foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+        else :
+            left_branch = np.NaN
+            right_branch = np.NaN
+            points_l = np.NaN
+            points_r = np.NaN
+            foot_l = np.NaN
+            foot_r = np.NaN
+            theta_l = np.NaN
+            theta_r = np.NaN
+            cot_l = np.NaN
+            cot_r = np.NaN
         xc, zc, R, residue = circle_fit(intf_contour, z_th=fit_param.substrate_location)
         CD.time.append( fit_param.time_step*k )
         CD.contour.append( intf_contour )

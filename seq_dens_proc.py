@@ -2,7 +2,7 @@ import densmap as dm
 import matplotlib.pyplot as plt
 import numpy as np
 
-FP = dm.fitting_parameters( par_file='parameters_medium.txt' )
+FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
 
 """
 # Medium
@@ -30,13 +30,13 @@ FP.interpolation_order = 1
 # NB: conutour tracking should check whether there are actually kfin-kinit files!!!
 
 # CD = dm.contour_tracking('100nm/spreading', 1, 200, FP)
-CD = dm.contour_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP)
+CD = dm.contour_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, file_root = '/flow_SOL_', contact_line = False)
 
-CD.plot_radius()
-CD.plot_angles()
+# CD.plot_radius()
+# CD.plot_angles()
 
 dz = FP.dz
-CD.movie_contour(FP.lenght_x, FP.lenght_z, dz)
+CD.movie_contour(FP.lenght_x, FP.lenght_z, dz, circle=False, contact_line = False)
 
 # SAVING WHAT NEEDED
 
@@ -44,11 +44,14 @@ CD.movie_contour(FP.lenght_x, FP.lenght_z, dz)
 # mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 # hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 
+"""
 t = np.array(CD.time)
 spreading_radius = np.array(CD.spreading_radius)[:,0]
 mean_contact_angle = np.array(CD.mean_contact_angle)
 hysteresis = np.array(CD.hysteresis)
+"""
 
+"""
 save_dir = 'substrate_loc/3nm/'
 np.savetxt(save_dir+'time.txt', t)
 np.savetxt(save_dir+'radius_c.txt', spreading_radius)
@@ -56,7 +59,9 @@ np.savetxt(save_dir+'angle_c.txt', mean_contact_angle)
 np.savetxt(save_dir+'difference.txt', hysteresis)
 np.savetxt(save_dir+'radius_r.txt', CD.radius_circle)
 np.savetxt(save_dir+'angle_r.txt', CD.angle_circle)
+"""
 
+"""
 fig, axs = plt.subplots(1, 2)
 axs[0].plot(CD.time, CD.spreading_radius[:,0], 'k-', linewidth=2.5, label='contour')
 axs[0].plot(CD.time, CD.radius_circle, 'g-', linewidth=2.5, label='cap')
@@ -76,3 +81,4 @@ axs[1].tick_params(axis='y', labelsize=20.0)
 axs[1].legend(fontsize=20.0)
 axs[1].set_title('Contact angle', fontsize=20.0)
 plt.show()
+"""
