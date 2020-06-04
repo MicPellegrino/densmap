@@ -11,7 +11,7 @@ from matplotlib import cm
 # folder_name = '100nm/third_run'
 # file_name = 'flow_00900.dat'
 folder_name = 'RawFlowData'
-file_name = 'flow_SOL_00100.dat'
+file_name = 'combined_00100.dat'
 
 # PARAMETERS TO TUNE
 # Lx = 60.00000       # [nm]

@@ -10,7 +10,7 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 folder_name = 'RawFlowData'
-file_root = 'flow_SOL_'
+file_root = 'combined_'
 
 # PARAMETERS TO TUNE
 Lx = 75.60000
@@ -32,10 +32,10 @@ X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
 r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 # TIME AVERAGING
-n_aver = 10
+n_aver = 20
 
 n_init = 1
-n_fin = 200
+n_fin = 1000
 dt = 10.0
 
 n_dump = 10
@@ -49,6 +49,7 @@ fig = plt.figure()
 plt.xlabel('x [nm]')
 plt.ylabel('z [nm]')
 # smooth_kin_ener = np.NaN
+smooth_kin_ener_list = []
 with writer.saving(fig, "kinetic_energy.mp4", 250):
     for idx in range(1, n_fin-n_init+1 ):
         if idx%n_dump==0 :
@@ -59,6 +60,21 @@ with writer.saving(fig, "kinetic_energy.mp4", 250):
         n_hist = min(n_aver, idx)
         w = np.exp(-np.linspace(0.0,5.0,n_hist))
         w = w / np.sum(w)
+        vel_x, vel_z = dm.read_velocity_file(folder_name+'/'+'flow_SOL_'+'{:05d}'.format(idx)+'.dat')
+        kin_ener = 0.5*(np.multiply(vel_x, vel_x)+np.multiply(vel_z, vel_z))
+        tmp = dm.convolute(kin_ener, smoother)
+        if idx > n_aver :
+            smooth_kin_ener_list.append(tmp)
+            smooth_kin_ener_list.pop(0)
+        else :
+            smooth_kin_ener_list.append(tmp)
+        for k in range(n_hist) :
+            # print(len(smooth_kin_ener_list))
+            if k == 0 :
+                smooth_kin_ener = w[0]*smooth_kin_ener_list[-1]
+            else :
+                smooth_kin_ener += w[k]*smooth_kin_ener_list[-k-1]
+        """
         for k in range(n_hist) :
             vel_x, vel_z = dm.read_velocity_file(folder_name+'/'+'flow_SOL_'+'{:05d}'.format(idx-k)+'.dat')
             kin_ener = 0.5*(np.multiply(vel_x, vel_x)+np.multiply(vel_z, vel_z))
@@ -67,6 +83,7 @@ with writer.saving(fig, "kinetic_energy.mp4", 250):
                 smooth_kin_ener = w[k]*tmp
             else :
                 smooth_kin_ener += w[k]*tmp
+        """
         plt.pcolormesh(X, Z, smooth_kin_ener, cmap=cm.jet)
         plt.axis('scaled')
         writer.grab_frame()
