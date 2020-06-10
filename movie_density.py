@@ -9,12 +9,12 @@ import matplotlib.animation as manimation
 
 mpl.use("Agg")
 
-folder_name = 'ButanolEquil'
+folder_name = 'ShearPhobic'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
-Lx = 75.60000
-Lz = 28.00000
+Lx = 159.75000
+Lz = 30.36600
 
 # CREATING MESHGRID
 print("Creating meshgrid")
@@ -33,17 +33,17 @@ smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
 n_fin = 400
-dt = 50.0
+dt = 25.0
 delta_th = 2.0
 
 n_dump = 10
 print("Producing movie of the number density")
 FFMpegWriter = manimation.writers['ffmpeg']
-metadata = dict(title='Shear droplet density profile', artist='Michele Pellegrino',
+metadata = dict(title='Meniscus density profile', artist='Michele Pellegrino',
     comment='Just the tracked contour of a shear droplet')
 writer = FFMpegWriter(fps=30, metadata=metadata)
 fig = plt.figure()
-with writer.saving(fig, "butanol_equil_density.mp4", 250):
+with writer.saving(fig, "meniscus_hydrophobic.mp4", 250):
     t_label = '0.0'
     for idx in range(1, n_fin-n_init+1 ):
         plt.xlabel('x [nm]')

@@ -9,14 +9,14 @@ import matplotlib.animation as manimation
 
 mpl.use("Agg")
 
-folder_name = 'RawFlowData'
-file_root = 'combined_'
+folder_name = 'ShearPhilic'
+file_root = 'flow_'
 # folder_name = '20nm/flow_adv_w1'
 # file_root = 'flow_'
 
 # PARAMETERS TO TUNE
-Lx = 75.60000
-Lz = 28.00000
+Lx = 159.75000
+Lz = 30.36600
 # Lx = 60.00000
 # Lz = 35.37240
 
@@ -32,16 +32,16 @@ z = hz*np.arange(0.0,Nz,1.0, dtype=float)
 X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
 
 # INITIALIZING SMOOTHING KERNEL
-p = 2.0
+p = 3.0
 r_mol = p*0.09584
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 # TIME AVERAGING
-n_aver = 75
+n_aver = 50
 
 n_init = 1
-n_fin = 1000
+n_fin = 50
 # dt = 8.0
-dt = 50.0
+dt = 25.0
 
 n_dump = 10
 print("Producing movie of the kinetic energy")
@@ -54,7 +54,7 @@ fig = plt.figure()
 p_x_list = []
 p_z_list = []
 kin_ener_list = []
-with writer.saving(fig, "propanol_ca05_velocity.mp4", 250):
+with writer.saving(fig, "meniscus_hydrophilic_velocity.mp4", 250):
     t_label = '0.0'
     for idx in range(1, n_fin-n_init+1 ):
         if idx%n_dump==0 :
@@ -93,7 +93,7 @@ with writer.saving(fig, "propanol_ca05_velocity.mp4", 250):
         smooth_p_x = dm.convolute(smooth_p_x, smoother)
         smooth_p_z = dm.convolute(smooth_p_z, smoother)
         plt.streamplot(x, z, smooth_p_x.transpose(), smooth_p_z.transpose(), \
-            density=2.0, color='w', linewidth=0.5)
+            density=2.0, arrowsize=0.5, color='w', linewidth=0.5)
         plt.pcolormesh(X, Z, smooth_kin_ener, cmap=cm.jet)
         plt.colorbar()
         plt.xlabel('x [nm]')
