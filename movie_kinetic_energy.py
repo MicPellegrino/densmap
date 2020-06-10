@@ -11,15 +11,18 @@ mpl.use("Agg")
 
 folder_name = 'RawFlowData'
 file_root = 'combined_'
+# folder_name = '20nm/flow_adv_w1'
+# file_root = 'flow_'
 
 # PARAMETERS TO TUNE
 Lx = 75.60000
 Lz = 28.00000
+# Lx = 60.00000
+# Lz = 35.37240
 
 # CREATING MESHGRID
 print("Creating meshgrid")
 vel_x, vel_z = dm.read_velocity_file(folder_name+'/'+file_root+'00001.dat')
-kin_ener = 0.5*(np.multiply(vel_x, vel_x)+np.multiply(vel_z, vel_z))
 Nx = vel_x.shape[0]
 Nz = vel_x.shape[1]
 hx = Lx/Nx
@@ -29,64 +32,76 @@ z = hz*np.arange(0.0,Nz,1.0, dtype=float)
 X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
 
 # INITIALIZING SMOOTHING KERNEL
-r_mol = 0.39876
+p = 2.0
+r_mol = p*0.09584
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 # TIME AVERAGING
-n_aver = 20
+n_aver = 75
 
 n_init = 1
 n_fin = 1000
-dt = 10.0
+# dt = 8.0
+dt = 50.0
 
 n_dump = 10
 print("Producing movie of the kinetic energy")
 FFMpegWriter = manimation.writers['ffmpeg']
-metadata = dict(title='Shear droplet kinetic energy', artist='Michele Pellegrino',
-    comment='Just the tracked contour of a shear droplet')
+metadata = dict( title='Propanol kinetic energy Ca=0.05', \
+    artist='Michele Pellegrino', \
+    comment='Just the tracked contour of a spreading droplet' )
 writer = FFMpegWriter(fps=30, metadata=metadata)
 fig = plt.figure()
-# fig_ener = plt.pcolormesh(X, Z, kin_ener, cmap=cm.jet)
-plt.xlabel('x [nm]')
-plt.ylabel('z [nm]')
-# smooth_kin_ener = np.NaN
-smooth_kin_ener_list = []
-with writer.saving(fig, "kinetic_energy.mp4", 250):
+p_x_list = []
+p_z_list = []
+kin_ener_list = []
+with writer.saving(fig, "propanol_ca05_velocity.mp4", 250):
+    t_label = '0.0'
     for idx in range(1, n_fin-n_init+1 ):
         if idx%n_dump==0 :
             print("Obtainig frame "+str(idx))
             t_label = str(dt*idx)+' ps'
-            plt.title('Kinetic energy @'+t_label)
         # Time-averaging window
         n_hist = min(n_aver, idx)
         w = np.exp(-np.linspace(0.0,5.0,n_hist))
         w = w / np.sum(w)
-        vel_x, vel_z = dm.read_velocity_file(folder_name+'/'+'flow_SOL_'+'{:05d}'.format(idx)+'.dat')
-        kin_ener = 0.5*(np.multiply(vel_x, vel_x)+np.multiply(vel_z, vel_z))
-        tmp = dm.convolute(kin_ener, smoother)
+        rho = dm.read_density_file(folder_name+'/'+file_root+'{:05d}'.format(idx)+'.dat', bin='y')
+        tmp_x, tmp_z = dm.read_velocity_file(folder_name+'/'+file_root+'{:05d}'.format(idx)+'.dat')
+        tmp_e = 0.5*np.multiply( rho, np.multiply(tmp_x, tmp_x)+np.multiply(tmp_z, tmp_z) )
+        tmp_x = np.multiply(rho, tmp_x)
+        tmp_z = np.multiply(rho, tmp_z)
         if idx > n_aver :
-            smooth_kin_ener_list.append(tmp)
-            smooth_kin_ener_list.pop(0)
+            p_x_list.append(tmp_x)
+            p_x_list.pop(0)
+            p_z_list.append(tmp_z)
+            p_z_list.pop(0)
+            kin_ener_list.append(tmp_e)
+            kin_ener_list.pop(0)
         else :
-            smooth_kin_ener_list.append(tmp)
+            p_x_list.append(tmp_x)
+            p_z_list.append(tmp_z)
+            kin_ener_list.append(tmp_e)
         for k in range(n_hist) :
-            # print(len(smooth_kin_ener_list))
             if k == 0 :
-                smooth_kin_ener = w[0]*smooth_kin_ener_list[-1]
+                smooth_p_x = w[0]*p_x_list[-1]
+                smooth_p_z = w[0]*p_z_list[-1]
+                smooth_kin_ener = w[0]*kin_ener_list[-1]
             else :
-                smooth_kin_ener += w[k]*smooth_kin_ener_list[-k-1]
-        """
-        for k in range(n_hist) :
-            vel_x, vel_z = dm.read_velocity_file(folder_name+'/'+'flow_SOL_'+'{:05d}'.format(idx-k)+'.dat')
-            kin_ener = 0.5*(np.multiply(vel_x, vel_x)+np.multiply(vel_z, vel_z))
-            tmp = dm.convolute(kin_ener, smoother)
-            if k == 0 :
-                smooth_kin_ener = w[k]*tmp
-            else :
-                smooth_kin_ener += w[k]*tmp
-        """
+                smooth_p_x += w[k]*p_x_list[-k-1]
+                smooth_p_z += w[k]*p_z_list[-k-1]
+                smooth_kin_ener += w[k]*kin_ener_list[-k-1]
+        smooth_kin_ener = dm.convolute(smooth_kin_ener, smoother)
+        smooth_p_x = dm.convolute(smooth_p_x, smoother)
+        smooth_p_z = dm.convolute(smooth_p_z, smoother)
+        plt.streamplot(x, z, smooth_p_x.transpose(), smooth_p_z.transpose(), \
+            density=2.0, color='w', linewidth=0.5)
         plt.pcolormesh(X, Z, smooth_kin_ener, cmap=cm.jet)
+        plt.colorbar()
+        plt.xlabel('x [nm]')
+        plt.ylabel('z [nm]')
+        plt.title('Kinetic energy @'+t_label)
         plt.axis('scaled')
         writer.grab_frame()
-        # textvar.remove()
+        plt.cla()
+        plt.clf()
 
 mpl.use("TkAgg")
