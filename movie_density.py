@@ -9,7 +9,10 @@ import matplotlib.animation as manimation
 
 mpl.use("Agg")
 
-folder_name = 'ShearPhobic'
+# Output file name
+output_file_name = "meniscus_ca_10.mp4"
+
+folder_name = 'Ca10Phobic'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -32,7 +35,7 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 400
+n_fin = 480
 dt = 25.0
 delta_th = 2.0
 
@@ -43,7 +46,7 @@ metadata = dict(title='Meniscus density profile', artist='Michele Pellegrino',
     comment='Just the tracked contour of a shear droplet')
 writer = FFMpegWriter(fps=30, metadata=metadata)
 fig = plt.figure()
-with writer.saving(fig, "meniscus_hydrophobic.mp4", 250):
+with writer.saving(fig, output_file_name, 250):
     t_label = '0.0'
     for idx in range(1, n_fin-n_init+1 ):
         plt.xlabel('x [nm]')
