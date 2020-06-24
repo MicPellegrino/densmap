@@ -225,60 +225,60 @@ rough_parameter = lambda a : (2.0/np.pi) * np.sqrt(a+1.0) * sc.special.ellipe(a/
 """
     Class for storing information regarding droplet spreding
 """
-class contour_data :
+class droplet_data :
 
-    def __init__(contour_data):
+    def __init__(droplet_data):
         print("[densmap] Initializing contour data structure")
-        contour_data.time = []
-        contour_data.contour = []
-        contour_data.branch_left = []
-        contour_data.branch_right = []
-        contour_data.foot_left = []
-        contour_data.foot_right = []
-        contour_data.angle_left = []
-        contour_data.angle_right = []
-        contour_data.cotangent_left = []
-        contour_data.cotangent_right = []
-        contour_data.circle_rad = []
-        contour_data.circle_xc = []
-        contour_data.circle_zc = []
-        contour_data.circle_res = []
-        contour_data.angle_circle = []
-        contour_data.radius_circle = []
+        droplet_data.time = []
+        droplet_data.contour = []
+        droplet_data.branch_left = []
+        droplet_data.branch_right = []
+        droplet_data.foot_left = []
+        droplet_data.foot_right = []
+        droplet_data.angle_left = []
+        droplet_data.angle_right = []
+        droplet_data.cotangent_left = []
+        droplet_data.cotangent_right = []
+        droplet_data.circle_rad = []
+        droplet_data.circle_xc = []
+        droplet_data.circle_zc = []
+        droplet_data.circle_res = []
+        droplet_data.angle_circle = []
+        droplet_data.radius_circle = []
 
-    def merge(contour_data, new_data):
-        new_time = [  contour_data.time[-1] + t for t in new_data.time]
-        contour_data.time = contour_data.time + new_time
-        contour_data.contour = contour_data.contour + new_data.contour
-        contour_data.branch_left = contour_data.branch_left + new_data.branch_left
-        contour_data.branch_right = contour_data.branch_right + new_data.branch_right
-        contour_data.foot_left = contour_data.foot_left + new_data.foot_left
-        contour_data.foot_right = contour_data.foot_right + new_data.foot_right
-        contour_data.angle_left = contour_data.angle_left + new_data.angle_left
-        contour_data.angle_right = contour_data.angle_right + new_data.angle_right
-        contour_data.cotangent_left = contour_data.cotangent_left + new_data.cotangent_left
-        contour_data.cotangent_right = contour_data.cotangent_right + new_data.cotangent_right
-        contour_data.circle_rad = contour_data.circle_rad + new_data.circle_rad
-        contour_data.circle_xc = contour_data.circle_xc + new_data.circle_xc
-        contour_data.circle_zc = contour_data.circle_zc + new_data.circle_zc
-        contour_data.circle_res = contour_data.circle_res + new_data.circle_res
-        contour_data.angle_circle = contour_data.angle_circle + new_data.angle_circle
-        contour_data.radius_circle = contour_data.radius_circle + new_data.radius_circle
+    def merge(droplet_data, new_data):
+        new_time = [  droplet_data.time[-1] + t for t in new_data.time]
+        droplet_data.time = droplet_data.time + new_time
+        droplet_data.contour = droplet_data.contour + new_data.contour
+        droplet_data.branch_left = droplet_data.branch_left + new_data.branch_left
+        droplet_data.branch_right = droplet_data.branch_right + new_data.branch_right
+        droplet_data.foot_left = droplet_data.foot_left + new_data.foot_left
+        droplet_data.foot_right = droplet_data.foot_right + new_data.foot_right
+        droplet_data.angle_left = droplet_data.angle_left + new_data.angle_left
+        droplet_data.angle_right = droplet_data.angle_right + new_data.angle_right
+        droplet_data.cotangent_left = droplet_data.cotangent_left + new_data.cotangent_left
+        droplet_data.cotangent_right = droplet_data.cotangent_right + new_data.cotangent_right
+        droplet_data.circle_rad = droplet_data.circle_rad + new_data.circle_rad
+        droplet_data.circle_xc = droplet_data.circle_xc + new_data.circle_xc
+        droplet_data.circle_zc = droplet_data.circle_zc + new_data.circle_zc
+        droplet_data.circle_res = droplet_data.circle_res + new_data.circle_res
+        droplet_data.angle_circle = droplet_data.angle_circle + new_data.angle_circle
+        droplet_data.radius_circle = droplet_data.radius_circle + new_data.radius_circle
 
-    def save_to_file(contour_data):
-        contour_data.file_angles = 'contact_angles.dat'
-        contour_data.file_feet = 'contact_points.dat'
-        contour_data.file_contout = 'contour.dat'
-        contour_data.file_branches = 'branches.dat'
-        # Think about that ...
+    def save_to_file(droplet_data):
+        # Those should be saved BEFORE poltting, not after...
+        droplet_data.file_angles = 'contact_angles.dat'
+        droplet_data.file_feet = 'contact_points.dat'
+        droplet_data.file_contout = 'contour.dat'
+        droplet_data.file_branches = 'branches.dat'
 
-    def plot_radius(contour_data):
+    def plot_radius(droplet_data):
         mpl.use("Agg")
-        contour_data.spreading_radius = \
-            np.array(contour_data.foot_right)-np.array(contour_data.foot_left)
+        droplet_data.spreading_radius = \
+            np.array(droplet_data.foot_right)-np.array(droplet_data.foot_left)
         plt.figure()
-        plt.plot(contour_data.time, contour_data.spreading_radius[:,0], 'k-', label='contour')
-        plt.plot(contour_data.time, contour_data.radius_circle, 'g-', label='cap')
+        plt.plot(droplet_data.time, droplet_data.spreading_radius[:,0], 'k-', label='contour')
+        plt.plot(droplet_data.time, droplet_data.radius_circle, 'g-', label='cap')
         plt.title('Spreading radius', fontsize=20.0)
         plt.xlabel('t [ps]', fontsize=20.0)
         plt.ylabel('R(t) [nm]', fontsize=20.0)
@@ -287,18 +287,16 @@ class contour_data :
         plt.savefig('spreading_radius.eps')
         mpl.use("TkAgg")
 
-    def plot_angles(contour_data):
+    def plot_angles(droplet_data):
         mpl.use("Agg")
-        contour_data.mean_contact_angle = \
-            0.5*(np.array(contour_data.angle_right)+np.array(contour_data.angle_left))
-        # contour_data.hysteresis = \
-        #     np.absolute(np.array(contour_data.angle_right)-np.array(contour_data.angle_left))
-        contour_data.hysteresis = \
-            np.array(contour_data.angle_right)-np.array(contour_data.angle_left)
+        droplet_data.mean_contact_angle = \
+            0.5*(np.array(droplet_data.angle_right)+np.array(droplet_data.angle_left))
+        droplet_data.hysteresis = \
+            np.array(droplet_data.angle_right)-np.array(droplet_data.angle_left)
         plt.figure()
-        plt.plot(contour_data.time, contour_data.mean_contact_angle, 'b-', label='average')
-        plt.plot(contour_data.time, contour_data.hysteresis, 'r-', label='difference')
-        plt.plot(contour_data.time, contour_data.angle_circle, 'g-', label='cap')
+        plt.plot(droplet_data.time, droplet_data.mean_contact_angle, 'b-', label='average')
+        plt.plot(droplet_data.time, droplet_data.hysteresis, 'r-', label='difference')
+        plt.plot(droplet_data.time, droplet_data.angle_circle, 'g-', label='cap')
         plt.title('Contact angle', fontsize=20.0)
         plt.xlabel('t [ps]', fontsize=20.0)
         plt.ylabel('theta(t) [deg]', fontsize=20.0)
@@ -307,7 +305,7 @@ class contour_data :
         plt.savefig('contact_angles.eps')
         mpl.use("TkAgg")
 
-    def movie_contour(contour_data, crop_x, crop_z, dz, circle=True, contact_line=True, rad = 1.0):
+    def movie_contour(droplet_data, crop_x, crop_z, dz, circle=True, contact_line=True):
         mpl.use("Agg")
         print("[densmap] Producing movie of the interface dynamics")
         FFMpegWriter = manimation.writers['ffmpeg']
@@ -315,10 +313,6 @@ class contour_data :
             comment='Just the tracked contour of a spreding droplet')
         writer = FFMpegWriter(fps=30, metadata=metadata)
         fig = plt.figure()
-        """
-        plt.plot([points_r[0,0], points_r[0,0]+dx_r], [points_r[1,0],points_r[1,0]+dz] , 'g--',
-            [points_l[0,0], points_l[0,0]+dx_l], [points_l[1,0],points_l[1,0]+dz] , 'r--', linewidth=2.0)
-        """
         fig_cont, = plt.plot([], [], 'k-', linewidth=1.5)
         fig_left, = plt.plot([], [], 'r-', linewidth=1.0)
         fig_right, = plt.plot([], [], 'b-', linewidth=1.0)
@@ -330,22 +324,22 @@ class contour_data :
         plt.ylabel('z [nm]')
         s = np.linspace(0,2*np.pi,250)
         with writer.saving(fig, "contour_movie.mp4", 250):
-            for i in range( len(contour_data.contour) ):
-                dx_l = dz * contour_data.cotangent_left[i]
-                dx_r = dz * contour_data.cotangent_right[i]
+            for i in range( len(droplet_data.contour) ):
+                dx_l = dz * droplet_data.cotangent_left[i]
+                dx_r = dz * droplet_data.cotangent_right[i]
                 if circle :
-                    circle_x = contour_data.circle_xc[i] + contour_data.circle_rad[i]*np.cos(s)
-                    circle_z = contour_data.circle_zc[i] + contour_data.circle_rad[i]*np.sin(s)
-                fig_cont.set_data(contour_data.contour[i][0,:], contour_data.contour[i][1,:])
-                t_label = str(contour_data.time[i])+' ps'
+                    circle_x = droplet_data.circle_xc[i] + droplet_data.circle_rad[i]*np.cos(s)
+                    circle_z = droplet_data.circle_zc[i] + droplet_data.circle_rad[i]*np.sin(s)
+                fig_cont.set_data(droplet_data.contour[i][0,:], droplet_data.contour[i][1,:])
+                t_label = str(droplet_data.time[i])+' ps'
                 textvar = plt.text(1.5, 14.0, t_label)
                 if contact_line :
-                    fig_left.set_data([contour_data.foot_left[i][0], contour_data.foot_left[i][0]+dx_l],
-                        [contour_data.foot_left[i][1], contour_data.foot_left[i][1]+dz])
-                    fig_right.set_data([contour_data.foot_right[i][0], contour_data.foot_right[i][0]+dx_r],
-                        [contour_data.foot_right[i][1], contour_data.foot_right[i][1]+dz])
-                    fig_pl.set_data(contour_data.foot_left[i][0], contour_data.foot_left[i][1])
-                    fig_pr.set_data(contour_data.foot_right[i][0], contour_data.foot_right[i][1])
+                    fig_left.set_data([droplet_data.foot_left[i][0], droplet_data.foot_left[i][0]+dx_l],
+                        [droplet_data.foot_left[i][1], droplet_data.foot_left[i][1]+dz])
+                    fig_right.set_data([droplet_data.foot_right[i][0], droplet_data.foot_right[i][0]+dx_r],
+                        [droplet_data.foot_right[i][1], droplet_data.foot_right[i][1]+dz])
+                    fig_pl.set_data(droplet_data.foot_left[i][0], droplet_data.foot_left[i][1])
+                    fig_pr.set_data(droplet_data.foot_right[i][0], droplet_data.foot_right[i][1])
                 if circle :
                     fig_cir.set_data(circle_x, circle_z)
                 plt.axis('scaled')
@@ -354,6 +348,141 @@ class contour_data :
                 writer.grab_frame()
                 textvar.remove()
         mpl.use("TkAgg")
+
+class shear_data :
+
+    """
+        Legend:
+            'bl' = bottom left
+            'br' = bottom right
+            'tl' = top left
+            'tr' = top right
+    """
+
+    def __init__(shear_data):
+        print("[densmap] Initializing contour data structure")
+        shear_data.time = []
+        shear_data.contour = []
+        shear_data.branch = dict()
+        shear_data.branch['bl'] = []
+        shear_data.branch['br'] = []
+        shear_data.branch['tl'] = []
+        shear_data.branch['tr'] = []
+        shear_data.foot = dict()
+        shear_data.foot['bl'] = []
+        shear_data.foot['br'] = []
+        shear_data.foot['tl'] = []
+        shear_data.foot['tr'] = []
+        shear_data.angle = dict()
+        shear_data.angle['bl'] = []
+        shear_data.angle['br'] = []
+        shear_data.angle['tl'] = []
+        shear_data.angle['tr'] = []
+        shear_data.cotangent = dict()
+        shear_data.cotangent['bl'] = []
+        shear_data.cotangent['br'] = []
+        shear_data.cotangent['tl'] = []
+        shear_data.cotangent['tr'] = []
+
+    def save_to_file(shear_data, save_dir):
+        print("[densmap] Saving to .txt files")
+        np.savetxt(save_dir+'/time.txt', np.array(shear_data.time))
+        radius_upper = np.abs( np.array(shear_data.foot['tr']) - np.array(shear_data.foot['tl']) )
+        radius_lower = np.abs( np.array(shear_data.foot['br']) - np.array(shear_data.foot['bl']) )
+        np.savetxt(save_dir+'/radius_upper.txt', radius_upper[:,0])
+        np.savetxt(save_dir+'/radius_lower.txt', radius_lower[:,0])
+        np.savetxt(save_dir+'/angle_bl.txt', shear_data.angle['bl'])
+        np.savetxt(save_dir+'/angle_br.txt', shear_data.angle['br'])
+        np.savetxt(save_dir+'/angle_tl.txt', shear_data.angle['tl'])
+        np.savetxt(save_dir+'/angle_tr.txt', shear_data.angle['tr'])
+
+    def plot_radius(shear_data, fig_name='spreading_radius.eps'):
+        mpl.use("Agg")
+        print("[densmap] Producing plot for spreading radius")
+        radius_upper = np.abs( np.array(shear_data.foot['tr']) - np.array(shear_data.foot['tl']) )
+        radius_lower = np.abs( np.array(shear_data.foot['br']) - np.array(shear_data.foot['bl']) )
+        plt.figure()
+        """
+            Change once the upper half tracking is added
+        """
+        plt.plot(shear_data.time, radius_upper[:,0], 'k-', label='upper')
+        plt.plot(shear_data.time, radius_lower[:,0], 'g-', label='lower')
+        plt.title('Spreading radius', fontsize=20.0)
+        plt.xlabel('t [ps]', fontsize=20.0)
+        plt.ylabel('R(t) [nm]', fontsize=20.0)
+        plt.legend()
+        plt.show()
+        plt.savefig(fig_name)
+        mpl.use("TkAgg")
+
+    def plot_angles(shear_data, fig_name='contact_angles.eps'):
+        mpl.use("Agg")
+        print("[densmap] Producing plot for contact angles")
+        plt.figure()
+        plt.plot(shear_data.time, shear_data.angle['bl'], 'b-', label='bottom left')
+        plt.plot(shear_data.time, shear_data.angle['br'], 'r-', label='bottom right')
+        plt.plot(shear_data.time, shear_data.angle['tl'], 'c-', label='top left')
+        plt.plot(shear_data.time, shear_data.angle['tr'], 'm-', label='top right')
+        plt.title('Contact angle', fontsize=20.0)
+        plt.xlabel('t [ps]', fontsize=20.0)
+        plt.ylabel('theta(t) [deg]', fontsize=20.0)
+        plt.legend()
+        plt.show()
+        plt.savefig(fig_name)
+        mpl.use("TkAgg")
+
+    def movie_contour(shear_data, crop_x, crop_z, dz, contact_line=True):
+        mpl.use("Agg")
+        print("[densmap] Producing movie of the interface dynamics")
+        FFMpegWriter = manimation.writers['ffmpeg']
+        metadata = dict(title='Spreading Droplet Contour', artist='Michele Pellegrino',
+            comment='Just the tracked contour of a spreding droplet')
+        writer = FFMpegWriter(fps=30, metadata=metadata)
+        fig = plt.figure()
+        fig_cont, = plt.plot([], [], 'k-', linewidth=1.5)
+        fig_fbl, = plt.plot([], [], 'b-', linewidth=1.0)
+        fig_fbr, = plt.plot([], [], 'r-', linewidth=1.0)
+        fig_ftl, = plt.plot([], [], 'c-', linewidth=1.0)
+        fig_ftr, = plt.plot([], [], 'm-', linewidth=1.0)
+        fig_pbl, = plt.plot([], [], 'b.', linewidth=1.5)
+        fig_pbr, = plt.plot([], [], 'r.', linewidth=1.5)
+        fig_ptl, = plt.plot([], [], 'c.', linewidth=1.5)
+        fig_ptr, = plt.plot([], [], 'm.', linewidth=1.5)
+        plt.title('Droplet Shear')
+        plt.xlabel('x [nm]')
+        plt.ylabel('z [nm]')
+        s = np.linspace(0,2*np.pi,250)
+        with writer.saving(fig, "contour_movie.mp4", 250):
+            for i in range( len(shear_data.contour) ):
+                dx_l = dz * shear_data.cotangent['bl'][i]
+                dx_r = dz * shear_data.cotangent['br'][i]
+                fig_cont.set_data(shear_data.contour[i][0,:], shear_data.contour[i][1,:])
+                t_label = str(shear_data.time[i])+' ps'
+                """
+                    The position of the time label should be an input (or at leat a macro)
+                """
+                textvar = plt.text(1.5, 14.0, t_label)
+                if contact_line :
+                    fig_fbl.set_data([shear_data.foot['bl'][i][0], shear_data.foot['bl'][i][0]+dx_l],
+                        [shear_data.foot['bl'][i][1], shear_data.foot['bl'][i][1]+dz])
+                    fig_fbr.set_data([shear_data.foot['br'][i][0], shear_data.foot['br'][i][0]+dx_r],
+                        [shear_data.foot['br'][i][1], shear_data.foot['br'][i][1]+dz])
+                    fig_pbl.set_data(shear_data.foot['bl'][i][0], shear_data.foot['bl'][i][1])
+                    fig_pbr.set_data(shear_data.foot['br'][i][0], shear_data.foot['br'][i][1])
+                    # Flipping again to the upper wall
+                    fig_ftl.set_data([shear_data.foot['tl'][i][0], shear_data.foot['tl'][i][0]+dx_l],
+                        [crop_z-shear_data.foot['tl'][i][1], crop_z-shear_data.foot['tl'][i][1]-dz])
+                    fig_ftr.set_data([shear_data.foot['tr'][i][0], shear_data.foot['tr'][i][0]+dx_r],
+                        [crop_z-shear_data.foot['tr'][i][1], crop_z-shear_data.foot['tr'][i][1]-dz])
+                    fig_ptl.set_data(shear_data.foot['tl'][i][0], crop_z-shear_data.foot['tl'][i][1])
+                    fig_ptr.set_data(shear_data.foot['tr'][i][0], crop_z-shear_data.foot['tr'][i][1])
+                plt.axis('scaled')
+                plt.xlim(0, crop_x)
+                plt.ylim(0, crop_z)
+                writer.grab_frame()
+                textvar.remove()
+        mpl.use("TkAgg")
+
 
 def dictionify( file_name, sp = '=' ) :
     par_dict = dict()
@@ -676,9 +805,9 @@ def detect_contact_angle (
 """
     Build up contour data starting from flow_%%%%%.dat files
 """
-# Print info each ... steps
+# Print info each K_INFO steps
 K_INFO = 50
-def contour_tracking (
+def droplet_tracking (
     folder_name,
     k_init,
     k_end,
@@ -688,7 +817,7 @@ def contour_tracking (
     ) :
 
     # Data structure that will be outputted
-    CD = contour_data()
+    CD = droplet_data()
 
     # Read the first density snapshot, in order to get the values needed to contruct the smoothing kernel
     file_name = folder_name+file_root+str(k_init).zfill(5)+'.dat'
@@ -700,6 +829,7 @@ def contour_tracking (
     hz = fit_param.lenght_z/Nz
     print("[densmap] Initialize smoothing kernel")
     smoother = smooth_kernel(fit_param.r_mol, hx, hz)
+
     # Append the values for the first time-step
     smooth_density_array = convolute(density_array, smoother)
     bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
@@ -743,7 +873,6 @@ def contour_tracking (
     theta_circle = np.rad2deg( -np.arctan( cot_circle )+0.5*math.pi )
     theta_circle = theta_circle + 180*(theta_circle<=0)
     CD.angle_circle.append(theta_circle)
-
     # RADIUS FROM CAP FITTING
     CD.radius_circle.append(2*np.sqrt(R*R-(h-zc)**2))
 
@@ -794,9 +923,163 @@ def contour_tracking (
         theta_circle = np.rad2deg( -np.arctan( cot_circle )+0.5*math.pi )
         theta_circle = theta_circle + 180*(theta_circle<=0)
         CD.angle_circle.append(theta_circle)
-
         # RADIUS FROM CAP FITTING
         CD.radius_circle.append(2*np.sqrt(R*R-(h-zc)**2))
+
+    return CD
+
+"""
+    Same as above, but for a shear droplet
+"""
+def shear_tracking (
+    folder_name,
+    k_init,
+    k_end,
+    fit_param,
+    file_root = '/flow_',
+    contact_line = True
+    ) :
+
+    # Data structure that will be outputted
+    CD = shear_data()
+
+    # Read the first density snapshot, in order to get the values needed to contruct the smoothing kernel
+    file_name = folder_name+file_root+str(k_init).zfill(5)+'.dat'
+    print("[densmap] Reading "+file_name)
+    density_array = read_density_file(file_name, bin='y')
+    Nx = density_array.shape[0]
+    Nz = density_array.shape[1]
+    hx = fit_param.lenght_x/Nx
+    hz = fit_param.lenght_z/Nz
+    print("[densmap] Initialize smoothing kernel")
+    """
+        Should actually check if r_mol is less than the bin size; in that case
+        performing density averaging is useless
+    """
+    smoother = smooth_kernel(fit_param.r_mol, hx, hz)
+
+    # Append the values for the first time-step
+    smooth_density_array = convolute(density_array, smoother)
+    bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
+    intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
+    """
+        Stuff below has to be modified
+    """
+    if contact_line :
+        b_left_branch, b_right_branch, b_points_l, b_points_r = \
+            detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+            z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+        b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+            detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+        # Flip interface contour
+        intf_contour_flip = np.stack((intf_contour[0,:], fit_param.lenght_z-intf_contour[1,:]))
+        t_left_branch, t_right_branch, t_points_l, t_points_r = \
+            detect_contact_line(intf_contour_flip, z_min=fit_param.substrate_location,
+            z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+        t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+            detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+    else :
+        b_left_branch = np.NaN
+        b_right_branch = np.NaN
+        b_points_l = np.NaN
+        b_points_r = np.NaN
+        b_foot_l = np.NaN
+        b_foot_r = np.NaN
+        b_theta_l = np.NaN
+        b_theta_r = np.NaN
+        b_cot_l = np.NaN
+        b_cot_r = np.NaN
+        t_left_branch = np.NaN
+        t_right_branch = np.NaN
+        t_points_l = np.NaN
+        t_points_r = np.NaN
+        t_foot_l = np.NaN
+        t_foot_r = np.NaN
+        t_theta_l = np.NaN
+        t_theta_r = np.NaN
+        t_cot_l = np.NaN
+        t_cot_r = np.NaN
+    CD.time.append( fit_param.time_step*k_init )
+    CD.contour.append( intf_contour )
+    CD.branch['bl'].append( b_left_branch )
+    CD.branch['br'].append( b_right_branch )
+    CD.foot['bl'].append( b_foot_l )
+    CD.foot['br'].append( b_foot_r )
+    CD.angle['bl'].append( b_theta_l )
+    CD.angle['br'].append( b_theta_r )
+    CD.cotangent['bl'].append( b_cot_l )
+    CD.cotangent['br'].append( b_cot_r )
+    CD.branch['tl'].append( t_left_branch )
+    CD.branch['tr'].append( t_right_branch )
+    CD.foot['tl'].append( t_foot_l )
+    CD.foot['tr'].append( t_foot_r )
+    CD.angle['tl'].append( t_theta_l )
+    CD.angle['tr'].append( t_theta_r )
+    CD.cotangent['tl'].append( t_cot_l )
+    CD.cotangent['tr'].append( t_cot_r )
+
+    for k in range(k_init+1, k_end+1) :
+        file_name = folder_name+file_root+str(k).zfill(5)+'.dat'
+        if k % K_INFO == 0 :
+            print("[densmap] Reading "+file_name)
+        # Loop
+        density_array = read_density_file(file_name, bin='y')
+        smooth_density_array = convolute(density_array, smoother)
+        bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
+        intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
+        if contact_line :
+            b_left_branch, b_right_branch, b_points_l, b_points_r = \
+                detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+            # Flip interface contour
+            intf_contour_flip = np.stack((intf_contour[0,:], fit_param.lenght_z-intf_contour[1,:]))
+            t_left_branch, t_right_branch, t_points_l, t_points_r = \
+                detect_contact_line(intf_contour_flip, z_min=fit_param.substrate_location,
+                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+        else :
+            b_left_branch = np.NaN
+            b_right_branch = np.NaN
+            b_points_l = np.NaN
+            b_points_r = np.NaN
+            b_foot_l = np.NaN
+            b_foot_r = np.NaN
+            b_theta_l = np.NaN
+            b_theta_r = np.NaN
+            b_cot_l = np.NaN
+            b_cot_r = np.NaN
+            t_left_branch = np.NaN
+            t_right_branch = np.NaN
+            t_points_l = np.NaN
+            t_points_r = np.NaN
+            t_foot_l = np.NaN
+            t_foot_r = np.NaN
+            t_theta_l = np.NaN
+            t_theta_r = np.NaN
+            t_cot_l = np.NaN
+            t_cot_r = np.NaN
+        xc, zc, R, residue = circle_fit(intf_contour, z_th=fit_param.substrate_location)
+        CD.time.append( fit_param.time_step*k )
+        CD.contour.append( intf_contour )
+        CD.branch['bl'].append( b_left_branch )
+        CD.branch['br'].append( b_right_branch )
+        CD.foot['bl'].append( b_foot_l )
+        CD.foot['br'].append( b_foot_r )
+        CD.angle['bl'].append( b_theta_l )
+        CD.angle['br'].append( b_theta_r )
+        CD.cotangent['bl'].append( b_cot_l )
+        CD.cotangent['br'].append( b_cot_r )
+        CD.branch['tl'].append( t_left_branch )
+        CD.branch['tr'].append( t_right_branch )
+        CD.foot['tl'].append( t_foot_l )
+        CD.foot['tr'].append( t_foot_r )
+        CD.angle['tl'].append( t_theta_l )
+        CD.angle['tr'].append( t_theta_r )
+        CD.cotangent['tl'].append( t_cot_l )
+        CD.cotangent['tr'].append( t_cot_r )
 
     return CD
 

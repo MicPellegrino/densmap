@@ -1,0 +1,13 @@
+time_step = 25.0
+lenght_x = 159.75000
+lenght_z = 30.36600
+r_mol = 0.09584
+max_vapour_density = 2.0
+substrate_location = 1.5
+bulk_location = 10.0
+simmetry_plane = 80.0
+interpolation_order = 2
+folder_name =  HydrophobicEq
+first_stamp = 1
+last_stamp = 600
+dz = 2.0

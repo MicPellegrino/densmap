@@ -6,6 +6,13 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
+"""
+    !!!
+    OBTAIN MOBILITY AS LINEAR RELATION BETWEEN R*THETA
+    AND R*dR/dt
+    (Xia, Steen)
+"""
+
 def array_from_file( filename ):
     my_list = []
     with open(filename, 'r') as f:
@@ -16,19 +23,30 @@ def array_from_file( filename ):
 # Initial droplet shape
 D_0 = 20.0
 
-mode = 'REC'
+mode = 'ADV'
+
+max_T = 375
 
 # ADVANCING
 if mode == 'ADV' :
     time = array_from_file('Adv/Flat/time.txt')
+    time = time[0:375]
     radius_f = array_from_file('Adv/Flat/radius_c.txt')
+    radius_f = radius_f[0:375]
     radius_h2 = array_from_file('Adv/Height2/radius_c.txt')
+    radius_h2 = radius_h2[0:375]
     radius_h1 = array_from_file('Adv/Height1/radius_c.txt')
+    radius_h1 = radius_h1[0:375]
     radius_w1 = array_from_file('Adv/Wave1/radius_c.txt')
+    radius_w1 = radius_w1[0:375]
     radius_w2 = array_from_file('Adv/Wave2/radius_c.txt')
+    radius_w2 = radius_w2[0:375]
     radius_w3 = array_from_file('Adv/Wave3/radius_c.txt')
+    radius_w3 = radius_w3[0:375]
     radius_w4 = array_from_file('Adv/Wave4/radius_c.txt')
+    radius_w4 = radius_w4[0:375]
     radius_w5 = array_from_file('Adv/Wave5/radius_c.txt')
+    radius_w5 = radius_w5[0:375]
 
 # RECEIDING
 if mode == 'REC' :

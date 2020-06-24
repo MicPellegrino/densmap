@@ -7,11 +7,11 @@ FP_2 = dm.fitting_parameters( par_file='parameters2.txt' )
 
 # FP_3 = dm.fitting_parameters( par_file='parameters.txt' )
 
-CD = dm.contour_tracking(FP_1.folder_name, FP_1.first_stamp, \
+CD = dm.droplet_tracking(FP_1.folder_name, FP_1.first_stamp, \
     FP_1.last_stamp, FP_1)
-CD_2 = dm.contour_tracking(FP_2.folder_name, FP_2.first_stamp, \
+CD_2 = dm.droplet_tracking(FP_2.folder_name, FP_2.first_stamp, \
     FP_2.last_stamp, FP_2)
-# CD_3 = dm.contour_tracking(FP_3.folder_name, FP_3.first_stamp, \
+# CD_3 = dm.droplet_tracking(FP_3.folder_name, FP_3.first_stamp, \
 #     FP_3.last_stamp, FP_3)
 
 CD.merge(CD_2)

@@ -106,7 +106,7 @@ FP.substrate_location = 2.0
 FP.bulk_location = 5.0
 FP.simmetry_planefontsize=20.0 = 12.0
 FP.interpolation_order = 1
-dm.contour_tracking('flow_data3', 200, 300, FP)
+dm.droplet_tracking('flow_data3', 200, 300, FP)
 """
 
 # CIRCLE FITTING
