@@ -10,9 +10,9 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "meniscus_ca10_dt1fs.mp4"
+output_file_name = "meniscus_theta120_ca10_init11ns.mp4"
 
-folder_name = 'Quart'
+folder_name = 'Theta120Ca10Init11ns'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -35,8 +35,8 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 582
-dt = 0.25*(25.0)
+n_fin = 480
+dt = 0.5*(25.0)
 delta_th = 2.0
 
 n_dump = 10
