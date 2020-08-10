@@ -2,7 +2,7 @@ import densmap as dm
 import matplotlib.pyplot as plt
 import numpy as np
 
-FP = dm.fitting_parameters( par_file='parameters_medium.txt' )
+FP = dm.fitting_parameters( par_file='50nm/parameters_medium.txt' )
 
 # NB: conutour tracking should check whether there are actually kfin-kinit files!!!
 
@@ -21,6 +21,7 @@ CD.movie_contour(FP.lenght_x, FP.lenght_z, dz, circle=True, contact_line = True)
 # mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 # hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 
+"""
 t = np.array(CD.time)
 spreading_radius = np.array(CD.spreading_radius)[:,0]
 mean_contact_angle = np.array(CD.mean_contact_angle)
@@ -33,6 +34,7 @@ np.savetxt(save_dir+'angle_c.txt', mean_contact_angle)
 np.savetxt(save_dir+'difference.txt', hysteresis)
 np.savetxt(save_dir+'radius_r.txt', CD.radius_circle)
 np.savetxt(save_dir+'angle_r.txt', CD.angle_circle)
+"""
 
  ############
 #### MISC ####

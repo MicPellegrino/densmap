@@ -1,0 +1,2 @@
+A little note: for some reason the simulation of droplet spreading starts from zero (some mistake has been made in the batch script)
+Time steps from 330 in Preliminary Test folder are just a repetition of the first 329
