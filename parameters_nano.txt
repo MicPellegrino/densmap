@@ -1,0 +1,13 @@
+time_step = 12.5
+lenght_x = 32.85000
+lenght_z = 2.73480
+r_mol = 0.0
+max_vapour_density = 2.0
+substrate_location = 1.5
+bulk_location = 10.0
+simmetry_plane = 15.0
+interpolation_order = 2
+folder_name = /home/michele/python_for_md/NonlinearViscosity/DensityProfile/Flow
+first_stamp = 1
+last_stamp = 80
+dz = 2.0       
