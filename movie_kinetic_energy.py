@@ -9,14 +9,20 @@ import matplotlib.animation as manimation
 
 mpl.use("Agg")
 
-folder_name = 'Regen'
+# FP = dm.fitting_parameters( par_file='SlipLenght/parameters_slip.txt' )
+FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
+
+# folder_name = 'Theta90Ca30Init1000ps'
+folder_name = FP.folder_name
 file_root = 'flow_'
 # folder_name = '20nm/flow_adv_w1'
 # file_root = 'flow_'
 
 # PARAMETERS TO TUNE
-Lx = 159.75000
-Lz = 30.36600
+# Lx = 159.75000
+# Lz = 30.36600
+Lx = FP.lenght_x
+Lz = FP.lenght_z
 # Lx = 60.00000
 # Lz = 35.37240
 
@@ -33,29 +39,31 @@ X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
 
 # INITIALIZING SMOOTHING KERNEL
 p = 3.0
-r_mol = p*0.09584
+# r_mol = p*0.09584
+r_mol = p*FP.r_mol
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 # TIME AVERAGING
 n_aver = 50
 
-n_init = 1
-n_fin = 480
+n_init = FP.first_stamp
+# n_fin = 100
+n_fin = FP.last_stamp
 # dt = 8.0
 # dt = 25.0
-dt = 0.5*25.0
+dt = FP.time_step
 
 n_dump = 10
 print("Producing movie of the kinetic energy")
 FFMpegWriter = manimation.writers['ffmpeg']
-metadata = dict( title='Meniscus kinetic energy Ca=1.0', \
+metadata = dict( title='Shear flow Ca=0.2, Q2', \
     artist='Michele Pellegrino', \
-    comment='Just the tracked contour of a spreading droplet' )
+    comment='Results from flow data binning' )
 writer = FFMpegWriter(fps=30, metadata=metadata)
 fig = plt.figure(figsize=(14.0,7.0))
 p_x_list = []
 p_z_list = []
 kin_ener_list = []
-with writer.saving(fig, "meniscus_hydrophobic_velocity.mp4", 250):
+with writer.saving(fig, "shear_q2_ca02.mp4", 250):
     t_label = '0.0'
     for idx in range(1, n_fin-n_init+1 ):
         if idx%n_dump==0 :
