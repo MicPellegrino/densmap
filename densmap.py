@@ -711,6 +711,19 @@ def detect_bulk_density (
     return bulk_density
 
 """
+    Returns an array d[i][j] s.t.
+"""
+def density_indicator (
+    density_array,
+    target_density
+    ) :
+
+    idx = np.zeros( density_array.shape, dtype=int )
+    idx[density_array >= target_density] = 1
+
+    return idx
+
+"""
     Identify the contour line corresponding to the desired density value
 """
 def detect_contour (
