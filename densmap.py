@@ -349,6 +349,10 @@ class droplet_data :
                 textvar.remove()
         mpl.use("TkAgg")
 
+    def save_xvg(shear_data, folder) :
+        for k in range(len(shear_data.contour)) : 
+            output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
+
 class shear_data :
 
     """
@@ -383,6 +387,14 @@ class shear_data :
         shear_data.cotangent['br'] = []
         shear_data.cotangent['tl'] = []
         shear_data.cotangent['tr'] = []
+        shear_data.circle_rad_l = []
+        shear_data.circle_xc_l = []
+        shear_data.circle_zc_l = []
+        shear_data.circle_res_l = []
+        shear_data.circle_rad_r = []
+        shear_data.circle_xc_r = []
+        shear_data.circle_zc_r = []
+        shear_data.circle_res_r = []
 
     def save_to_file(shear_data, save_dir):
         print("[densmap] Saving to .txt files")
@@ -435,7 +447,7 @@ class shear_data :
         plt.savefig(fig_name)
         mpl.use("TkAgg")
 
-    def movie_contour(shear_data, crop_x, crop_z, dz, contact_line=True):
+    def movie_contour(shear_data, crop_x, crop_z, dz, circle=True, contact_line=True):
         mpl.use("Agg")
         print("[densmap] Producing movie of the interface dynamics")
         FFMpegWriter = manimation.writers['ffmpeg']
@@ -454,6 +466,8 @@ class shear_data :
         fig_ptr, = plt.plot([], [], 'm.', linewidth=1.5)
         fig_pos_up, = plt.plot([], [], 'kx', linewidth=1.5)
         fig_pos_lw, = plt.plot([], [], 'gx', linewidth=1.5)
+        fig_cir_right, = plt.plot([], [], 'k--', linewidth=1.00)
+        fig_cir_left, = plt.plot([], [], 'k--', linewidth=1.00)
         plt.title('Droplet Shear')
         plt.xlabel('x [nm]')
         plt.ylabel('z [nm]')
@@ -462,6 +476,11 @@ class shear_data :
             for i in range( len(shear_data.contour) ):
                 dx_l = dz * shear_data.cotangent['bl'][i]
                 dx_r = dz * shear_data.cotangent['br'][i]
+                if circle :
+                    circle_x_l = shear_data.circle_xc_l[i] + shear_data.circle_rad_l[i]*np.cos(s)
+                    circle_z_l = shear_data.circle_zc_l[i] + shear_data.circle_rad_l[i]*np.sin(s)
+                    circle_x_r = shear_data.circle_xc_r[i] + shear_data.circle_rad_r[i]*np.cos(s)
+                    circle_z_r = shear_data.circle_zc_r[i] + shear_data.circle_rad_r[i]*np.sin(s)
                 fig_cont.set_data(shear_data.contour[i][0,:], shear_data.contour[i][1,:])
                 t_label = str(shear_data.time[i])+' ps'
                 """
@@ -486,6 +505,9 @@ class shear_data :
                         0.5*(crop_z-shear_data.foot['tl'][i][1]+crop_z-shear_data.foot['tr'][i][1]) )
                     fig_pos_lw.set_data( 0.5*(shear_data.foot['bl'][i][0]+shear_data.foot['br'][i][0]), \
                         0.5*(shear_data.foot['bl'][i][1]+shear_data.foot['br'][i][1]) )
+                if circle :
+                    fig_cir_left.set_data(circle_x_l, circle_z_l)
+                    fig_cir_right.set_data(circle_x_r, circle_z_r)
                 plt.axis('scaled')
                 plt.xlim(0, crop_x)
                 plt.ylim(0, crop_z)
@@ -493,6 +515,9 @@ class shear_data :
                 textvar.remove()
         mpl.use("TkAgg")
 
+    def save_xvg(shear_data, folder) :
+        for k in range(len(shear_data.contour)) : 
+            output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
 
 def dictionify( file_name, sp = '=' ) :
     par_dict = dict()
@@ -874,7 +899,7 @@ def droplet_tracking (
         theta_r = np.NaN
         cot_l = np.NaN
         cot_r = np.NaN
-    xc, zc, R, residue = circle_fit(intf_contour, z_th=fit_param.substrate_location)
+    xc, zc, R, residue = circle_fit_droplet(intf_contour, z_th=fit_param.substrate_location)
     CD.time.append( fit_param.time_step*k_init )
     CD.contour.append( intf_contour )
     CD.branch_left.append( left_branch )
@@ -925,7 +950,7 @@ def droplet_tracking (
             theta_r = np.NaN
             cot_l = np.NaN
             cot_r = np.NaN
-        xc, zc, R, residue = circle_fit(intf_contour, z_th=fit_param.substrate_location)
+        xc, zc, R, residue = circle_fit_droplet(intf_contour, z_th=fit_param.substrate_location)
         CD.time.append( fit_param.time_step*k )
         CD.contour.append( intf_contour )
         CD.branch_left.append( left_branch )
@@ -1022,6 +1047,8 @@ def shear_tracking (
         t_theta_r = np.NaN
         t_cot_l = np.NaN
         t_cot_r = np.NaN
+    xc_l, zc_l, R_l, residue_l = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='l')
+    xc_r, zc_r, R_r, residue_r = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='r')
     CD.time.append( fit_param.time_step*k_init )
     CD.contour.append( intf_contour )
     CD.branch['bl'].append( b_left_branch )
@@ -1040,6 +1067,14 @@ def shear_tracking (
     CD.angle['tr'].append( t_theta_r )
     CD.cotangent['tl'].append( t_cot_l )
     CD.cotangent['tr'].append( t_cot_r )
+    CD.circle_rad_l.append(R_l)
+    CD.circle_xc_l.append(xc_l)
+    CD.circle_zc_l.append(zc_l)
+    CD.circle_res_l.append(residue_l)
+    CD.circle_rad_r.append(R_r)
+    CD.circle_xc_r.append(xc_r)
+    CD.circle_zc_r.append(zc_r)
+    CD.circle_res_r.append(residue_r)
 
     for k in range(k_init+1, k_end+1) :
         file_name = folder_name+file_root+str(k).zfill(5)+'.dat'
@@ -1084,7 +1119,8 @@ def shear_tracking (
             t_theta_r = np.NaN
             t_cot_l = np.NaN
             t_cot_r = np.NaN
-        xc, zc, R, residue = circle_fit(intf_contour, z_th=fit_param.substrate_location)
+        xc_l, zc_l, R_l, residue_l = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='l')
+        xc_r, zc_r, R_r, residue_r = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='r')
         CD.time.append( fit_param.time_step*k )
         CD.contour.append( intf_contour )
         CD.branch['bl'].append( b_left_branch )
@@ -1103,13 +1139,21 @@ def shear_tracking (
         CD.angle['tr'].append( t_theta_r )
         CD.cotangent['tl'].append( t_cot_l )
         CD.cotangent['tr'].append( t_cot_r )
+        CD.circle_rad_l.append(R_l)
+        CD.circle_xc_l.append(xc_l)
+        CD.circle_zc_l.append(zc_l)
+        CD.circle_res_l.append(residue_l)
+        CD.circle_rad_r.append(R_r)
+        CD.circle_xc_r.append(xc_r)
+        CD.circle_zc_r.append(zc_r)
+        CD.circle_res_r.append(residue_r)
 
     return CD
 
 """
     Finds the better circle fitting the droplet contour
 """
-def circle_fit(intf_contour, z_th=0.0) :
+def circle_fit_droplet(intf_contour, z_th=0.0) :
     M = len(intf_contour[0,:])
     data_circle_x = []
     data_circle_z = []
@@ -1124,6 +1168,24 @@ def circle_fit(intf_contour, z_th=0.0) :
     # circle_z = zc + R*np.sin(t)
     return cf.least_squares_circle(np.stack((data_circle_x, data_circle_z), axis=1))
 
+def circle_fit_meniscus(intf_contour, z_th, Lz, Midx, wing) :
+    assert wing=='l' or wing=='r', \
+            "Specify if the wing to fit with LS circle is left (wing='l') or right (wing='r')"
+    M = len(intf_contour[0,:])
+    data_circle_x = []
+    data_circle_z = []
+    if wing=='l' :
+        for k in range(M) :
+            if intf_contour[1,k] > z_th and intf_contour[1,k] < Lz-z_th and intf_contour[0,k]<Midx:
+                data_circle_x.append(intf_contour[0,k])
+                data_circle_z.append(intf_contour[1,k])
+    else :
+        for k in range(M) :
+            if intf_contour[1,k] > z_th and intf_contour[1,k] < Lz-z_th and intf_contour[0,k]>Midx:
+                data_circle_x.append(intf_contour[0,k])
+                data_circle_z.append(intf_contour[1,k])
+    return cf.least_squares_circle(np.stack((data_circle_x, data_circle_z), axis=1))
+
 """
     Function to obtain equilibrium radius and c.a.
 """
@@ -1132,9 +1194,42 @@ def equilibrium_from_density ( filename, smoother, density_th, hx, hz, h ) :
     smooth_density_array = convolute(density_array, smoother)
     bulk_density = detect_bulk_density(smooth_density_array, density_th)
     intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
-    xc, zc, R, residue = circle_fit(intf_contour, h)
+    xc, zc, R, residue = circle_fit_droplet(intf_contour, h)
     radius_circle = 2*np.sqrt(R*R-(h-zc)**2)
     cot_circle = (h-zc)/np.sqrt(R*R-(h-zc)**2)
     theta_circle = np.rad2deg( -np.arctan( cot_circle )+0.5*math.pi )
     theta_circle = theta_circle + 180*(theta_circle<=0)
     return radius_circle, theta_circle
+
+"""
+    Function to output interface points as .xvg file
+"""
+def output_interface_xmgrace ( intf_contour, file_name='interface.xvg' ) :
+    
+    f_out = open(file_name, 'w') 
+    
+    # HEADER
+    f_out.write("# Interface coordinates of a droplet\n")
+    f_out.write("# \n")
+    f_out.write("# Created by: densmap\n")
+    f_out.write("# Creation date: [...]\n")
+    f_out.write("# Using module version: 0.0.0\n")
+    f_out.write("# \n")
+    f_out.write("# Working directory: [...]\n")
+    f_out.write("# Input files:\n")
+    f_out.write("# \t[...]\n")
+    f_out.write("# \n")
+    f_out.write("# Input options:\n")
+    f_out.write("# \tRecenter: [...]\n")
+    f_out.write("# \tMass cut-off: [...]\n")
+    f_out.write("# \tRadius cut-off: [...]\n")
+    f_out.write("# \tRequired # of bins: [...]\n")
+    f_out.write("# \n")
+    f_out.write("# x (nm) y (nm)\n")
+    
+    # WRITING INTERFACE
+    M = len(intf_contour[0,:])
+    for k in range(M) :
+        f_out.write("%.3f %.3f\n" % (intf_contour[0,k], intf_contour[1,k]) )
+
+    f_out.close()
