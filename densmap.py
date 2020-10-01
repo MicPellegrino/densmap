@@ -1233,3 +1233,26 @@ def output_interface_xmgrace ( intf_contour, file_name='interface.xvg' ) :
         f_out.write("%.3f %.3f\n" % (intf_contour[0,k], intf_contour[1,k]) )
 
     f_out.close()
+
+"""
+    Function to bin the distribution of single c.l. position
+"""
+def position_distribution ( signal, N, std_mult=6.0 ) :
+   
+    sign_mean = np.mean(signal) 
+    sign_std = np.std(signal)
+
+    x_low = -std_mult*sign_std
+    x_upp =  std_mult*sign_std
+    
+    dx = (x_upp-x_low)/N
+
+    bin_vector = np.linspace(x_low+dx, x_upp-dx, N-1)
+    distribution = np.zeros( len(bin_vector), dtype=int )
+
+    for k in range(len(signal)) :
+       idx = ( np.abs( bin_vector-(signal[k]-sign_mean) ) ).argmin()
+       distribution[idx] += 1
+
+    return sign_mean, sign_std, bin_vector, distribution
+

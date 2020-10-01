@@ -13,17 +13,31 @@ CD = dm.shear_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
     file_root = '/flow_', contact_line = True)
 
 # Testing xmgrace output
-CD.save_xvg('InterfaceTest')
+# CD.save_xvg('InterfaceTest')
 
+# Testing cl distribution binning
+signal = np.array(CD.foot['tr'])[:,0]
+N = len(signal)
+print(int(np.sqrt(N/4)))
+sign_mean, sign_std, bin_vector, distribution = \
+        dm.position_distribution(signal[int(N/4):], int(np.sqrt(N/2)))
+
+print("Mean = "+str(sign_mean))
+print("Std  = "+str(sign_std))
+
+plt.plot(bin_vector, distribution)
+plt.show()
+
+# Testing plot
 CD.plot_radius()
 CD.plot_angles()
 
 dz = FP.dz
+# Testing movie
 # CD.movie_contour(FP.lenght_x, FP.lenght_z, dz, circle=False, contact_line = True)
 CD.movie_contour(FP.lenght_x, FP.lenght_z, dz,  circle=True, contact_line = True)
 
 # SAVING WHAT NEEDED
-
 # spreading_radius = np.array(CD.foot_right)-np.array(CD.foot_left)
 # mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 # hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
