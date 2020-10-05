@@ -519,6 +519,32 @@ class shear_data :
         for k in range(len(shear_data.contour)) : 
             output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
 
+    def plot_contact_line_pdf(shear_data, N_in=0,  fig_name='cl_pdf.eps') :
+        signal_tr = np.array(shear_data.foot['tr'])[:,0]
+        N = len(signal_tr)
+        sign_mean_tr, sign_std_tr, bin_vector_tr, distribution_tr = position_distribution( signal_tr[N_in:], int(np.sqrt(N-N_in)) ) 
+        signal_tl = np.array(shear_data.foot['tl'])[:,0]
+        sign_mean_tl, sign_std_tl, bin_vector_tl, distribution_tl = position_distribution( signal_tl[N_in:], int(np.sqrt(N-N_in)) ) 
+        signal_br = np.array(shear_data.foot['br'])[:,0]
+        sign_mean_br, sign_std_br, bin_vector_br, distribution_br = position_distribution( signal_br[N_in:], int(np.sqrt(N-N_in)) ) 
+        signal_bl = np.array(shear_data.foot['bl'])[:,0]
+        sign_mean_bl, sign_std_bl, bin_vector_bl, distribution_bl = position_distribution( signal_bl[N_in:], int(np.sqrt(N-N_in)) )
+        mpl.use("Agg")
+        print("[densmap] Producing plot for contact angles")
+        plt.figure()
+        plt.step(bin_vector_bl, distribution_bl, 'b-', label='BL, mean='+"{:.3f}".format(sign_mean_bl)+"nm")
+        plt.step(bin_vector_br, distribution_br, 'r-', label='BR, mean='+"{:.3f}".format(sign_mean_br)+"nm")
+        plt.step(bin_vector_tl, distribution_tl, 'c-', label='TL, mean='+"{:.3f}".format(sign_mean_tl)+"nm")
+        plt.step(bin_vector_tr, distribution_tr, 'm-', label='TR, mean='+"{:.3f}".format(sign_mean_tr)+"nm")
+        plt.title('CL PDF', fontsize=20.0)
+        plt.xlabel('position [nm]', fontsize=20.0)
+        plt.ylabel('PDF', fontsize=20.0)
+        plt.legend()
+        plt.show()
+        plt.savefig(fig_name)
+        mpl.use("TkAgg")
+        
+
 def dictionify( file_name, sp = '=' ) :
     par_dict = dict()
     par_file = open( file_name, 'r')
@@ -761,7 +787,7 @@ def detect_contour (
     assert hx>0 and hz>0, \
         "Provide a finite positive value for the bin size in x and z direction"
 
-    contour = sk.measure.find_contours(density_array, density_target)
+    contour = sk.measure.find_contours(density_array, density_target, fully_connected='high')
 
     assert len(contour)>=1, \
         "No contour line found for the target density value"
@@ -770,9 +796,52 @@ def detect_contour (
         print( "[densmap] More than one contour found for the target density value (returning the one with most points)" )
         contour = sorted(contour, key=lambda x : len(x))
 
+    # From indices space to physical space
     h = np.array([[hx, 0.0],[0.0, hz]])
     contour = np.matmul(h,(contour[-1].transpose()))
+
+    # Evaluate at the center of the bin
+    contour = contour + np.array([[0.5*hx],[0.5*hz]])
+
     return contour
+
+def detect_interface_int (
+    density_array,
+    density_target,
+    hx,
+    hz,
+    z0
+    ) :
+
+    Nx = density_array.shape[0]
+    Nz = density_array.shape[1]
+    x = hx*np.arange(0.0, Nx, 1.0, dtype=float)+0.5*hx
+    z = hz*np.arange(0.0, Nz, 1.0, dtype=float)+0.5*hz
+
+    M = int(np.ceil(0.5*Nx))
+    i0 = np.abs(z-z0).argmin()
+    
+    left_branch = np.zeros( (2,Nz-2*i0), dtype=float )
+    right_branch = np.zeros( (2,Nz-2*i0), dtype=float )
+
+    for j in range(i0,Nz-i0) :
+        
+        left_branch[1,j-i0] = z[j]
+        right_branch[1,j-i0] = z[j]
+
+        for i in range(0,M) :
+            if density_array[i,j] > density_target :
+                left_branch[0,j-i0] = \
+                        ((density_array[i,j]-density_target)*x[i-1]+(density_target-density_array[i-1,j])*x[i])/(density_array[i,j]-density_array[i-1,j])
+                break
+        
+        for i in range(Nx-1, Nx-M+1, -1) :
+            if density_array[i,j] > density_target :
+                right_branch[0,j-i0] = \
+                        ((density_array[i,j]-density_target)*x[i+1]+(density_target-density_array[i+1,j])*x[i])/(density_array[i,j]-density_array[i+1,j])
+                break
+
+    return left_branch, right_branch
 
 """
     Identify the points near the contact line
@@ -1248,11 +1317,13 @@ def position_distribution ( signal, N, std_mult=6.0 ) :
     dx = (x_upp-x_low)/N
 
     bin_vector = np.linspace(x_low+dx, x_upp-dx, N-1)
-    distribution = np.zeros( len(bin_vector), dtype=int )
+    distribution = np.zeros( len(bin_vector), dtype=float )
 
     for k in range(len(signal)) :
        idx = ( np.abs( bin_vector-(signal[k]-sign_mean) ) ).argmin()
-       distribution[idx] += 1
+       distribution[idx] += 1.0
+
+    distribution = distribution/(dx*sum(distribution))
 
     return sign_mean, sign_std, bin_vector, distribution
 

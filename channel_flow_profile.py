@@ -11,7 +11,7 @@ file_root = 'flow_'
 # Linear flow profile fit
 print("[densmap] Fitting LINEAR flow profile")
 
-FP = dm.fitting_parameters( par_file='SlipLenght/parameters_slip_linear.txt' )
+FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
 folder_name = FP.folder_name
 
 Lx = FP.lenght_x
@@ -30,7 +30,7 @@ profile_velocity_x = np.zeros( len(z), dtype=float )
 profile_velocity_z = np.zeros( len(z), dtype=float )
 profile_kinetic_energy = np.zeros( len(z), dtype=float )
 
-spin_up_steps = 49
+spin_up_steps = 25
 n_init = FP.first_stamp + spin_up_steps
 n_fin = FP.last_stamp
 dt = FP.time_step
@@ -54,7 +54,7 @@ profile_velocity_z /= n_fin-n_init
 profile_kinetic_energy /= n_fin-n_init
 
 # Linear regression on velocity profile
-offset_z = 0.85     # [nm]
+offset_z = 0.75     # [nm]
 idx_low = (np.abs(z - offset_z)).argmin()
 idx_high = (np.abs( np.flip(z)-offset_z )).argmin()
 z_linear = z[idx_low: idx_high]
@@ -66,9 +66,10 @@ U_lin = 0.01            # [nm/ps]
 # L = 29.0919983      # [nm]
 # slip_lenght = L/2 - U/p[0]
 # print("Estimate slip lenght: lambda = "+str(slip_lenght)+" nm")
-# lin_fit = np.polyval(p, z)
+lin_fit = np.polyval(p_lin, z)
 
 # Parabolib flow profile fit
+"""
 print("[densmap] Fitting PARABOLIC flow profile")
 
 FP = dm.fitting_parameters( par_file='SlipLenght/parameters_slip_parab.txt' )
@@ -122,14 +123,20 @@ profile_parab = profile_velocity_x[idx_low: idx_high]
 p_par = np.polyfit(z_parab, profile_parab, deg=2)
 print(p_par)
 # par_fit = np.polyval(p, z)
+"""
+
+"""
+print("[densmap] Estimate of the slip lenght")
+# slip_lenght = U_lin/p_lin[0]-0.5*channel_width
+# slip_lenght = np.sqrt( (U_lin/p_lin[0])**2 + p_par[2]/p_par[0] - 0.25*Lz**2 )
+slip_lenght = 0.5 * ( -(3.0/4.0)*(U_lin/p_lin[0]) + np.sqrt( (9.0/16.0)*(U_lin/p_lin[0])**2 - 0.5*((U_lin/p_lin[0])**2-0.25*Lz**2+p_par[2]/p_par[0]) ) )
+print("slip_lenght = "+str(slip_lenght)+" nm")
 
 print("[densmap] Estimate of channel width")
-channel_width = -p_par[1]/p_par[0]
+# channel_width = -p_par[1]/p_par[0]
+channel_width = np.sqrt( Lz**2 + 4.0*slip_lenght**2 -4.0*p_par[2]/p_par[0] ) - 2.0*slip_lenght
 print("channel_width = "+str(channel_width)+" nm")
-
-print("[densmap] Estimate of the slip lenght")
-slip_lenght = 0.5*channel_width-U_lin/p_lin[0]
-print("slip_lenght = "+str(slip_lenght)+" nm")
+"""
 
 """
 plt.plot(z, profile_velocity_x, 'b-', linewidth=1.5)
@@ -157,7 +164,6 @@ plt.title('Channel flow under double shear', fontsize=30.0)
 plt.show()
 """
 
-"""
 plt.plot(z, profile_velocity_x, 'k.', markersize=5.0, label='U')
 plt.plot(z, lin_fit, 'r-', linewidth=1.25, label='lin. fit')
 plt.legend(fontsize=20.0)
@@ -167,4 +173,3 @@ plt.xticks(fontsize=30.0)
 plt.yticks(fontsize=30.0)
 plt.title('Channel flow under double shear', fontsize=30.0)
 plt.show()
-"""

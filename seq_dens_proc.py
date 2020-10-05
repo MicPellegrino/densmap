@@ -16,17 +16,17 @@ CD = dm.shear_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
 # CD.save_xvg('InterfaceTest')
 
 # Testing cl distribution binning
+"""
 signal = np.array(CD.foot['tr'])[:,0]
 N = len(signal)
-print(int(np.sqrt(N/4)))
+N_in = 300
 sign_mean, sign_std, bin_vector, distribution = \
-        dm.position_distribution(signal[int(N/4):], int(np.sqrt(N/2)))
+        dm.position_distribution( signal[N_in:], int(np.sqrt(N-N_in)) )
+"""
+CD.plot_contact_line_pdf(N_in=300)
 
-print("Mean = "+str(sign_mean))
-print("Std  = "+str(sign_std))
-
-plt.plot(bin_vector, distribution)
-plt.show()
+# plt.step(bin_vector, distribution)
+# plt.show()
 
 # Testing plot
 CD.plot_radius()
