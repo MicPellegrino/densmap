@@ -37,7 +37,7 @@ mpl.use('TkAgg')
 
 # Shear droplet
 folder_name = 'ShearChar/Q2/'
-file_name = 'flow_01000.dat'
+file_name = 'flow_00300.dat'
 Lx = 159.75000
 Lz = 30.36600
 
@@ -71,7 +71,8 @@ X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
 r_h2o = 0.09584
 # r_pro = 0.17
 # r_half = 0.5 * ( r_h2o + r_pro )
-alpha = 3.0
+# alpha = 3.0
+alpha = 1.0
 
 smoother = dm.smooth_kernel(alpha*r_h2o, hx, hz)
 # smoother = dm.smooth_kernel(alpha*r_half, hz, hz)
@@ -216,11 +217,13 @@ plt.colorbar()
 
 # plt.plot(intf_contour[0,:], intf_contour[1,:], 'r-', linewidth=3.0, label='half density')
 
-plt.plot(left_branch[0,:], left_branch[1,:], 'r-', \
-    right_branch[0,:], right_branch[1,:], 'r-', linewidth=2.5)
+plt.plot(left_branch[0,:], left_branch[1,:], 'r-', linewidth=2.5, label="marching squares")
 
-plt.plot(left_branch_man[0,:], left_branch_man[1,:], 'g--', \
-    right_branch_man[0,:], right_branch_man[1,:], 'g--', linewidth=2.5)
+plt.plot(right_branch[0,:], right_branch[1,:], 'r-', linewidth=2.5)
+
+plt.plot(left_branch_man[0,:], left_branch_man[1,:], 'g--', linewidth=2.5, label="bin-wise interpolation")
+
+plt.plot(right_branch_man[0,:], right_branch_man[1,:], 'g--', linewidth=2.5)
 
 # plt.plot(points_r[0,:], points_r[1,:], 'kx', points_l[0,:], points_l[1,:], 'kx')
 # plt.plot([points_r[0,0], points_r[0,0]+dx_r], [points_r[1,0],points_r[1,0]+dz] , 'b-',
@@ -231,6 +234,7 @@ plt.axis('scaled')
 plt.xlim([0,Lx])
 plt.ylim([0,Lz])
 plt.title('Binned and smoothed density output', fontsize=30.0)
+plt.legend(fontsize=15.0)
 
 # plt.legend(fontsize=20.0)
 
