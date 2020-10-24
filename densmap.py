@@ -474,8 +474,10 @@ class shear_data :
         s = np.linspace(0,2*np.pi,250)
         with writer.saving(fig, "contour_movie.mp4", 250):
             for i in range( len(shear_data.contour) ):
-                dx_l = dz * shear_data.cotangent['bl'][i]
-                dx_r = dz * shear_data.cotangent['br'][i]
+                dx_bl = dz * shear_data.cotangent['bl'][i]
+                dx_br = dz * shear_data.cotangent['br'][i]
+                dx_tl = dz * shear_data.cotangent['tl'][i]
+                dx_tr = dz * shear_data.cotangent['tr'][i]
                 if circle :
                     circle_x_l = shear_data.circle_xc_l[i] + shear_data.circle_rad_l[i]*np.cos(s)
                     circle_z_l = shear_data.circle_zc_l[i] + shear_data.circle_rad_l[i]*np.sin(s)
@@ -488,16 +490,16 @@ class shear_data :
                 """
                 textvar = plt.text(1.5, 14.0, t_label)
                 if contact_line :
-                    fig_fbl.set_data([shear_data.foot['bl'][i][0], shear_data.foot['bl'][i][0]+dx_l],
+                    fig_fbl.set_data([shear_data.foot['bl'][i][0], shear_data.foot['bl'][i][0]+dx_bl],
                         [shear_data.foot['bl'][i][1], shear_data.foot['bl'][i][1]+dz])
-                    fig_fbr.set_data([shear_data.foot['br'][i][0], shear_data.foot['br'][i][0]+dx_r],
+                    fig_fbr.set_data([shear_data.foot['br'][i][0], shear_data.foot['br'][i][0]+dx_br],
                         [shear_data.foot['br'][i][1], shear_data.foot['br'][i][1]+dz])
                     fig_pbl.set_data(shear_data.foot['bl'][i][0], shear_data.foot['bl'][i][1])
                     fig_pbr.set_data(shear_data.foot['br'][i][0], shear_data.foot['br'][i][1])
                     # Flipping again to the upper wall
-                    fig_ftl.set_data([shear_data.foot['tl'][i][0], shear_data.foot['tl'][i][0]+dx_l],
+                    fig_ftl.set_data([shear_data.foot['tl'][i][0], shear_data.foot['tl'][i][0]+dx_tl],
                         [crop_z-shear_data.foot['tl'][i][1], crop_z-shear_data.foot['tl'][i][1]-dz])
-                    fig_ftr.set_data([shear_data.foot['tr'][i][0], shear_data.foot['tr'][i][0]+dx_r],
+                    fig_ftr.set_data([shear_data.foot['tr'][i][0], shear_data.foot['tr'][i][0]+dx_tr],
                         [crop_z-shear_data.foot['tr'][i][1], crop_z-shear_data.foot['tr'][i][1]-dz])
                     fig_ptl.set_data(shear_data.foot['tl'][i][0], crop_z-shear_data.foot['tl'][i][1])
                     fig_ptr.set_data(shear_data.foot['tr'][i][0], crop_z-shear_data.foot['tr'][i][1])

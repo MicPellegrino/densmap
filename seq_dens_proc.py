@@ -2,13 +2,9 @@ import densmap as dm
 import matplotlib.pyplot as plt
 import numpy as np
 
-FP = dm.fitting_parameters( par_file='ShearChar/parameters_shear.txt' )
+FP = dm.fitting_parameters( par_file='/home/michele/densmap/ShearChar/parameters_shear.txt' )
 
-# NB: conutour tracking should check whether there are actually kfin-kinit files!!!
-
-# CD = dm.droplet_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
-#     file_root = '/flow_', contact_line = True)
-
+# NB: contour tracking should check whether there are actually kfin-kinit files!!!
 CD = dm.shear_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
     file_root = '/flow_', contact_line = True)
 
@@ -22,9 +18,8 @@ N = len(signal)
 N_in = 300
 sign_mean, sign_std, bin_vector, distribution = \
         dm.position_distribution( signal[N_in:], int(np.sqrt(N-N_in)) )
-"""
 CD.plot_contact_line_pdf(N_in=300)
-
+"""
 # plt.step(bin_vector, distribution)
 # plt.show()
 
@@ -32,15 +27,19 @@ CD.plot_contact_line_pdf(N_in=300)
 CD.plot_radius()
 CD.plot_angles()
 
+# Movie
 dz = FP.dz
-# Testing movie
-# CD.movie_contour(FP.lenght_x, FP.lenght_z, dz, circle=False, contact_line = True)
-CD.movie_contour(FP.lenght_x, FP.lenght_z, dz,  circle=True, contact_line = True)
+CD.movie_contour(FP.lenght_x, FP.lenght_z, dz,  circle=False, contact_line = True)
 
 # SAVING WHAT NEEDED
-# spreading_radius = np.array(CD.foot_right)-np.array(CD.foot_left)
-# mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
-# hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
+# Droplet
+"""
+spreading_radius = np.array(CD.foot_right)-np.array(CD.foot_left)
+mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
+hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
+"""
+# Shear
+CD.save_to_file('/home/michele/densmap/ShearChar/LJ')
 
 """
 t = np.array(CD.time)

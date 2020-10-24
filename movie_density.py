@@ -10,9 +10,9 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "meniscus_hysteresis_120_90.mp4"
+output_file_name = "shear_t123_ca025.mp4"
 
-folder_name = 'HystQ1Q2'
+folder_name = 'Theta123Ca025'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -38,8 +38,8 @@ N_upp = int(np.ceil(90.0/hx))
 r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
-n_init = 300
-n_fin = 500
+n_init = 1
+n_fin = 867
 dt = 0.5*(25.0)
 delta_th = 2.0
 
@@ -65,19 +65,24 @@ with writer.saving(fig, output_file_name, 250):
             t_label = str(dt*idx)+' ps'
         density_array = dm.read_density_file(folder_name+'/'+file_root+ \
             '{:05d}'.format(idx)+'.dat', bin='y')
-        smooth_density_array = dm.convolute(density_array, smoother)
+        # PLOT ORIGINAL DENSITY
+        plt.pcolormesh(X, Z, density_array, cmap=cm.bone)
+        # PLOT SMOOTHED DENSITY
+        # smooth_density_array = dm.convolute(density_array, smoother)
         # plt.pcolormesh(X, Z, smooth_density_array, cmap=cm.bone)
+        
+        """
         bulk_density = dm.detect_bulk_density(smooth_density_array, delta_th)
         indicator = dm.density_indicator(smooth_density_array,0.5*bulk_density)
         if idx%n_dump==0 :
             area.append(hx*hz*np.sum(indicator))
             print("Droplet area = "+str(area[-1])+" nm^2")
-
         density_profile += np.sum( density_array[N_low:N_upp,:], axis=0 )
-        
-        # plt.pcolormesh(X, Z, indicator, cmap=cm.bone)
+        plt.pcolormesh(X, Z, indicator, cmap=cm.bone)
         intf_contour = dm.detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
         plt.plot(intf_contour[0,:], intf_contour[1,:], 'r-', linewidth=1.5)
+        """
+
         plt.axis('scaled')
         plt.title('Density profile @'+t_label)
         writer.grab_frame()
@@ -86,18 +91,16 @@ with writer.saving(fig, output_file_name, 250):
 
 mpl.use("TkAgg")
 
+# POST-PROCESSING ...
+"""
 density_profile /= (n_fin-n_init)
-
 area = np.array(area)
 avg_area = np.mean(area)
-
 print("Average droplet area = "+str(avg_area)+" nm^2")
-
 plt.plot(z, density_profile)
 plt.show()
-
 Nz_th = int(5.0/hz)
 bulk_density = np.mean(density_profile[Nz_th:Nz-Nz_th])
 L_hat = (1.0/bulk_density) * sum(density_profile) * hz
-
 print("L_hat = "+str(L_hat)+" nm")
+"""
