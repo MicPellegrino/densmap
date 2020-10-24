@@ -2,11 +2,11 @@ import densmap as dm
 import matplotlib.pyplot as plt
 import numpy as np
 
-FP = dm.fitting_parameters( par_file='/home/michele/densmap/ShearChar/parameters_shear.txt' )
+FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
 
 # NB: contour tracking should check whether there are actually kfin-kinit files!!!
 CD = dm.shear_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
-    file_root = '/flow_', contact_line = True)
+    file_root = '/flow_', contact_line = True, mode='int')
 
 # Testing xmgrace output
 # CD.save_xvg('InterfaceTest')
@@ -39,7 +39,7 @@ mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 """
 # Shear
-CD.save_to_file('/home/michele/densmap/ShearChar/LJ')
+CD.save_to_file('ShearCL/t123ca005')
 
 """
 t = np.array(CD.time)

@@ -33,3 +33,14 @@ for q in range(5) :
 print("Charge vs contact angle:")
 for q in range(5) :
     print("q:"+str(q+1)+"\tmean="+str(mean_angle[q])+"\tstd="+str(std_angle[q]))
+
+
+# Lennard-Jones
+
+time = array_from_file('/home/michele/densmap/ShearChar/LJ/time.txt')
+tl = array_from_file('/home/michele/densmap/ShearChar/LJ/angle_bl.txt')
+tr = array_from_file('/home/michele/densmap/ShearChar/LJ/angle_br.txt')
+bl = array_from_file('/home/michele/densmap/ShearChar/LJ/angle_tl.txt')
+br = array_from_file('/home/michele/densmap/ShearChar/LJ/angle_tr.txt')
+theta_lj = 0.25 * ( tl + tr + bl + br )
+print("LJ\tmean="+str(theta_lj.mean())+"\tstd="+str(theta_lj.std()))

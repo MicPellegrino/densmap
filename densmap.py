@@ -812,7 +812,8 @@ def detect_interface_int (
     density_target,
     hx,
     hz,
-    z0
+    z0,
+    offset = 1.0
     ) :
 
     Nx = density_array.shape[0]
@@ -820,7 +821,9 @@ def detect_interface_int (
     x = hx*np.arange(0.0, Nx, 1.0, dtype=float)+0.5*hx
     z = hz*np.arange(0.0, Nz, 1.0, dtype=float)+0.5*hz
 
-    M = int(np.ceil(0.5*Nx))
+    # In this way I again fall in the 'half-plane' loophole...
+    # M = int(np.ceil(0.5*Nx))
+    M = int(np.ceil(offset*Nx))
     i0 = np.abs(z-z0).argmin()
     
     left_branch = np.zeros( (2,Nz-2*i0), dtype=float )
@@ -1056,8 +1059,16 @@ def shear_tracking (
     k_end,
     fit_param,
     file_root = '/flow_',
-    contact_line = True
+    contact_line = True,
+    mode = 'sk'
     ) :
+
+    # Modes for obtaining the L/R interfaces
+    """
+        'sk'  : marching squares, smoothed density ("soft" way)
+        'int' : bin-wise interpolation, non-smoothed density ("hard" way)
+    """
+    assert mode=='sk' or mode =='int', "Unrecognized interface traking mode"
 
     # Data structure that will be outputted
     CD = shear_data()
@@ -1078,25 +1089,45 @@ def shear_tracking (
     smoother = smooth_kernel(fit_param.r_mol, hx, hz)
 
     # Append the values for the first time-step
-    smooth_density_array = convolute(density_array, smoother)
-    bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
-    intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
-    """
-        Stuff below has to be modified
-    """
+    if mode == 'sk' :
+        smooth_density_array = convolute(density_array, smoother)
+        bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
+        intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
+    else :
+        bulk_density = detect_bulk_density(density_array, density_th=fit_param.max_vapour_density)
+        intf_contour = detect_contour(density_array, 0.5*bulk_density, hx, hz)
     if contact_line :
-        b_left_branch, b_right_branch, b_points_l, b_points_r = \
-            detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
-            z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-        b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
-            detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
-        # Flip interface contour
-        intf_contour_flip = np.stack((intf_contour[0,:], fit_param.lenght_z-intf_contour[1,:]))
-        t_left_branch, t_right_branch, t_points_l, t_points_r = \
-            detect_contact_line(intf_contour_flip, z_min=fit_param.substrate_location,
-            z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-        t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
-            detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+        if mode == 'sk' :
+            b_left_branch, b_right_branch, b_points_l, b_points_r = \
+                detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+            # Flip interface contour
+            intf_contour_flip = np.stack((intf_contour[0,:], fit_param.lenght_z-intf_contour[1,:]))
+            t_left_branch, t_right_branch, t_points_l, t_points_r = \
+                detect_contact_line(intf_contour_flip, z_min=fit_param.substrate_location,
+                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+        else :
+            z0 = fit_param.substrate_location
+            b_left_branch, b_right_branch = detect_interface_int(density_array, 0.5*bulk_density, hx, hz, z0)
+            t_left_branch = np.stack( (np.flip(b_left_branch[0,:]), \
+                fit_param.lenght_z-b_left_branch[1,:]) )
+            t_right_branch = np.stack( (np.flip(b_right_branch[0,:]), \
+                fit_param.lenght_z-b_right_branch[1,:]) )
+            # Take the first 10 points (change -> make it generic!)
+            b_points_l = b_left_branch[:,0:10:1]
+            b_points_r = b_right_branch[:,0:10:1]
+            t_points_l = np.stack( (t_left_branch[0,0:10:1], \
+                fit_param.lenght_z-t_left_branch[1,0:10:1] ) )
+            t_points_r = np.stack( (t_right_branch[0,0:10:1], \
+                fit_param.lenght_z-t_right_branch[1,0:10:1] ) )
+            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
     else :
         b_left_branch = np.NaN
         b_right_branch = np.NaN
@@ -1153,22 +1184,46 @@ def shear_tracking (
             print("[densmap] Reading "+file_name)
         # Loop
         density_array = read_density_file(file_name, bin='y')
-        smooth_density_array = convolute(density_array, smoother)
-        bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
-        intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
+        if mode == 'sk' :
+            smooth_density_array = convolute(density_array, smoother)
+            bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
+            intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
+        else :
+            bulk_density = detect_bulk_density(density_array, density_th=fit_param.max_vapour_density)
+            intf_contour = detect_contour(density_array, 0.5*bulk_density, hx, hz)
         if contact_line :
-            b_left_branch, b_right_branch, b_points_l, b_points_r = \
-                detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
-                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
-                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
-            # Flip interface contour
-            intf_contour_flip = np.stack((intf_contour[0,:], fit_param.lenght_z-intf_contour[1,:]))
-            t_left_branch, t_right_branch, t_points_l, t_points_r = \
-                detect_contact_line(intf_contour_flip, z_min=fit_param.substrate_location,
-                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
-                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+            if mode == 'sk' :
+                b_left_branch, b_right_branch, b_points_l, b_points_r = \
+                    detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+                    z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+                b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+                    detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+                # Flip interface contour
+                intf_contour_flip = np.stack((intf_contour[0,:], fit_param.lenght_z-intf_contour[1,:]))
+                t_left_branch, t_right_branch, t_points_l, t_points_r = \
+                    detect_contact_line(intf_contour_flip, z_min=fit_param.substrate_location,
+                    z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+                t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+                    detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+            else :
+                z0 = fit_param.substrate_location
+                b_left_branch, b_right_branch = detect_interface_int(density_array, \
+                        0.5*bulk_density, hx, hz, z0)
+                t_left_branch = np.stack( (np.flip(b_left_branch[0,:]), \
+                        fit_param.lenght_z-b_left_branch[1,:]) )
+                t_right_branch = np.stack( (np.flip(b_right_branch[0,:]), \
+                        fit_param.lenght_z-b_right_branch[1,:]) )
+                # Take the first 10 points (change -> make it generic!)
+                b_points_l = b_left_branch[:,0:10:1]
+                b_points_r = b_right_branch[:,0:10:1]
+                t_points_l = np.stack( (t_left_branch[0,0:10:1], \
+                    fit_param.lenght_z-t_left_branch[1,0:10:1] ) )
+                t_points_r = np.stack( (t_right_branch[0,0:10:1], \
+                    fit_param.lenght_z-t_right_branch[1,0:10:1] ) )
+                b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+                    detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+                t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+                    detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
         else :
             b_left_branch = np.NaN
             b_right_branch = np.NaN
