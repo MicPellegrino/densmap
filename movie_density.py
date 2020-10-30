@@ -10,14 +10,14 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "shear_t123_ca025.mp4"
+output_file_name = "lj_ca500.mp4"
 
-folder_name = 'Theta123Ca025'
+folder_name = 'LJCa50'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
-Lx = 159.75000
-Lz = 30.36600
+Lx = 159.57001
+Lz = 29.04330
 
 # CREATING MESHGRID
 print("Creating meshgrid")
@@ -39,7 +39,7 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 867
+n_fin = 800
 dt = 0.5*(25.0)
 delta_th = 2.0
 

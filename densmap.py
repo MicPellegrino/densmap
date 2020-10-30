@@ -225,6 +225,13 @@ rough_parameter = lambda a : (2.0/np.pi) * np.sqrt(a+1.0) * sc.special.ellipe(a/
 """
     Class for storing information regarding droplet spreding
 """
+
+# Base class for storing flow data
+"""
+class flow_data :
+    # ...
+"""
+
 class droplet_data :
 
     def __init__(droplet_data):
@@ -1118,12 +1125,12 @@ def shear_tracking (
             t_right_branch = np.stack( (np.flip(b_right_branch[0,:]), \
                 fit_param.lenght_z-b_right_branch[1,:]) )
             # Take the first 10 points (change -> make it generic!)
-            b_points_l = b_left_branch[:,0:10:1]
-            b_points_r = b_right_branch[:,0:10:1]
-            t_points_l = np.stack( (t_left_branch[0,0:10:1], \
-                fit_param.lenght_z-t_left_branch[1,0:10:1] ) )
-            t_points_r = np.stack( (t_right_branch[0,0:10:1], \
-                fit_param.lenght_z-t_right_branch[1,0:10:1] ) )
+            b_points_l = b_left_branch[:,0:15:3]
+            b_points_r = b_right_branch[:,0:15:3]
+            t_points_l = np.stack( (t_left_branch[0,0:15:3], \
+                fit_param.lenght_z-t_left_branch[1,0:15:3] ) )
+            t_points_r = np.stack( (t_right_branch[0,0:15:3], \
+                fit_param.lenght_z-t_right_branch[1,0:15:3] ) )
             b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
                 detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
             t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
@@ -1214,12 +1221,12 @@ def shear_tracking (
                 t_right_branch = np.stack( (np.flip(b_right_branch[0,:]), \
                         fit_param.lenght_z-b_right_branch[1,:]) )
                 # Take the first 10 points (change -> make it generic!)
-                b_points_l = b_left_branch[:,0:10:1]
-                b_points_r = b_right_branch[:,0:10:1]
-                t_points_l = np.stack( (t_left_branch[0,0:10:1], \
-                    fit_param.lenght_z-t_left_branch[1,0:10:1] ) )
-                t_points_r = np.stack( (t_right_branch[0,0:10:1], \
-                    fit_param.lenght_z-t_right_branch[1,0:10:1] ) )
+                b_points_l = b_left_branch[:,0:15:3]
+                b_points_r = b_right_branch[:,0:15:3]
+                t_points_l = np.stack( (t_left_branch[0,0:15:3], \
+                    fit_param.lenght_z-t_left_branch[1,0:15:3] ) )
+                t_points_r = np.stack( (t_right_branch[0,0:15:3], \
+                    fit_param.lenght_z-t_right_branch[1,0:15:3] ) )
                 b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
                     detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
                 t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
@@ -1383,4 +1390,3 @@ def position_distribution ( signal, N, std_mult=6.0 ) :
     distribution = distribution/(dx*sum(distribution))
 
     return sign_mean, sign_std, bin_vector, distribution
-

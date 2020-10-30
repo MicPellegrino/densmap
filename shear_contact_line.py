@@ -8,7 +8,7 @@ def array_from_file( filename ):
             my_list.append(float(line.split()[0]))
     return np.array(my_list)
 
-folder_name = 'ShearCL/t123ca005'
+folder_name = 'ShearCL/t47ca011'
 
 time = array_from_file(folder_name+'/time.txt')
 
@@ -35,7 +35,7 @@ plt.plot(time, contact_line['tr'], 'r--', label='TR (adv)', linewidth=1.75)
 plt.plot(time, contact_line['bl'], 'r-.', label='BL (adv)', linewidth=1.75)
 plt.plot(time, contact_line['br'], 'b-.', label='BR (rec)', linewidth=1.75)
 plt.legend(fontsize=20.0)
-plt.title('Contact line position (Ca=0.05, theta=123deg)', fontsize=30.0)
+plt.title('Contact line position (Ca=0.11, theta=47deg)', fontsize=30.0)
 plt.xlabel('time [ps]', fontsize=25.0)
 plt.ylabel('position [nm]', fontsize=25.0)
 plt.xticks(fontsize=25.0)

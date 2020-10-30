@@ -1,8 +1,7 @@
 import numpy as np
-
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+# Avoid: use ensemble averaging instead...
 import scipy.ndimage as smg
 import scipy.signal as sgn
 
@@ -13,218 +12,121 @@ def array_from_file( filename ):
             my_list.append(float(line.split()[0]))
     return np.array(my_list)
 
-def cos( theta ) :
-    return np.cos(np.deg2rad(theta))
+folder_name = 'ShearCL/t47ca011'
 
-"""
-    Following the approach by Xia and Steen, one may also plot:
-    1) Velocity (scaled) vs position (scaled)
-    2) C.A. vs position
-    3) Position*C.A. vs position*velocity
-"""
-
-# Obtaining the signal from saved .txt files
-folder_name = 'SpreadingData/H2Q4'
 time = array_from_file(folder_name+'/time.txt')
-foot_l = array_from_file(folder_name+'/foot_l.txt')
-foot_r = array_from_file(folder_name+'/foot_r.txt')
-angle_l = array_from_file(folder_name+'/angle_l.txt')
-angle_r = array_from_file(folder_name+'/angle_r.txt')
-radius = array_from_file(folder_name+'/radius_fit.txt')
-
-# Definition of phase and projective area
-h = 5.570423    # [nm]
-k = 0.179520    # [nm^-1]
-a = h*k
-Ly = 4.67654    # [nm]
-phi_0 = k*Ly
-area_proj = lambda x : np.sqrt( 1.0 + (a**2)*(np.cos(k*x+Ly)**2) )
-alpha_sub = lambda x : -np.arctan(a*np.cos(k*x+Ly))
-
-# Cutoff inertial phase
 dt = time[1]-time[0]
-T_cut = 1000.0      # [ps]
-N = int( T_cut / dt )
-time = time[N:]
-foot_l = foot_l[N:]
-foot_r = foot_r[N:]
-angle_l = angle_l[N:]
-angle_r = angle_r[N:]
 
-# Velocity from raw data (very noisy)
-velocity_l = np.zeros(len(foot_l))
-velocity_r = np.zeros(len(foot_r))
-velocity_l[1:-1] = -0.5 * np.subtract(foot_l[2:],foot_l[0:-2]) / dt
-velocity_r[1:-1] = 0.5 * np.subtract(foot_r[2:],foot_r[0:-2]) / dt
-velocity_l[0] = -( foot_l[1]-foot_l[0] ) / dt
-velocity_r[0] = ( foot_r[1]-foot_r[0] ) / dt
-velocity_l[-1] = -( foot_l[-1]-foot_l[-2] ) / dt
-velocity_r[-1] = ( foot_r[-1]-foot_r[-2] ) / dt
+centers = dict()
+width = dict()
 
-# Manually-tuned filter
-sigma_pos = 5.0
-foot_l_filtered = smg.gaussian_filter1d(foot_l, sigma=sigma_pos)
-foot_r_filtered = smg.gaussian_filter1d(foot_r, sigma=sigma_pos)
-sigma_ang = 5.0
-angle_l_filtered = smg.gaussian_filter1d(angle_l, sigma=sigma_ang)
-angle_r_filtered = smg.gaussian_filter1d(angle_r, sigma=sigma_ang)
+centers['top'] = array_from_file(folder_name+'/position_upper.txt')
+centers['bot'] = array_from_file(folder_name+'/position_lower.txt')
+width['top'] = array_from_file(folder_name+'/radius_upper.txt')
+width['bot'] = array_from_file(folder_name+'/radius_lower.txt')
 
-# Velocity from filtered data (less noisy, hopefully)
-velocity_l_filtered = np.zeros(len(foot_l_filtered))
-velocity_r_filtered = np.zeros(len(foot_r_filtered))
-velocity_l_filtered[1:-1] = -0.5 * np.subtract(foot_l_filtered[2:],foot_l_filtered[0:-2]) / dt
-velocity_r_filtered[1:-1] = 0.5 * np.subtract(foot_r_filtered[2:],foot_r_filtered[0:-2]) / dt
-velocity_l_filtered[0] = -( foot_l_filtered[1]-foot_l_filtered[0] ) / dt
-velocity_r_filtered[0] = ( foot_r_filtered[1]-foot_r_filtered[0] ) / dt
-velocity_l_filtered[-1] = -( foot_l_filtered[-1]-foot_l_filtered[-2] ) / dt
-velocity_r_filtered[-1] = ( foot_r_filtered[-1]-foot_r_filtered[-2] ) / dt
+contact_angle = dict()
+contact_angle['tl'] = array_from_file(folder_name+'/angle_tl.txt')
+contact_angle['tr'] = array_from_file(folder_name+'/angle_tr.txt')
+contact_angle['bl'] = array_from_file(folder_name+'/angle_bl.txt')
+contact_angle['br'] = array_from_file(folder_name+'/angle_br.txt')
 
-# Apply are projector to velocity dx/dt -> ds/dt
-velocity_l_micro = velocity_l * area_proj(foot_l)
-velocity_r_micro = velocity_r * area_proj(foot_r)
-velocity_l_micro_filtered = smg.gaussian_filter1d(velocity_l_micro, sigma=sigma_pos)
-velocity_r_micro_filtered = smg.gaussian_filter1d(velocity_r_micro, sigma=sigma_pos)
+contact_line = dict()
+contact_line['tl'] = centers['top'] - 0.5*width['top']
+contact_line['tr'] = centers['top'] + 0.5*width['top']
+contact_line['bl'] = centers['bot'] - 0.5*width['bot']
+contact_line['br'] = centers['bot'] + 0.5*width['bot']
 
-# Obtain the microscopic contact angle
-angle_l_micro = angle_l - alpha_sub(foot_l)
-angle_r_micro = angle_r - alpha_sub(foot_r)
-angle_l_micro_filtered = smg.gaussian_filter1d(angle_l_micro, sigma=sigma_ang)
-angle_r_micro_filtered = smg.gaussian_filter1d(angle_r_micro, sigma=sigma_ang)
+labels = ['tl', 'tr', 'bl', 'br']
+sigma_pos = 5.0     # MANUALLY TUNED
+contact_line_fil = dict()
+for l in labels :
+    contact_line_fil[l] = smg.gaussian_filter1d(contact_line[l], sigma=sigma_pos)
 
-#########
-# PLOTS #
-#########
+contact_speed = dict()
+for l in labels :
+    # Unfiltered
+    """
+    contact_speed[l] = np.zeros( contact_line[l].shape )
+    contact_speed[l][1:-2] = 0.5*(contact_line[l][2:-1]-contact_line[l][0:-3])/dt
+    contact_speed[l][0] = (contact_line[l][1]-contact_line[l][0])/dt
+    contact_speed[l][-1] = (contact_line[l][-1]-contact_line[l][-2])/dt
+    """
+    contact_speed[l] = np.zeros( contact_line_fil[l].shape )
+    contact_speed[l][1:-2] = 0.5*(contact_line_fil[l][2:-1]-contact_line_fil[l][0:-3])/dt
+    contact_speed[l][0] = (contact_line_fil[l][1]-contact_line_fil[l][0])/dt
+    contact_speed[l][-1] = (contact_line_fil[l][-1]-contact_line_fil[l][-2])/dt
 
-"""
-plt.title('Spreading branches (raw value and filtered)')
-plt.plot(time, foot_l, 'b-', linewidth=0.75, label='left (raw)')
-plt.plot(time, foot_r, 'r-', linewidth=0.75, label='right (raw)')
-plt.plot(time, foot_l_filtered, 'b--', linewidth=2.0, label='left (fil.)')
-plt.plot(time, foot_r_filtered, 'r--', linewidth=2.0, label='right (fil.)')
-plt.xlabel('t [ps]', fontsize=20.0)
-plt.ylabel('x [nm]', fontsize=20.0)
-plt.ylim([0.0, 175.0])
-plt.xlim([time[0], time[-1]])
+# Plot of CL position over time
+plt.plot(time, contact_line['tl'], 'b--', label='TL (rec)')
+plt.plot(time, contact_line['tr'], 'r--', label='TR (adv)')
+plt.plot(time, contact_line['bl'], 'r-.', label='BL (adv)')
+plt.plot(time, contact_line['br'], 'b-.', label='BR (rec)')
+plt.plot(time, contact_line_fil['tl'], 'b-')
+plt.plot(time, contact_line_fil['tr'], 'r-')
+plt.plot(time, contact_line_fil['bl'], 'r-')
+plt.plot(time, contact_line_fil['br'], 'b-')
 plt.legend(fontsize=20.0)
+plt.title('Contact line (Ca=0.11, theta=47deg)', fontsize=30.0)
+plt.ylabel('contact speed [nm]', fontsize=25.0)
+plt.xlabel('time [ps]', fontsize=25.0)
+plt.xticks(fontsize=25.0)
+plt.yticks(fontsize=25.0)
+plt.xlim([0,time[-1]])
 plt.show()
-"""
 
-"""
-plt.title('Apparent wetting speed (raw value and filtered)')
-plt.plot(time, velocity_l, 'b-', linewidth=0.75)
-plt.plot(time, velocity_r, 'r-', linewidth=0.75)
-plt.plot(time, velocity_l_filtered, 'b--', linewidth=2.0)
-plt.plot(time, velocity_r_filtered, 'r--', linewidth=2.0)
-plt.xlabel('t [ps]', fontsize=20.0)
-plt.ylabel('dx/dt [nm/ps]', fontsize=20.0)
-plt.xlim([time[0], time[-1]])
-plt.show()
-"""
-
-"""
-plt.title('Apparent wetting contact angles')
-plt.plot(time, angle_l, 'b-', linewidth=0.75)
-plt.plot(time, angle_r, 'r-', linewidth=0.75)
-plt.plot(time, angle_l_filtered, 'b--', linewidth=2.0)
-plt.plot(time, angle_r_filtered, 'r--', linewidth=2.0)
-plt.xlabel('t [ps]', fontsize=20.0)
-plt.ylabel(r'$\theta$ [deg]', fontsize=20.0)
-plt.show()
-"""
-
-"""
-plt.title('Correlation between c.a. and c.l. speed')
-plt.plot(cos(angle_l_filtered), velocity_l_filtered, 'bx')
-plt.plot(cos(angle_r_filtered), velocity_r_filtered, 'ro')
-plt.xlabel(r'$cos(\theta)$ [-1]', fontsize=20.0)
-plt.ylabel('dx/dt [nm/ps]', fontsize=20.0)
-plt.show()
-"""
-
-"""
-plt.title('Microscopic wetting speed (raw value and filtered)')
-plt.plot(time, velocity_l_micro, 'b-', linewidth=0.75, label='left (raw)')
-plt.plot(time, velocity_r_micro, 'r-', linewidth=0.75, label='right (raw)')
-plt.plot(time, velocity_l_micro_filtered, 'b--', linewidth=2.0, label='left (fil.)')
-plt.plot(time, velocity_r_micro_filtered, 'r--', linewidth=2.0, label='right (fil.)')
-plt.xlabel('t [ps]', fontsize=20.0)
-plt.ylabel('ds/dt [nm/ps]', fontsize=20.0)
-plt.xlim([time[0], time[-1]])
+# Plot of CA over time
+plt.plot(time, contact_angle['tl'], 'b--', label='TL (rec)')
+plt.plot(time, contact_angle['tr'], 'r--', label='TR (adv)')
+plt.plot(time, contact_angle['bl'], 'r-.', label='BL (adv)')
+plt.plot(time, contact_angle['br'], 'b-.', label='BR (rec)')
 plt.legend(fontsize=20.0)
+plt.title('Contact angle (Ca=0.11, theta=47deg)', fontsize=30.0)
+plt.ylabel('contact angle [deg]', fontsize=25.0)
+plt.xlabel('time [ps]', fontsize=25.0)
+plt.xticks(fontsize=25.0)
+plt.yticks(fontsize=25.0)
+plt.xlim([0,time[-1]])
 plt.show()
-"""
 
-"""
-plt.title('Microscopic wetting contact angles')
-plt.plot(time, angle_l_micro, 'b-', linewidth=0.75, label='left (raw)')
-plt.plot(time, angle_r_micro, 'r-', linewidth=0.75, label='right (raw)')
-plt.plot(time, angle_l_micro_filtered, 'b--', linewidth=2.0, label='left (fil.)')
-plt.plot(time, angle_r_micro_filtered, 'r--', linewidth=2.0, label='right (fil.)')
-plt.xlabel('t [ps]', fontsize=20.0)
-plt.ylabel(r'$\theta$ [deg]', fontsize=20.0)
-plt.xlim([time[0], time[-1]])
+# Plot of CL speed over time
+plt.plot(time, contact_speed['tl'], 'bx', label='TL (rec)')
+plt.plot(time, contact_speed['tr'], 'rx', label='TR (adv)')
+plt.plot(time, contact_speed['bl'], 'ro', label='BL (adv)')
+plt.plot(time, contact_speed['br'], 'bo', label='BR (rec)')
 plt.legend(fontsize=20.0)
+plt.title('Contact line speed (Ca=0.11, theta=47deg)', fontsize=30.0)
+plt.ylabel('contact speed [nm/ps]', fontsize=25.0)
+plt.xlabel('time [ps]', fontsize=25.0)
+plt.xticks(fontsize=25.0)
+plt.yticks(fontsize=25.0)
+plt.xlim([0,time[-1]])
 plt.show()
-"""
 
-"""
-plt.title('Correlation between c.a. and c.l. speed')
-plt.plot(cos(angle_l_micro_filtered), velocity_l_micro_filtered, 'bx', label='left')
-plt.plot(cos(angle_r_micro_filtered), velocity_r_micro_filtered, 'ro', label='right')
-plt.xlabel(r'$cos(\theta)$ [-1]', fontsize=20.0)
-plt.ylabel('dx/dt [nm/ps]', fontsize=20.0)
+# Plot CA vs CL position
+plt.plot(contact_angle['tl'], contact_line['tl'], 'bx', label='TL (rec)')
+plt.plot(contact_angle['tr'], contact_line['tr'], 'rx', label='TR (adv)')
+plt.plot(contact_angle['bl'], contact_line['bl'], 'ro', label='BL (adv)')
+plt.plot(contact_angle['br'], contact_line['br'], 'bo', label='BR (rec)')
 plt.legend(fontsize=20.0)
+plt.title('Contact line position vs contact angle (Ca=0.11, theta=47deg)', fontsize=30.0)
+plt.xlabel('contact angle [deg]', fontsize=25.0)
+plt.ylabel('position [nm]', fontsize=25.0)
+plt.xticks(fontsize=25.0)
+plt.yticks(fontsize=25.0)
+# plt.xlim([0,time[-1]])
 plt.show()
-"""
 
-# Nondim.
-X_mid = 85.7    # [mn]
-D0 = 50.0       # [nm]
-T0 = 2000.0     # [ps]
-pos_l_scaled = (X_mid-foot_l_filtered)/D0
-pos_r_scaled = (foot_r_filtered-X_mid)/D0
-vel_l_scaled = T0*velocity_l_micro_filtered/D0
-vel_r_scaled = T0*velocity_r_micro_filtered/D0
-
-plt.title('Position vs velocity')
-plt.plot(pos_l_scaled, vel_l_scaled, 'bx', label='left')
-plt.plot(pos_r_scaled, vel_r_scaled, 'ro', label='right')
-plt.xlabel('$x/D_0$ [-1]', fontsize=20.0)
-plt.ylabel('$(dx/dt)/(D_0/T_0)$ [-1]', fontsize=20.0)
+# Plot CA vs CL position
+plt.plot(contact_angle['tl'], contact_speed['tl'], 'bx', label='TL (rec)')
+plt.plot(contact_angle['tr'], contact_speed['tr'], 'rx', label='TR (adv)')
+plt.plot(contact_angle['bl'], contact_speed['bl'], 'ro', label='BL (adv)')
+plt.plot(contact_angle['br'], contact_speed['br'], 'bo', label='BR (rec)')
 plt.legend(fontsize=20.0)
+plt.title('Contact line position vs contact angle (Ca=0.11, theta=47deg)', fontsize=30.0)
+plt.xlabel('contact angle [deg]', fontsize=25.0)
+plt.ylabel('speed [nm/ps]', fontsize=25.0)
+plt.xticks(fontsize=25.0)
+plt.yticks(fontsize=25.0)
+# plt.xlim([0,time[-1]])
 plt.show()
-
-plt.title('Contact angle vs position')
-plt.plot(pos_l_scaled, cos(angle_l_micro_filtered), 'bx', label='left')
-plt.plot(pos_r_scaled, cos(angle_r_micro_filtered), 'ro', label='right')
-plt.xlabel('$x/D_0$ [-1]', fontsize=20.0)
-plt.ylabel(r'$\cos(\theta)$ [-1]', fontsize=20.0)
-plt.legend(fontsize=20.0)
-plt.show()
-
-plt.title('Xia-Steen-like plot')
-plt.plot(pos_l_scaled*cos(angle_l_micro_filtered), pos_l_scaled*vel_l_scaled, 'bx', label='left')
-plt.plot(pos_r_scaled*cos(angle_r_micro_filtered), pos_r_scaled*vel_r_scaled, 'ro', label='right')
-plt.xlabel(r'$(dx/dt)x/(D_0^2/T_0)$ [-1]', fontsize=20.0)
-plt.ylabel(r'$\cos(\theta)x/D_0$ [-1]', fontsize=20.0)
-plt.legend(fontsize=20.0)
-plt.show()
-
-#########################
-# STUDY NOISE STRUCTURE #
-#########################
-
-"""
-f_l, P_l = sgn.periodogram(foot_l, detrend='constant')
-f_r, P_r = sgn.periodogram(foot_r, detrend='constant')
-f_l = f_l[1:-1]
-f_r = f_r[1:-1]
-P_l = P_l[1:-1]
-P_r = P_r[1:-1]
-plt.semilogy(f_l, P_l, 'b-')
-plt.semilogy(f_r, P_r, 'r-')
-plt.xlabel('frequency [Hz]')
-plt.ylabel('PSD [V**2/Hz]')
-plt.title('Radius (P.S.)')
-plt.show()
-"""
