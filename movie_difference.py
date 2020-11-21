@@ -10,18 +10,19 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "theta111_ca01.mp4"
+output_file_name = "t47_ca011_diff.mp4"
 
-folder_name = 'Theta111Ca01'
+folder_ens1 = 'Theta47Ca011_ens3'
+folder_ens2 = 'Theta47Ca011_ens2'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
-Lx = 159.75000
-Lz = 30.63400
+Lx = 159.57001
+Lz = 29.04330
 
 # CREATING MESHGRID
 print("Creating meshgrid")
-density_array = dm.read_density_file(folder_name+'/'+file_root+'00001.dat', bin='y')
+density_array = dm.read_density_file(folder_ens1+'/'+file_root+'00001.dat', bin='y')
 Nx = density_array.shape[0]
 Nz = density_array.shape[1]
 hx = Lx/Nx
@@ -39,12 +40,12 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 714
-dt = 12.5
+n_fin = 600
+dt = 0.5*(25.0)
 delta_th = 2.0
 
 n_dump = 10
-print("Producing movie of the number density")
+print("Producing movie of the difference in number density")
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Meniscus density profile', artist='Michele Pellegrino',
     comment='Just the tracked contour of a shear droplet')
@@ -63,7 +64,9 @@ with writer.saving(fig, output_file_name, 250):
         if idx%n_dump==0 :
             print("Obtainig frame "+str(idx))
             t_label = str(dt*idx)+' ps'
-        density_array = dm.read_density_file(folder_name+'/'+file_root+ \
+        density_array = dm.read_density_file(folder_ens1+'/'+file_root+ \
+            '{:05d}'.format(idx)+'.dat', bin='y') - \
+            dm.read_density_file(folder_ens2+'/'+file_root+ \
             '{:05d}'.format(idx)+'.dat', bin='y')
         # PLOT ORIGINAL DENSITY
         plt.pcolormesh(X, Z, density_array, cmap=cm.bone)
