@@ -29,7 +29,7 @@ CD.plot_angles()
 
 # Movie
 dz = FP.dz
-CD.movie_contour(FP.lenght_x, FP.lenght_z, dz,  circle=False, contact_line = True)
+CD.movie_contour(FP.lenght_x, FP.lenght_z, dz,  circle=True, contact_line = True)
 
 # SAVING WHAT NEEDED
 # Droplet
@@ -39,7 +39,7 @@ mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 """
 # Shear
-CD.save_to_file('ShearCL/t47ca011')
+CD.save_to_file('ShearChar/QT')
 
 """
 t = np.array(CD.time)
