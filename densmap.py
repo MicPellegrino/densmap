@@ -1059,6 +1059,8 @@ def droplet_tracking (
 
 """
     Same as above, but for a shear droplet
+    Modification: add more than one ensemble
+    ens = 0: no ensemble averaging
 """
 def shear_tracking (
     folder_name,
@@ -1067,7 +1069,8 @@ def shear_tracking (
     fit_param,
     file_root = '/flow_',
     contact_line = True,
-    mode = 'sk'
+    mode = 'sk',
+    ens = 0
     ) :
 
     # Modes for obtaining the L/R interfaces
@@ -1083,7 +1086,16 @@ def shear_tracking (
     # Read the first density snapshot, in order to get the values needed to contruct the smoothing kernel
     file_name = folder_name+file_root+str(k_init).zfill(5)+'.dat'
     print("[densmap] Reading "+file_name)
-    density_array = read_density_file(file_name, bin='y')
+    density_array = np.NaN
+    if ens>0 :
+        file_name = folder_name+'_ens1'+file_root+str(k_init).zfill(5)+'.dat'
+        density_array = read_density_file(file_name, bin='y')
+        for k in range(1,ens) :
+            file_name = folder_name+'_ens'+str(k+1)+file_root+str(k_init).zfill(5)+'.dat'
+            density_array += read_density_file(file_name, bin='y')
+        density_array /= ens
+    else :
+        density_array = read_density_file(file_name, bin='y')
     Nx = density_array.shape[0]
     Nz = density_array.shape[1]
     hx = fit_param.lenght_x/Nx
@@ -1190,7 +1202,19 @@ def shear_tracking (
         if k % K_INFO == 0 :
             print("[densmap] Reading "+file_name)
         # Loop
-        density_array = read_density_file(file_name, bin='y')
+
+        density_array = np.NaN
+        if ens>0 :
+            file_name = folder_name+'_ens1'+file_root+str(k).zfill(5)+'.dat'
+            density_array = read_density_file(file_name, bin='y')
+            for kk in range(1,ens) :
+                file_name = folder_name+'_ens'+str(kk+1)+file_root+str(k).zfill(5)+'.dat'
+                density_array += read_density_file(file_name, bin='y')
+            density_array /= ens
+        else :
+            density_array = read_density_file(file_name, bin='y')
+
+        # density_array = read_density_file(file_name, bin='y')
         if mode == 'sk' :
             smooth_density_array = convolute(density_array, smoother)
             bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)

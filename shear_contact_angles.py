@@ -79,12 +79,55 @@ acf = acf[:len(acf)//2]
 # plt.plot(time[idx_0:], theta[1][idx_0:])
 tau = time[idx_0:]-t_0
 tau = tau[0:len(tau)//2]
+"""
 
 # I am lazy
 def func(t, a1, a2) :
     return a1*np.exp(-a2*t)+mean_angle**2
-popt, pcov = curve_fit(func, tau, acf, p0=(4,0.05))
+# popt, pcov = curve_fit(func, tau, acf, p0=(4,0.05))
 
+# folder_label="EquilWallOffset"
+# folder_label="EquilNewRestraints"
+# folder_label="EquilNoWallInt"
+folder_label="Q2"
+# folder_label ="QT"
+
+tl = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_bl.txt')[idx_0:]
+tr = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_br.txt')[idx_0:]
+bl = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_tl.txt')[idx_0:]
+br = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_tr.txt')[idx_0:]
+
+# Averaging
+array = dict()
+mean = dict()
+std = dict()
+bins = dict()
+dist = dict()
+labels = ['tl', 'tr', 'bl', 'br']
+cols = dict()
+cols['tl'] = 'b-'
+cols['tr'] = 'r-'
+cols['bl'] = 'c-'
+cols['br'] = 'm-'
+plt.figure()
+for l in labels :
+    array[l] = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_'+l+'.txt')[idx_0:]
+    mean[l], std[l], bins[l], dist[l] = dm.position_distribution(array[l], int(np.sqrt(len(array[l]))))
+    plt.step(bins[l], dist[l], cols[l], label=l+', mean='+"{:.3f}".format(mean[l])+"deg")
+plt.title('CA PDF', fontsize=20.0)
+plt.xlabel('angle [deg]', fontsize=20.0)
+plt.ylabel('PDF', fontsize=20.0)
+plt.legend()
+plt.show()
+
+theta_eq = 0.25 * ( tl + tr + bl + br )
+mean_angle = theta_eq.mean()
+std_angle = theta_eq.std()
+# print(folder_label)
+# print("Eq. c.a. = "+str(mean_angle)+" +/- "+str(std_angle/np.sqrt(len(theta_eq))))
+# print("<theta>="+str(mean_angle)+"; std(theta)="+str(std_angle)+"; err(theta)="+str(std_angle/np.sqrt(len(theta_eq))))
+
+"""
 plt.plot(tau, acf, 'b-')
 plt.plot(tau, np.ones(tau.shape)*mean_angle**2, 'r--')
 plt.plot(tau, mean_angle**2 + popt[0]*np.exp(-popt[1]*tau), 'k-.')

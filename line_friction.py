@@ -46,7 +46,6 @@ for l in labels :
 contact_speed = dict()
 for l in labels :
     # Unfiltered
-    """
     contact_speed[l] = np.zeros( contact_line[l].shape )
     contact_speed[l][1:-2] = 0.5*(contact_line[l][2:-1]-contact_line[l][0:-3])/dt
     contact_speed[l][0] = (contact_line[l][1]-contact_line[l][0])/dt
@@ -56,6 +55,7 @@ for l in labels :
     contact_speed[l][1:-2] = 0.5*(contact_line_fil[l][2:-1]-contact_line_fil[l][0:-3])/dt
     contact_speed[l][0] = (contact_line_fil[l][1]-contact_line_fil[l][0])/dt
     contact_speed[l][-1] = (contact_line_fil[l][-1]-contact_line_fil[l][-2])/dt
+    """
 
 # Plot of CL position over time
 plt.plot(time, contact_line['tl'], 'b--', label='TL (rec)')
