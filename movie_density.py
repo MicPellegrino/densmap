@@ -21,7 +21,7 @@ Lz = 30.63400
 
 # CREATING MESHGRID
 print("Creating meshgrid")
-density_array = dm.read_density_file(folder_name+'/'+file_root+'00001.dat', bin='y')
+density_array = dm.read_density_file(folder_name+'/'+file_root+'00100.dat', bin='y')
 Nx = density_array.shape[0]
 Nz = density_array.shape[1]
 hx = Lx/Nx
@@ -29,6 +29,12 @@ hz = Lz/Nz
 x = hx*np.arange(0.0,Nx,1.0, dtype=float)
 z = hz*np.arange(0.0,Nz,1.0, dtype=float)
 X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
+
+# Testing .vtk output function
+"""
+vtk_folder = "/home/michele/densmap/TestVtk"
+dm.export_scalar_vtk(x, z, hx, hz, 2.5, density_array)
+"""
 
 # Section for density computation
 N_low = int(np.floor(70.0/hx))
@@ -39,7 +45,7 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 714
+n_fin = 100
 dt = 12.5
 delta_th = 2.0
 
@@ -88,6 +94,11 @@ with writer.saving(fig, output_file_name, 250):
         writer.grab_frame()
         plt.cla()
         plt.clf()
+
+        # Exporting corresponding .vtk
+        """
+        dm.export_scalar_vtk(x, z, hx, hz, 2.5, density_array, file_name=vtk_folder+"/density_"+str(idx).zfill(5)+".vtk")
+        """
 
 mpl.use("TkAgg")
 

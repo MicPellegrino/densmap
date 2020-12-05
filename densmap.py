@@ -1414,3 +1414,62 @@ def position_distribution ( signal, N, std_mult=6.0 ) :
     distribution = distribution/(dx*sum(distribution))
 
     return sign_mean, sign_std, bin_vector, distribution
+
+# Functions to export flow data in ASCII .vtk format (suitable for Paraview)
+
+"""
+    Scalars (e.g. density)
+"""
+def export_scalar_vtk(x, z, hx, hz, Ly, array, file_name="flow_output.vtk"):
+    
+    fvtk = open(file_name, 'w')
+
+    fvtk.write("# vtk DataFile Version 3.0\n")
+    fvtk.write("Vtk output for binned flow configurations (metric in Ångström)\n")
+    fvtk.write("ASCII\n")
+    fvtk.write("DATASET STRUCTURED_POINTS\n")
+    
+    fvtk.write("DIMENSIONS "+str(len(x))+" 2 "+str(len(z))+"\n")
+    fvtk.write("ORIGIN "+str(10.0*x[0])+" 0.0 "+str(10.0*z[0])+"\n")
+    fvtk.write("SPACING "+str(10.0*hx)+" "+str(5.0*Ly)+" "+str(10.0*hz)+"\n")
+    
+    fvtk.write("CELL_DATA "+str((len(x)-1)*(len(z)-1))+"\n")
+    fvtk.write("POINT_DATA "+str(2*len(x)*len(z))+"\n")
+    fvtk.write("SCALARS density float 1\n")
+    fvtk.write("LOOKUP_TABLE default\n")
+
+    for k in range(len(z)) :
+        for j in range(2) :
+            for i in range(len(x)) :
+                fvtk.write( str( array[i,k] )+"\n" )
+
+    fvtk.close()
+
+"""
+    Vectors (e.g. velocity)
+"""
+def export_vector_vtk(x, z, hx, hz, Ly, array_x, array_z, file_name="flow_output.vtk"):
+    
+    fvtk = open(file_name, 'w')
+
+    fvtk.write("# vtk DataFile Version 3.0\n")
+    fvtk.write("Vtk output for binned flow configurations (metric in Ångström)\n")
+    fvtk.write("ASCII\n")
+    fvtk.write("DATASET STRUCTURED_POINTS\n")
+    
+    fvtk.write("DIMENSIONS "+str(len(x))+" 2 "+str(len(z))+"\n")
+    fvtk.write("ORIGIN "+str(10.0*x[0])+" 0.0 "+str(10.0*z[0])+"\n")
+    fvtk.write("SPACING "+str(10.0*hx)+" "+str(5.0*Ly)+" "+str(10.0*hz)+"\n")
+    
+    fvtk.write("CELL_DATA "+str((len(x)-1)*(len(z)-1))+"\n")
+    fvtk.write("POINT_DATA "+str(2*len(x)*len(z))+"\n")
+    fvtk.write("VECTORS velocity float\n")
+
+    for k in range(len(z)) :
+        for j in range(2) :
+            for i in range(len(x)) :
+                vx_str = str(array_x[i,k])
+                vz_str = str(array_z[i,k])
+                fvtk.write(vx_str+" 0.00000 "+vz_str+"\n")
+
+    fvtk.close()
