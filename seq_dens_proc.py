@@ -10,7 +10,7 @@ CD = dm.shear_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
     file_root = '/flow_', contact_line = True, mode='int', ens=0)
 
 # Testing xmgrace output
-# CD.save_xvg('InterfaceTest')
+CD.save_xvg('InterfaceTest', mode='interface')
 
 # Testing cl distribution binning
 """
@@ -40,7 +40,7 @@ mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 """
 # Shear
-CD.save_to_file('ShearDropModes/Sep')
+# CD.save_to_file('ShearDropModes/NeoQ2')
 
 """
 t = np.array(CD.time)

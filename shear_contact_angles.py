@@ -23,9 +23,9 @@ def array_from_file( filename ):
 # folder_label="EquilNoWallInt"
 # folder_label="Q2"
 # folder_label ="QT"
-# folder_label = "NeoQ2"
 # folder_label = "Petter"
-folder_label = "Sep"
+
+folder_label = "NeoQ2"
 
 time = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/time.txt')
 
@@ -33,8 +33,8 @@ mean_angle = np.zeros(5)
 std_angle = np.zeros(5)
 
 dt = 12.5
-# t_0 = 3000
-t_0 = 1000
+t_0 = 7500
+# t_0 = 10000
 idx_0 = np.abs( time-t_0 ).argmin()
 
 ### OLD ###
@@ -117,7 +117,7 @@ cols['br'] = 'm-'
 plt.figure()
 for l in labels :
     array[l] = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_'+l+'.txt')
-    mean[l], std[l], bins[l], dist[l] = dm.position_distribution(array[l][idx_0:], int(np.sqrt(len(array[l]))))
+    mean[l], std[l], bins[l], dist[l] = dm.position_distribution(array[l][idx_0:], int(np.sqrt(len(array[l][idx_0:]))))
     plt.step(bins[l], dist[l], cols[l], label=l+', mean='+"{:.3f}".format(mean[l])+"deg")
 plt.title('CA PDF', fontsize=20.0)
 plt.xlabel('angle [deg]', fontsize=20.0)
@@ -142,10 +142,10 @@ plt.xlim([time[0], time[-1]])
 plt.show()
 
 # Correlation matrix
-data = {'TL': array['tl'],
-        'BL': array['bl'],
-        'TR': array['tr'],
-        'BR': array['br'] }
+data = {'TL': array['tl'][idx_0:],
+        'BL': array['bl'][idx_0:],
+        'TR': array['tr'][idx_0:],
+        'BR': array['br'][idx_0:] }
 df = pd.DataFrame(data,columns=['TL','BL','TR','BR'])
 covMatrix = pd.DataFrame.cov(df)
 sn.heatmap(covMatrix, annot=True, fmt='g', cmap="YlGnBu")

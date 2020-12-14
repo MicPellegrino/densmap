@@ -10,9 +10,9 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "theta111_ca01.mp4"
+output_file_name = "theta94_ca005.mp4"
 
-folder_name = 'Theta111Ca01'
+folder_name = 'Theta94_Ca005Neo'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -44,8 +44,8 @@ N_upp = int(np.ceil(90.0/hx))
 r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
-n_init = 1
-n_fin = 100
+n_init = 200
+n_fin = 700
 dt = 12.5
 delta_th = 2.0
 
@@ -61,9 +61,15 @@ area = []
 # Density profile
 density_profile = np.zeros( Nz, dtype=float )
 
+# Center of mass
+x_com = []
+z_com = []
+t_com = []
+print(np.sum(density_array))
+
 with writer.saving(fig, output_file_name, 250):
     t_label = '0.0'
-    for idx in range(1, n_fin-n_init+1 ):
+    for idx in range(n_init, n_fin+1 ):
         plt.xlabel('x [nm]')
         plt.ylabel('z [nm]')
         if idx%n_dump==0 :
@@ -77,6 +83,10 @@ with writer.saving(fig, output_file_name, 250):
         # smooth_density_array = dm.convolute(density_array, smoother)
         # plt.pcolormesh(X, Z, smooth_density_array, cmap=cm.bone)
         
+        x_com.append( np.sum(np.multiply(density_array,X))/np.sum(density_array) )
+        z_com.append( np.sum(np.multiply(density_array,Z))/np.sum(density_array) )
+        t_com.append( idx )
+
         """
         bulk_density = dm.detect_bulk_density(smooth_density_array, delta_th)
         indicator = dm.density_indicator(smooth_density_array,0.5*bulk_density)
@@ -101,6 +111,14 @@ with writer.saving(fig, output_file_name, 250):
         """
 
 mpl.use("TkAgg")
+
+output_com_file = open('InterfaceTest/com.txt', 'w')
+
+for k in range( len(t_com) ) :
+    line = str(t_com[k]).zfill(5)+" "+"{:3.5f}".format(x_com[k])+" "+"{:3.5f}".format(z_com[k])+"\n"
+    output_com_file.write(line)
+
+output_com_file.close()
 
 # POST-PROCESSING ...
 """

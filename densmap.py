@@ -524,9 +524,21 @@ class shear_data :
                 textvar.remove()
         mpl.use("TkAgg")
 
-    def save_xvg(shear_data, folder) :
-        for k in range(len(shear_data.contour)) : 
-            output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
+    def save_xvg(shear_data, folder, mode='contour') :
+        if mode=='contour' :
+            for k in range(len(shear_data.contour)) : 
+                output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
+        elif mode=='interface' :
+            """
+            shear_data.branch['bl'] = []
+            shear_data.branch['br'] = []
+            shear_data.branch['tl'] = []
+            shear_data.branch['tr'] = []
+            """
+            for k in range(len(shear_data.branch['bl'])) :
+                output_interface_xmgrace(shear_data.branch['bl'][k], folder+"/int_l_"+str(k+1).zfill(5)+".xvg")
+            for k in range(len(shear_data.branch['br'])) :
+                output_interface_xmgrace(shear_data.branch['br'][k], folder+"/int_r_"+str(k+1).zfill(5)+".xvg")
 
     def plot_contact_line_pdf(shear_data, N_in=0,  fig_name='cl_pdf.eps') :
         signal_tr = np.array(shear_data.foot['tr'])[:,0]
