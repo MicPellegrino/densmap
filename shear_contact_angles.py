@@ -33,8 +33,11 @@ mean_angle = np.zeros(5)
 std_angle = np.zeros(5)
 
 dt = 12.5
-t_0 = 7500
-# t_0 = 10000
+# t_0 = 1000    # Q1
+t_0 = 2000    # Q2
+# t_0 = 4000    # Q3
+# t_0 = 5000    # Q4
+# t_0 = 7000    # Q5
 idx_0 = np.abs( time-t_0 ).argmin()
 
 ### OLD ###
@@ -62,7 +65,7 @@ tr = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angl
 bl = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_tl.txt')[idx_0:]
 br = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_tr.txt')[idx_0:]
 
-# Computing autocorrelation function for q2
+# Computing autocorrelation function for the contact angle
 theta_q2 = 0.25 * ( tl + tr + bl + br )
 # theta_q2 = br
 mean_angle = theta_q2.mean()

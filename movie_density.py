@@ -10,9 +10,9 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "theta94_ca005.mp4"
+output_file_name = "theta124_ca01.mp4"
 
-folder_name = 'Theta94_Ca005Neo'
+folder_name = 'Theta124Ca010'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -44,8 +44,8 @@ N_upp = int(np.ceil(90.0/hx))
 r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
-n_init = 200
-n_fin = 700
+n_init = 1
+n_fin = 754
 dt = 12.5
 delta_th = 2.0
 
@@ -112,13 +112,24 @@ with writer.saving(fig, output_file_name, 250):
 
 mpl.use("TkAgg")
 
-output_com_file = open('InterfaceTest/com.txt', 'w')
+plt.plot(t_com, x_com, 'r-', linewidth=1.5, label='x')
+plt.plot(t_com, z_com, 'b-', linewidth=1.5, label='z')
+plt.legend(fontsize=20.0)
+plt.title("COM", fontsize=20.0)
+plt.xlabel("t [-1]", fontsize=20.0)
+plt.ylabel("pos [-1]", fontsize=20.0)
+plt.xticks(fontsize=20.0)
+plt.yticks(fontsize=20.0)
+plt.show()
 
+# Saving COM position
+"""
+output_com_file = open('InterfaceTest/com.txt', 'w')
 for k in range( len(t_com) ) :
     line = str(t_com[k]).zfill(5)+" "+"{:3.5f}".format(x_com[k])+" "+"{:3.5f}".format(z_com[k])+"\n"
     output_com_file.write(line)
-
 output_com_file.close()
+"""
 
 # POST-PROCESSING ...
 """

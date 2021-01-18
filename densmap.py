@@ -272,12 +272,15 @@ class droplet_data :
         droplet_data.angle_circle = droplet_data.angle_circle + new_data.angle_circle
         droplet_data.radius_circle = droplet_data.radius_circle + new_data.radius_circle
 
-    def save_to_file(droplet_data):
-        # Those should be saved BEFORE poltting, not after...
-        droplet_data.file_angles = 'contact_angles.dat'
-        droplet_data.file_feet = 'contact_points.dat'
-        droplet_data.file_contout = 'contour.dat'
-        droplet_data.file_branches = 'branches.dat'
+    def save_to_file(droplet_data, save_dir):
+        print("[densmap] Saving to .txt files")
+        np.savetxt(save_dir+'/time.txt', np.array(droplet_data.time))
+        np.savetxt(save_dir+'/foot_l.txt', np.array(droplet_data.foot_left)[:,0])
+        np.savetxt(save_dir+'/foot_r.txt', np.array(droplet_data.foot_right)[:,0])
+        np.savetxt(save_dir+'/angle_l.txt', np.array(droplet_data.angle_left))
+        np.savetxt(save_dir+'/angle_r.txt', np.array(droplet_data.angle_right))
+        np.savetxt(save_dir+'/radius_fit.txt', droplet_data.radius_circle)
+        np.savetxt(save_dir+'/angle_fit.txt', droplet_data.angle_circle)
 
     def plot_radius(droplet_data):
         mpl.use("Agg")
@@ -685,6 +688,22 @@ def read_velocity_file (
     vel_z = vel_z.reshape((Nx,Nz))
 
     return vel_x, vel_z
+
+"""
+    Read temperature field from .dat data
+"""
+def read_temperature_file (
+    filename
+    ) :
+
+    data, info = read_data(filename)
+    # print(data)
+    Nx = info['shape'][0]
+    Nz = info['shape'][1]
+    temp = np.array( data['T'] )
+    temp = temp.reshape((Nx,Nz))
+
+    return temp
 
 """
     Crops the array containg density values to the desired values
