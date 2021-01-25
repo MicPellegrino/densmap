@@ -10,7 +10,7 @@ CD = dm.shear_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
     file_root = '/flow_', contact_line = True, mode='int', ens=0)
 
 # Testing xmgrace output
-CD.save_xvg('InterfaceTest', mode='interface')
+# CD.save_xvg('InterfaceTest', mode='interface')
 
 # Testing cl distribution binning
 """
@@ -30,7 +30,7 @@ CD.plot_angles()
 
 # Movie
 dz = FP.dz
-CD.movie_contour(FP.lenght_x, FP.lenght_z, dz,  circle=True, contact_line = True)
+CD.movie_contour(FP.lenght_x, FP.lenght_z, dz,  circle=False, contact_line = True)
 
 # SAVING WHAT NEEDED
 # Droplet
@@ -40,7 +40,7 @@ mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 """
 # Shear
-CD.save_to_file('ShearChar/QT')
+CD.save_to_file('ShearDynamic/Q5_Ca005')
 
 """
 t = np.array(CD.time)

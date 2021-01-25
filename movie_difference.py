@@ -10,10 +10,10 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "t47_ca011_diff.mp4"
+output_file_name = "t94_ca01_diff_ds.mp4"
 
-folder_ens1 = 'Theta47Ca011_ens3'
-folder_ens2 = 'Theta47Ca011_ens2'
+folder_ens1 = 'Theta94Ca010_10nm'
+folder_ens2 = 'Theta94Ca01_double'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -40,8 +40,8 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 600
-dt = 0.5*(25.0)
+n_fin = 592
+dt = 12.5
 delta_th = 2.0
 
 n_dump = 10

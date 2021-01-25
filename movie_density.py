@@ -10,9 +10,9 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "theta111_ca01.mp4"
+output_file_name = "theta124_ca01.mp4"
 
-folder_name = 'Theta111Ca01'
+folder_name = 'Theta124Ca010'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -21,7 +21,7 @@ Lz = 30.63400
 
 # CREATING MESHGRID
 print("Creating meshgrid")
-density_array = dm.read_density_file(folder_name+'/'+file_root+'00001.dat', bin='y')
+density_array = dm.read_density_file(folder_name+'/'+file_root+'00100.dat', bin='y')
 Nx = density_array.shape[0]
 Nz = density_array.shape[1]
 hx = Lx/Nx
@@ -29,6 +29,12 @@ hz = Lz/Nz
 x = hx*np.arange(0.0,Nx,1.0, dtype=float)
 z = hz*np.arange(0.0,Nz,1.0, dtype=float)
 X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
+
+# Testing .vtk output function
+"""
+vtk_folder = "/home/michele/densmap/TestVtk"
+dm.export_scalar_vtk(x, z, hx, hz, 2.5, density_array)
+"""
 
 # Section for density computation
 N_low = int(np.floor(70.0/hx))
@@ -39,7 +45,7 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 714
+n_fin = 754
 dt = 12.5
 delta_th = 2.0
 
@@ -55,9 +61,15 @@ area = []
 # Density profile
 density_profile = np.zeros( Nz, dtype=float )
 
+# Center of mass
+x_com = []
+z_com = []
+t_com = []
+print(np.sum(density_array))
+
 with writer.saving(fig, output_file_name, 250):
     t_label = '0.0'
-    for idx in range(1, n_fin-n_init+1 ):
+    for idx in range(n_init, n_fin+1 ):
         plt.xlabel('x [nm]')
         plt.ylabel('z [nm]')
         if idx%n_dump==0 :
@@ -71,6 +83,10 @@ with writer.saving(fig, output_file_name, 250):
         # smooth_density_array = dm.convolute(density_array, smoother)
         # plt.pcolormesh(X, Z, smooth_density_array, cmap=cm.bone)
         
+        x_com.append( np.sum(np.multiply(density_array,X))/np.sum(density_array) )
+        z_com.append( np.sum(np.multiply(density_array,Z))/np.sum(density_array) )
+        t_com.append( idx )
+
         """
         bulk_density = dm.detect_bulk_density(smooth_density_array, delta_th)
         indicator = dm.density_indicator(smooth_density_array,0.5*bulk_density)
@@ -89,7 +105,31 @@ with writer.saving(fig, output_file_name, 250):
         plt.cla()
         plt.clf()
 
+        # Exporting corresponding .vtk
+        """
+        dm.export_scalar_vtk(x, z, hx, hz, 2.5, density_array, file_name=vtk_folder+"/density_"+str(idx).zfill(5)+".vtk")
+        """
+
 mpl.use("TkAgg")
+
+plt.plot(t_com, x_com, 'r-', linewidth=1.5, label='x')
+plt.plot(t_com, z_com, 'b-', linewidth=1.5, label='z')
+plt.legend(fontsize=20.0)
+plt.title("COM", fontsize=20.0)
+plt.xlabel("t [-1]", fontsize=20.0)
+plt.ylabel("pos [-1]", fontsize=20.0)
+plt.xticks(fontsize=20.0)
+plt.yticks(fontsize=20.0)
+plt.show()
+
+# Saving COM position
+"""
+output_com_file = open('InterfaceTest/com.txt', 'w')
+for k in range( len(t_com) ) :
+    line = str(t_com[k]).zfill(5)+" "+"{:3.5f}".format(x_com[k])+" "+"{:3.5f}".format(z_com[k])+"\n"
+    output_com_file.write(line)
+output_com_file.close()
+"""
 
 # POST-PROCESSING ...
 """

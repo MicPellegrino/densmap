@@ -272,12 +272,15 @@ class droplet_data :
         droplet_data.angle_circle = droplet_data.angle_circle + new_data.angle_circle
         droplet_data.radius_circle = droplet_data.radius_circle + new_data.radius_circle
 
-    def save_to_file(droplet_data):
-        # Those should be saved BEFORE poltting, not after...
-        droplet_data.file_angles = 'contact_angles.dat'
-        droplet_data.file_feet = 'contact_points.dat'
-        droplet_data.file_contout = 'contour.dat'
-        droplet_data.file_branches = 'branches.dat'
+    def save_to_file(droplet_data, save_dir):
+        print("[densmap] Saving to .txt files")
+        np.savetxt(save_dir+'/time.txt', np.array(droplet_data.time))
+        np.savetxt(save_dir+'/foot_l.txt', np.array(droplet_data.foot_left)[:,0])
+        np.savetxt(save_dir+'/foot_r.txt', np.array(droplet_data.foot_right)[:,0])
+        np.savetxt(save_dir+'/angle_l.txt', np.array(droplet_data.angle_left))
+        np.savetxt(save_dir+'/angle_r.txt', np.array(droplet_data.angle_right))
+        np.savetxt(save_dir+'/radius_fit.txt', droplet_data.radius_circle)
+        np.savetxt(save_dir+'/angle_fit.txt', droplet_data.angle_circle)
 
     def plot_radius(droplet_data):
         mpl.use("Agg")
@@ -524,9 +527,21 @@ class shear_data :
                 textvar.remove()
         mpl.use("TkAgg")
 
-    def save_xvg(shear_data, folder) :
-        for k in range(len(shear_data.contour)) : 
-            output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
+    def save_xvg(shear_data, folder, mode='contour') :
+        if mode=='contour' :
+            for k in range(len(shear_data.contour)) : 
+                output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
+        elif mode=='interface' :
+            """
+            shear_data.branch['bl'] = []
+            shear_data.branch['br'] = []
+            shear_data.branch['tl'] = []
+            shear_data.branch['tr'] = []
+            """
+            for k in range(len(shear_data.branch['bl'])) :
+                output_interface_xmgrace(shear_data.branch['bl'][k], folder+"/int_l_"+str(k+1).zfill(5)+".xvg")
+            for k in range(len(shear_data.branch['br'])) :
+                output_interface_xmgrace(shear_data.branch['br'][k], folder+"/int_r_"+str(k+1).zfill(5)+".xvg")
 
     def plot_contact_line_pdf(shear_data, N_in=0,  fig_name='cl_pdf.eps') :
         signal_tr = np.array(shear_data.foot['tr'])[:,0]
@@ -673,6 +688,22 @@ def read_velocity_file (
     vel_z = vel_z.reshape((Nx,Nz))
 
     return vel_x, vel_z
+
+"""
+    Read temperature field from .dat data
+"""
+def read_temperature_file (
+    filename
+    ) :
+
+    data, info = read_data(filename)
+    # print(data)
+    Nx = info['shape'][0]
+    Nz = info['shape'][1]
+    temp = np.array( data['T'] )
+    temp = temp.reshape((Nx,Nz))
+
+    return temp
 
 """
     Crops the array containg density values to the desired values
@@ -1414,3 +1445,62 @@ def position_distribution ( signal, N, std_mult=6.0 ) :
     distribution = distribution/(dx*sum(distribution))
 
     return sign_mean, sign_std, bin_vector, distribution
+
+# Functions to export flow data in ASCII .vtk format (suitable for Paraview)
+
+"""
+    Scalars (e.g. density)
+"""
+def export_scalar_vtk(x, z, hx, hz, Ly, array, file_name="flow_output.vtk"):
+    
+    fvtk = open(file_name, 'w')
+
+    fvtk.write("# vtk DataFile Version 3.0\n")
+    fvtk.write("Vtk output for binned flow configurations (metric in Ångström)\n")
+    fvtk.write("ASCII\n")
+    fvtk.write("DATASET STRUCTURED_POINTS\n")
+    
+    fvtk.write("DIMENSIONS "+str(len(x))+" 2 "+str(len(z))+"\n")
+    fvtk.write("ORIGIN "+str(10.0*x[0])+" 0.0 "+str(10.0*z[0])+"\n")
+    fvtk.write("SPACING "+str(10.0*hx)+" "+str(5.0*Ly)+" "+str(10.0*hz)+"\n")
+    
+    fvtk.write("CELL_DATA "+str((len(x)-1)*(len(z)-1))+"\n")
+    fvtk.write("POINT_DATA "+str(2*len(x)*len(z))+"\n")
+    fvtk.write("SCALARS density float 1\n")
+    fvtk.write("LOOKUP_TABLE default\n")
+
+    for k in range(len(z)) :
+        for j in range(2) :
+            for i in range(len(x)) :
+                fvtk.write( str( array[i,k] )+"\n" )
+
+    fvtk.close()
+
+"""
+    Vectors (e.g. velocity)
+"""
+def export_vector_vtk(x, z, hx, hz, Ly, array_x, array_z, file_name="flow_output.vtk"):
+    
+    fvtk = open(file_name, 'w')
+
+    fvtk.write("# vtk DataFile Version 3.0\n")
+    fvtk.write("Vtk output for binned flow configurations (metric in Ångström)\n")
+    fvtk.write("ASCII\n")
+    fvtk.write("DATASET STRUCTURED_POINTS\n")
+    
+    fvtk.write("DIMENSIONS "+str(len(x))+" 2 "+str(len(z))+"\n")
+    fvtk.write("ORIGIN "+str(10.0*x[0])+" 0.0 "+str(10.0*z[0])+"\n")
+    fvtk.write("SPACING "+str(10.0*hx)+" "+str(5.0*Ly)+" "+str(10.0*hz)+"\n")
+    
+    fvtk.write("CELL_DATA "+str((len(x)-1)*(len(z)-1))+"\n")
+    fvtk.write("POINT_DATA "+str(2*len(x)*len(z))+"\n")
+    fvtk.write("VECTORS velocity float\n")
+
+    for k in range(len(z)) :
+        for j in range(2) :
+            for i in range(len(x)) :
+                vx_str = str(array_x[i,k])
+                vz_str = str(array_z[i,k])
+                fvtk.write(vx_str+" 0.00000 "+vz_str+"\n")
+
+    fvtk.close()
