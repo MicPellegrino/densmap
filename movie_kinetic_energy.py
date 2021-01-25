@@ -29,10 +29,10 @@ z = hz*np.arange(0.0,Nz,1.0, dtype=float)
 X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
 
 # Manually tune, crop window [nm]
-x0_crop = 87.00
-x1_crop = 100.0
-z0_crop = 0.000
-z1_crop = 6.000
+x0_crop = 0.0
+x1_crop = Lx
+z0_crop = 0.0
+z1_crop = Lz
 idx_x0 = np.argmin(np.abs(x-x0_crop))
 idx_x1 = np.argmin(np.abs(x-x1_crop))
 idx_z0 = np.argmin(np.abs(z-z0_crop))
@@ -48,7 +48,7 @@ X_crop, Z_crop = np.meshgrid(x_crop, z_crop, sparse=False, indexing='ij')
 print("Zoom-in window: ["+str(x0_crop)+","+str(x1_crop)+"]x["+str(z0_crop)+","+str(z1_crop)+"], (dX x dZ)")
 
 # Testing .vtk output function
-vtk_folder = "/home/michele/densmap/TestVtk"
+vtk_folder = "/home/michele/densmap/BreakageVtk"
 dm.export_vector_vtk(x_crop, z_crop, hx, hz, 2.5, vel_x[idx_x0:idx_x1,idx_z0:idx_z1], vel_z[idx_x0:idx_x1,idx_z0:idx_z1])
 
 # INITIALIZING SMOOTHING KERNEL
@@ -74,7 +74,7 @@ fig = plt.figure(figsize=(14.0,7.0))
 p_x_list = []
 p_z_list = []
 kin_ener_list = []
-with writer.saving(fig, "shear_q1_ca03.mp4", 250):
+with writer.saving(fig, "shear_q2_ca03.mp4", 250):
     t_label = '0.0'
     for idx in range(n_init, n_fin+1):
         if idx%n_dump==0 :

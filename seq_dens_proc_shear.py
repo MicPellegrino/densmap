@@ -40,7 +40,7 @@ mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 """
 # Shear
-CD.save_to_file('ShearDynamic/Q4_Ca005')
+CD.save_to_file('ShearDynamic/Q5_Ca005')
 
 """
 t = np.array(CD.time)

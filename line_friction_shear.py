@@ -55,37 +55,49 @@ avg_angle_rec = np.array( avg_angle_rec )
 std_angle_adv = np.array( std_angle_adv )
 std_angle_rec = np.array( std_angle_rec )
 
-g_dir = \
-    lambda x : (1.0/9.0) * (x**3) - 0.00183985 * (x**4.5) + (1.845823*1e-6) * (x**12.258487) 
-g_inv = \
-    lambda x : (9.0*x)**(1.0/3.0) + 0.0727387 * x - 0.0515388 * (x**2) + 0.00341336 * (x**3)
-
-def cox_formula(cap, a_cox, t0) :
-    din_t= np.rad2deg( g_inv( g_dir( np.deg2rad(t0) ) + cap*np.log10(a_cox) ) )
+def mkt_formula(cap, a_mkt, t0) :
+    din_t = np.rad2deg( np.arccos( np.cos(np.deg2rad(t0)) - cap*a_mkt )  )
     return din_t
 
-cox_fit = lambda cap, a_cox : cox_formula(cap, a_cox, avg_theta_0)
+mkt_fit = lambda cap, a_mkt : mkt_formula(cap, a_mkt, avg_theta_0)
+mkt_fit_ps = lambda cap, a_mkt : mkt_formula(cap, a_mkt, avg_theta_0+std_theta_0)
+mkt_fit_ms = lambda cap, a_mkt : mkt_formula(cap, a_mkt, avg_theta_0-std_theta_0)
 
-lenght_ratio_0 = 10.0
+friction_ratio_0 = 3.0
 popt_adv, pcov_adv = \
-        opt.curve_fit(cox_fit, capillary_number, avg_angle_adv, p0=lenght_ratio_0)
+        opt.curve_fit(mkt_fit, capillary_number, avg_angle_adv, p0=friction_ratio_0)
 popt_rec, pcov_rec = \
-        opt.curve_fit(cox_fit, -capillary_number, avg_angle_rec, p0=lenght_ratio_0)
+        opt.curve_fit(mkt_fit, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
 
-len_ratio_adv = popt_adv[0]
-len_ratio_rec = popt_rec[0]
+mu_ratio_adv = popt_adv[0]
+mu_ratio_rec = popt_rec[0]
 
 capillary_adv = np.linspace(0, 0.3, 100)
 capillary_rec = np.linspace(-0.30, 0.0, 100)
-cox_adv = np.vectorize(lambda u : cox_fit(u, len_ratio_adv))
-cox_rec = np.vectorize(lambda u : cox_fit(u, len_ratio_rec))
+mkt_adv = np.vectorize(lambda u : mkt_fit(u, mu_ratio_adv))
+mkt_rec = np.vectorize(lambda u : mkt_fit(u, mu_ratio_rec))
+
+# Fitting for +/- standard deviation #
+friction_ratio_0 = 0.5*(mu_ratio_adv+mu_ratio_rec)
+popt_adv_p = opt.curve_fit(mkt_fit_ps, capillary_number, avg_angle_adv, p0=friction_ratio_0)
+popt_rec_p = opt.curve_fit(mkt_fit_ps, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
+popt_adv_m = opt.curve_fit(mkt_fit_ms, capillary_number, avg_angle_adv, p0=friction_ratio_0)
+popt_rec_m = opt.curve_fit(mkt_fit_ms, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
+mkt_adv_p = np.vectorize(lambda u : mkt_fit_ps(u, popt_adv_p[0]))
+mkt_rec_p = np.vectorize(lambda u : mkt_fit_ps(u, popt_rec_p[0]))
+mkt_adv_m = np.vectorize(lambda u : mkt_fit_ms(u, popt_adv_m[0]))
+mkt_rec_m = np.vectorize(lambda u : mkt_fit_ms(u, popt_rec_m[0]))
+std_adv = (0.5*np.abs(popt_adv_p[0]-popt_adv_m[0]))[0]
+std_rec = (0.5*np.abs(popt_rec_p[0]-popt_rec_m[0]))[0]
+######################################
 
 eb1 = plt.errorbar( capillary_number, avg_angle_adv, yerr=std_angle_adv, \
         ecolor='r', fmt='ro', elinewidth=2, capsize=7.5, capthick=2.5, ms=8.0, \
-        label='MD adv' )
+        label='MD adv (+/-std)' )
 eb2 = plt.errorbar( -capillary_number, avg_angle_rec, yerr=std_angle_rec, \
         ecolor='b', fmt='bs', elinewidth=2, capsize=7.5, capthick=2.5, ms=8.0, \
-        label='MD rec' )
+        label='MD rec (+/-std)' )
+"""
 eb3 = plt.violinplot(adv_collect, positions=capillary_number, \
         widths=0.035, showmeans=False, showmedians=False, showextrema=False)
 for pc in eb3['bodies']:
@@ -94,14 +106,26 @@ eb4 = plt.violinplot(rec_collect, positions=-capillary_number, \
     widths=0.03, showmeans=False, showmedians=False, showextrema=False)
 for pc in eb4['bodies']:
     pc.set_facecolor('blue')
-plt.plot(capillary_adv, cox_adv(capillary_adv), 'r--', linewidth=2.0, \
-        label=r'Cox, $L/\lambda=$'+'{:.2f}'.format(len_ratio_adv) )
-plt.plot(capillary_rec, cox_rec(capillary_rec), 'b--', linewidth=2.0, \
-        label=r'Cox, $L/\lambda=$'+'{:.2f}'.format(len_ratio_rec) )
+"""
+plt.plot(capillary_adv, mkt_adv(capillary_adv), 'r--', linewidth=2.0, \
+        label=r'MKT, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_adv)+ \
+        '+/-'+'{:.3f}'.format( std_adv ) )
+plt.plot(capillary_rec, mkt_rec(capillary_rec), 'b--', linewidth=2.0, \
+        label=r'MKT, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_rec)+ \
+        '+/-'+'{:.3f}'.format( std_rec ) )
 plt.plot([0.275, 0.275], [50.0, 140.0], 'k--', label='stab. threshold')
 plt.plot([-0.275, -0.275], [50.0, 140.0], 'k--')
 
-plt.title("Fit of Cox law and estimate of c.l. friction", fontsize=30.0)
+# Plotting +/- standard deviation #
+"""
+plt.plot(capillary_adv, mkt_adv_p(capillary_adv), 'r-.', linewidth=1.0 )
+plt.plot(capillary_rec, mkt_rec_p(capillary_rec), 'b-.', linewidth=1.0 )
+plt.plot(capillary_adv, mkt_adv_m(capillary_adv), 'r-.', linewidth=1.0 )
+plt.plot(capillary_rec, mkt_rec_m(capillary_rec), 'b-.', linewidth=1.0 )
+"""
+###################################
+
+plt.title("Fit of MKT and estimate of c.l. friction", fontsize=30.0)
 plt.legend(fontsize=20.0, loc='lower right')
 plt.xticks(fontsize=20.0)
 plt.yticks(fontsize=20.0)

@@ -40,26 +40,6 @@ t_0 = 2000    # Q2
 # t_0 = 7000    # Q5
 idx_0 = np.abs( time-t_0 ).argmin()
 
-### OLD ###
-"""
-theta = []
-for q in range(5) :
-    tl = array_from_file('/home/michele/densmap/ShearDropModes/Q'+str(q+1)+'/angle_bl.txt')
-    tr = array_from_file('/home/michele/densmap/ShearDropModes/Q'+str(q+1)+'/angle_br.txt')
-    bl = array_from_file('/home/michele/densmap/ShearDropModes/Q'+str(q+1)+'/angle_tl.txt')
-    br = array_from_file('/home/michele/densmap/ShearDropModes/Q'+str(q+1)+'/angle_tr.txt')
-    theta.append( 0.25 * ( tl + tr + bl + br ) )
-    mean_angle[q] = theta[-1][idx_0:].mean()
-    std_angle[q] = theta[-1][idx_0:].std()
-
-var_angle = std_angle*std_angle
-
-print("Charge vs contact angle:")
-for q in range(5) :
-    print("q:"+str(q+1)+"\tmean="+str(mean_angle[q])+"\tstd="+str(std_angle[q]))
-"""
-###########
-
 tl = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_bl.txt')[idx_0:]
 tr = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_br.txt')[idx_0:]
 bl = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_tl.txt')[idx_0:]
@@ -94,15 +74,19 @@ def func(t, a1, a2) :
     return a1*np.exp(-a2*t)+mean_angle**2
 popt, pcov = curve_fit(func, tau, acf, p0=(4,0.05))
 
+print("Time constrant: tau="+str(1.0/popt[1])+"ps")
+
 mean_angle_2 = mean_angle**2
 plt.plot(tau, acf/mean_angle_2, 'b-', linewidth=2.00, label='ACF')
-plt.plot(tau, np.ones(tau.shape), 'r--', linewidth=2.00, label='mean^2='+str(mean_angle_2)+"deg^2")
+plt.plot(tau, np.ones(tau.shape), 'r--', linewidth=2.00, label='mean^2='+'{:.2f}'.format(mean_angle_2)+"deg^2")
 plt.plot(tau, 1.0 + popt[0]*np.exp(-popt[1]*tau)/mean_angle_2, 'k-.', linewidth=2.00, label='exp. fit')
-plt.title('Autocorrelation function', fontsize=20.0)
+plt.title('Autocorrelation function', fontsize=30.0)
 plt.xlabel('time [ps]', fontsize=20.0)
-plt.ylabel(r'ACF/$<\theta_0>^2$ [-1]', fontsize=20.0)
-plt.legend()
+plt.ylabel(r'ACF/$<\theta_0>^2$ [-1]', fontsize=30.0)
+plt.legend(fontsize=20.0)
 plt.xlim([tau[0], tau[-1]])
+plt.xticks(fontsize=15.0)
+plt.yticks(fontsize=15.0)
 plt.show()
 
 # Averaging
@@ -121,11 +105,13 @@ plt.figure()
 for l in labels :
     array[l] = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_'+l+'.txt')
     mean[l], std[l], bins[l], dist[l] = dm.position_distribution(array[l][idx_0:], int(np.sqrt(len(array[l][idx_0:]))))
-    plt.step(bins[l], dist[l], cols[l], label=l+', mean='+"{:.3f}".format(mean[l])+"deg")
-plt.title('CA PDF', fontsize=20.0)
-plt.xlabel('angle [deg]', fontsize=20.0)
-plt.ylabel('PDF', fontsize=20.0)
-plt.legend()
+    plt.step(bins[l], dist[l], cols[l], label=l+', mean='+"{:.3f}".format(mean[l])+"deg", linewidth=2.5)
+plt.title('CA PDF', fontsize=30.0)
+plt.xlabel(r'$\theta-<\theta>$ [deg]', fontsize=30.0)
+plt.ylabel('PDF', fontsize=30.0)
+plt.xticks(fontsize=15.0)
+plt.yticks(fontsize=15.0)
+plt.legend(fontsize=20.0)
 plt.show()
 
 theta_eq = 0.25 * ( tl + tr + bl + br )
@@ -137,10 +123,12 @@ print("<theta>="+str(mean_angle)+"; std(theta)="+str(std_angle)+"; err(theta)="+
 
 for l in labels :
     plt.plot(time, array[l], cols[l], label=l+', mean='+"{:.3f}".format(mean[l])+"deg")
-plt.title('Equilibrium contact angle', fontsize=20.0)
-plt.xlabel('time [ps]', fontsize=20.0)
-plt.ylabel('angle [deg]', fontsize=20.0)
-plt.legend()
+plt.title('Equilibrium contact angle', fontsize=30.0)
+plt.xlabel('time [ps]', fontsize=30.0)
+plt.ylabel('angle [deg]', fontsize=30.0)
+plt.xticks(fontsize=15.0)
+plt.yticks(fontsize=15.0)
+plt.legend(fontsize=20.0)
 plt.xlim([time[0], time[-1]])
 plt.show()
 
@@ -151,18 +139,8 @@ data = {'TL': array['tl'][idx_0:],
         'BR': array['br'][idx_0:] }
 df = pd.DataFrame(data,columns=['TL','BL','TR','BR'])
 covMatrix = pd.DataFrame.cov(df)
+sn.set(font_scale=1.5)
 sn.heatmap(covMatrix, annot=True, fmt='g', cmap="YlGnBu")
-plt.title('Cross-correlation matrix for equilibrium CA [deg^2]')
+plt.title('Cross-correlation matrix for equilibrium CA [deg^2]', fontsize=30.0)
 plt.axis('equal')
 plt.show()
-
-# Lennard-Jones
-""""
-time = array_from_file('/home/michele/densmap/ShearChar/LJ/time.txt')
-tl = array_from_file('/home/michele/densmap/ShearChar/LJ/angle_bl.txt')
-tr = array_from_file('/home/michele/densmap/ShearChar/LJ/angle_br.txt')
-bl = array_from_file('/home/michele/densmap/ShearChar/LJ/angle_tl.txt')
-br = array_from_file('/home/michele/densmap/ShearChar/LJ/angle_tr.txt')
-theta_lj = 0.25 * ( tl + tr + bl + br )
-print("LJ\tmean="+str(theta_lj.mean())+"\tstd="+str(theta_lj.std()))
-"""
