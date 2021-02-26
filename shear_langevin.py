@@ -16,7 +16,7 @@ def array_from_file( filename ):
             my_list.append(float(line.split()[0]))
     return np.array(my_list)
 
-folder_label = "NeoQ1"
+folder_label = "NeoQ2"
 
 time = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/time.txt')
 
@@ -24,8 +24,8 @@ mean_angle = np.zeros(5)
 std_angle = np.zeros(5)
 
 dt = 12.5
-t_0 = 1000    # Q1
-# t_0 = 2000      # Q2
+# t_0 = 1000    # Q1
+t_0 = 2000      # Q2
 # t_0 = 4000    # Q3
 # t_0 = 5000    # Q4
 # t_0 = 7000    # Q5
@@ -73,8 +73,11 @@ plt.xlim([tau[0], tau[-1]])
 plt.show()
 
 cl_pos = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/position_upper.txt')[idx_0:] \
-        + 0.5*array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/radius_upper.txt')[idx_0:]
-cl_pos = detrend(cl_pos)
+        + 0.5*array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/radius_upper.txt')[idx_0:] \
+        - array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/xcom.txt')[idx_0:]
+
+# cl_pos = detrend(cl_pos)
+
 mean_cl = cl_pos.mean()
 # disp = cl_pos-mean_cl
 disp = cl_pos

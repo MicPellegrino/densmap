@@ -21,8 +21,16 @@ def array_from_file( filename ):
 def cos( theta ) :
     return np.cos(np.deg2rad(theta))
 
+cos_vec = np.vectorize(cos)
+
+# Reference units
+mu = 0.877                  # mPa*s
+gamma = 57.8                # mPa*m
+U_ref = (gamma/mu)*1e-3     # nm/ps
+theta_0 = 38.8              # deg
+
 # Obtaining the signal from saved .txt files
-folder_name = 'SpreadingData/FlatQ3'
+folder_name = 'SpreadingData/FlatQ5'
 time = array_from_file(folder_name+'/time.txt')
 foot_l = array_from_file(folder_name+'/foot_l.txt')
 foot_r = array_from_file(folder_name+'/foot_r.txt')
@@ -32,13 +40,18 @@ radius = array_from_file(folder_name+'/radius_fit.txt')
 
 # Cutoff inertial phase
 dt = time[1]-time[0]
-T_cut = 200.0      # [ps]
-N = int( T_cut / dt )
-time = time[N:]
-foot_l = foot_l[N:]
-foot_r = foot_r[N:]
-angle_l = angle_l[N:]
-angle_r = angle_r[N:]
+T_ini = 500.0                  # [ps]
+T_fin = 5000.0
+time_window = T_fin-T_ini
+print("Time window = "+str(time_window))
+print("Time step   = "+str(dt))
+N_ini = int( T_ini / dt )
+N_fin = int( T_fin / dt )
+time = time[N_ini:N_fin]
+foot_l = foot_l[N_ini:N_fin]
+foot_r = foot_r[N_ini:N_fin]
+angle_l = angle_l[N_ini:N_fin]
+angle_r = angle_r[N_ini:N_fin]
 
 # Rational polynomial fit
 def rational(x, p, q):
@@ -50,17 +63,26 @@ def rational_3_3(x, p0, p1, p2, q1, q2):
 popt_l, pcov_l = opt.curve_fit(rational_3_3, time, foot_l)
 popt_r, pcov_r = opt.curve_fit(rational_3_3, time, foot_r)
 
+R0 = 25.0   # [nm]
+diam = foot_r-foot_l
+# t_90deg = T_cut + dt*np.argmin(np.abs(diam-2.0*np.sqrt(2.0)*R0))
+# print("Time 90 deg = "+str(t_90deg))
+
 # Plot spreading radius
-plt.title('Spreading branches (raw value and filtered)', fontsize=20.0)
+plt.title('Spreading branches (raw value and filtered)', fontsize=30.0)
 plt.plot(time, foot_l, 'b-', linewidth=1.0, label='left (raw)')
 plt.plot(time, foot_r, 'r-', linewidth=1.0, label='right (raw)')
-plt.plot(time, rational_3_3(time, *popt_l), 'b--', linewidth=2.0, label='left (fit)')
-plt.plot(time, rational_3_3(time, *popt_r), 'r--', linewidth=2.0, label='right (fit)')
-plt.xlabel('t [ps]', fontsize=20.0)
-plt.ylabel('x [nm]', fontsize=20.0)
+plt.plot(time, foot_r-foot_l, 'k-', linewidth=1.75, label='wetted area')
+plt.plot(time, 2.0*np.sqrt(2.0)*R0*np.ones(time.shape), 'g--', linewidth=1.75, label='wetted area')
+plt.plot(time, rational_3_3(time, *popt_l), 'b--', linewidth=2.5, label='left (fit)')
+plt.plot(time, rational_3_3(time, *popt_r), 'r--', linewidth=2.5, label='right (fit)')
+plt.xlabel('t [ps]', fontsize=30.0)
+plt.ylabel('x [nm]', fontsize=30.0)
 plt.ylim([0.0, 175.0])
 plt.xlim([time[0], time[-1]])
-plt.legend(fontsize=15.0)
+plt.legend(fontsize=20.0)
+plt.xticks(fontsize=20.0)
+plt.yticks(fontsize=20.0)
 plt.show()
 
 # Velocity from raw data (very noisy)
@@ -94,39 +116,74 @@ velocity_l_fit = velocity_l_fit(time)
 velocity_r_fit = velocity_r_fit(time)
 
 # Plot velocity
-plt.title('Apparent wetting speed (raw value and filtered)', fontsize=20.0)
+plt.title('Apparent wetting speed (raw value and filtered)', fontsize=30.0)
 plt.plot(time, velocity_l, 'b-', linewidth=1.0, label='left (raw)')
 plt.plot(time, velocity_r, 'r-', linewidth=1.0, label='right (raw)')
-plt.plot(time, velocity_l_fit, 'b--', linewidth=2.0, label='left (fit)')
-plt.plot(time, velocity_r_fit, 'r--', linewidth=2.0, label='right (fit)')
-plt.xlabel('t [ps]', fontsize=20.0)
-plt.ylabel('dx/dt [nm/ps]', fontsize=20.0)
+plt.plot(time, velocity_l_fit, 'b--', linewidth=2.5, label='left (fit)')
+plt.plot(time, velocity_r_fit, 'r--', linewidth=2.5, label='right (fit)')
+plt.xlabel('t [ps]', fontsize=30.0)
+plt.ylabel('dx/dt [nm/ps]', fontsize=30.0)
 plt.xlim([time[0], time[-1]])
-plt.legend(fontsize=15.0)
+plt.legend(fontsize=20.0)
+plt.xticks(fontsize=20.0)
+plt.yticks(fontsize=20.0)
 plt.show()
+
+# Rational approximation of c.a.
+popt_l, pcov_l = opt.curve_fit(rational_3_3, time, angle_l)
+popt_r, pcov_r = opt.curve_fit(rational_3_3, time, angle_r)
+angle_l_fit = rational_3_3(time, *popt_l)
+angle_r_fit = rational_3_3(time, *popt_r)
 
 # Plot contact angles
-plt.title('Apparent wetting contact angles', fontsize=20.0)
-plt.plot(time, angle_l, 'b-', linewidth=1.25)
-plt.plot(time, angle_r, 'r-', linewidth=1.25)
-plt.xlabel('t [ps]', fontsize=20.0)
-plt.ylabel(r'$\theta$ [deg]', fontsize=20.0)
+plt.title('Apparent wetting contact angles', fontsize=30.0)
+plt.plot(time, angle_l, 'b-', linewidth=1.0, label='left (raw)')
+plt.plot(time, angle_r, 'r-', linewidth=1.0, label='left (raw)')
+plt.plot(time, angle_l_fit, 'b--', linewidth=2.5, label='left (fit)')
+plt.plot(time, angle_r_fit, 'r--', linewidth=2.5, label='right (fit)')
+plt.plot(time, 90.0*np.ones(time.shape), 'g--', linewidth=3.75, )
+plt.xlabel('t [ps]', fontsize=30.0)
+plt.ylabel(r'$\theta$ [deg]', fontsize=30.0)
+plt.xlim([time[0], time[-1]])
+plt.legend(fontsize=20.0)
+plt.xticks(fontsize=20.0)
+plt.yticks(fontsize=20.0)
 plt.show()
 
+
+# Rescale speed
+velocity_l_fit_red = velocity_l_fit/U_ref
+velocity_r_fit_red = velocity_r_fit/U_ref
+
 # Transform into cos and plot againts velocity
-plt.title(r'Linear regression: $U\sim-a\cdot\cos(\theta)+b$', fontsize=20.0)
-cos_l = np.cos(np.deg2rad(angle_l))
-cos_r = np.cos(np.deg2rad(angle_r))
-coef_l = np.polyfit(-cos_l, velocity_l_fit, 1)
-coef_r = np.polyfit(-cos_r, velocity_r_fit, 1)
-cos_range = np.linspace(-0.75, 0.50, 10)
-plt.plot(cos_l, velocity_l_fit, 'b.')
-plt.plot(cos_r, velocity_r_fit, 'r.')
-plt.plot(cos_range, np.polyval(coef_l, -cos_range), 'b-', linewidth=1.75)
-plt.plot(cos_range, np.polyval(coef_r, -cos_range), 'r-', linewidth=1.75)
-plt.xlabel(r'$cos(\theta(t))$ [-1]', fontsize=20.0)
-plt.ylabel(r'$U$ [nm/ps]', fontsize=20.0)
+plt.title(r'Linear regression: $U\sim-a\cdot\cos(\theta)+b$', fontsize=30.0)
+cos_l = cos_vec(angle_l)
+cos_r = cos_vec(angle_r)
+coef_l = np.polyfit(cos_l, velocity_l_fit_red, 1)
+coef_r = np.polyfit(cos_r, velocity_r_fit_red, 1)
+cos_range = np.linspace(max(max(cos_l),max(cos_r)), min(min(cos_l),min(cos_r)), 10)
+plt.plot(cos_l, velocity_l_fit_red, 'b.')
+plt.plot(cos_r, velocity_r_fit_red, 'r.')
+plt.plot(cos_range, np.polyval(coef_l, cos_range), 'b-', linewidth=2.0, label='linfit (left)')
+plt.plot(cos_range, np.polyval(coef_r, cos_range), 'r-', linewidth=2.0, label='linfit (right)')
+plt.xlabel(r'$cos(\theta(t))$ [-1]', fontsize=30.0)
+plt.ylabel(r'$U/U_{ref}$ [-1]', fontsize=30.0)
+plt.legend(fontsize=20.0)
+plt.xticks(fontsize=20.0)
+plt.yticks(fontsize=20.0)
 plt.show()
+
+# Contact line friction estimate
+mu_st = np.zeros(4)
+mu_st[0] = -1.0/coef_l[0]
+mu_st[1] = -1.0/coef_r[0]
+mu_st[2] = cos(theta_0)/coef_l[1]
+mu_st[3] = cos(theta_0)/coef_r[1]
+print("mu* (left, slope)  = "+str( mu_st[0] ))
+print("mu* (right, slope) = "+str( mu_st[1] ))
+print("mu* (left, inter)  = "+str( mu_st[2] ))
+print("mu* (right, inter) = "+str( mu_st[3] ))
+print("mu* (best fit)     = "+str( np.mean(mu_st) ))
 
 ########
 # MISC #

@@ -6,12 +6,15 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
+import scipy.optimize as opt
+
 file_root = 'flow_'
 
 # Linear flow profile fit
 print("[densmap] Fitting LINEAR flow profile")
 
-FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
+# FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
+FP = dm.fitting_parameters( par_file='parameters_viscosity.txt' )
 folder_name = FP.folder_name
 
 Lx = FP.lenght_x
@@ -22,25 +25,27 @@ Nx = vel_x.shape[0]
 Nz = vel_x.shape[1]
 hx = Lx/Nx
 hz = Lz/Nz
-x = hx*np.arange(0.0,Nx,1.0, dtype=float)
-z = hz*np.arange(0.0,Nz,1.0, dtype=float)
+x = hx*np.arange(0.0,Nx,1.0, dtype=float)+0.5*hx
+z = hz*np.arange(0.0,Nz,1.0, dtype=float)+0.5*hz
 X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
 
 profile_velocity_x = np.zeros( len(z), dtype=float )
 profile_velocity_z = np.zeros( len(z), dtype=float )
 profile_kinetic_energy = np.zeros( len(z), dtype=float )
 
-spin_up_steps = 25
+spin_up_steps = 0
 n_init = FP.first_stamp + spin_up_steps
 n_fin = FP.last_stamp
 dt = FP.time_step
 
 n_dump = 10
+tot_amu = 0
 print("Producing averaged profile ")
 for idx in range( n_init, n_fin ):
     if idx%n_dump==0 :
         print("Obtainig frame "+str(idx))
         t_label = str(dt*idx)+' ps'
+        print("tot amu = "+str(tot_amu))
     # Time-averaging window
     rho = dm.read_density_file(folder_name+'/'+file_root+'{:05d}'.format(idx)+'.dat', bin='y')
     U, V = dm.read_velocity_file(folder_name+'/'+file_root+'{:05d}'.format(idx)+'.dat')
@@ -48,12 +53,19 @@ for idx in range( n_init, n_fin ):
     profile_velocity_x = np.add( np.mean(U, axis=0), profile_velocity_x )
     profile_velocity_z = np.add( np.mean(V, axis=0), profile_velocity_z )
     profile_kinetic_energy = np.add( np.mean(K, axis=0), profile_kinetic_energy )
+    tot_amu = np.sum( np.sum( rho ) )
 
 profile_velocity_x /= n_fin-n_init
 profile_velocity_z /= n_fin-n_init
 profile_kinetic_energy /= n_fin-n_init
 
+Ly = 4.65840
+volume = Lx*Ly*Lz
+h2o_density = 1.66053904020*tot_amu/(volume)
+print("density = "+str(h2o_density))
+
 # Linear regression on velocity profile
+"""
 offset_z = 0.75     # [nm]
 idx_low = (np.abs(z - offset_z)).argmin()
 idx_high = (np.abs( np.flip(z)-offset_z )).argmin()
@@ -62,11 +74,12 @@ profile_linear = profile_velocity_x[idx_low: idx_high]
 p_lin = np.polyfit(z_linear, profile_linear, deg=1)
 print(p_lin)
 U_lin = 0.01            # [nm/ps]
+"""
 
 # L = 29.0919983      # [nm]
 # slip_lenght = L/2 - U/p[0]
 # print("Estimate slip lenght: lambda = "+str(slip_lenght)+" nm")
-lin_fit = np.polyval(p_lin, z)
+# lin_fit = np.polyval(p_lin, z)
 
 # Parabolib flow profile fit
 """
@@ -164,12 +177,30 @@ plt.title('Channel flow under double shear', fontsize=30.0)
 plt.show()
 """
 
-plt.plot(z, profile_velocity_x, 'k.', markersize=5.0, label='U')
-plt.plot(z, lin_fit, 'r-', linewidth=1.25, label='lin. fit')
+# Cosine fit
+k = 2*np.pi/Lz
+def u_forced(z, V) :
+    return V*np.cos(k*z)
+
+popt, _ = opt.curve_fit(u_forced, z, profile_velocity_x, p0=0.1)
+
+V_hat = popt[0]
+cos_acceleration = 39.44e-3     # nm/ps**2
+viscosity_estimate = (1e-3)*(h2o_density*cos_acceleration)/(V_hat*k**2)
+
+print("viscosity_estimate = "+str(viscosity_estimate)+" mPa*s (centipoise)")
+
+u_fit = np.vectorize(lambda z : u_forced(z, V_hat))
+
+plt.plot(z, profile_velocity_x, 'k.', markersize=7.5, label='U')
+plt.plot(z, u_fit(z), 'b--')
+# plt.plot(z, lin_fit, 'r-', linewidth=1.25, label='lin. fit')
 plt.legend(fontsize=20.0)
 plt.xlabel('z [nm]', fontsize=30.0)
 plt.ylabel('U [nm/ps]', fontsize=30.0)
 plt.xticks(fontsize=30.0)
 plt.yticks(fontsize=30.0)
-plt.title('Channel flow under double shear', fontsize=30.0)
+plt.title('Channel flow under cosine acceleration', fontsize=30.0)
+plt.xlim([0.0, Lz])
+# plt.title('Channel flow under double shear', fontsize=30.0)
 plt.show()

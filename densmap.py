@@ -359,9 +359,9 @@ class droplet_data :
                 textvar.remove()
         mpl.use("TkAgg")
 
-    def save_xvg(shear_data, folder) :
-        for k in range(len(shear_data.contour)) : 
-            output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
+    def save_xvg(droplet_data, folder) :
+        for k in range(len(droplet_data.contour)) : 
+            output_interface_xmgrace(droplet_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
 
 class shear_data :
 
@@ -405,6 +405,8 @@ class shear_data :
         shear_data.circle_xc_r = []
         shear_data.circle_zc_r = []
         shear_data.circle_res_r = []
+        shear_data.xcom = []
+        shear_data.zcom = []
 
     def save_to_file(shear_data, save_dir):
         print("[densmap] Saving to .txt files")
@@ -421,6 +423,8 @@ class shear_data :
         np.savetxt(save_dir+'/angle_br.txt', shear_data.angle['br'])
         np.savetxt(save_dir+'/angle_tl.txt', shear_data.angle['tl'])
         np.savetxt(save_dir+'/angle_tr.txt', shear_data.angle['tr'])
+        np.savetxt(save_dir+'/xcom.txt', shear_data.xcom)
+        np.savetxt(save_dir+'/zcom.txt', shear_data.zcom)
 
     def plot_radius(shear_data, fig_name='spreading_radius.eps'):
         mpl.use("Agg")
@@ -478,6 +482,7 @@ class shear_data :
         fig_pos_lw, = plt.plot([], [], 'gx', linewidth=1.5)
         fig_cir_right, = plt.plot([], [], 'k--', linewidth=1.00)
         fig_cir_left, = plt.plot([], [], 'k--', linewidth=1.00)
+        fig_com, = plt.plot([], [], 'ks', linewidth=1.5)
         plt.title('Droplet Shear')
         plt.xlabel('x [nm]')
         plt.ylabel('z [nm]')
@@ -494,6 +499,7 @@ class shear_data :
                     circle_x_r = shear_data.circle_xc_r[i] + shear_data.circle_rad_r[i]*np.cos(s)
                     circle_z_r = shear_data.circle_zc_r[i] + shear_data.circle_rad_r[i]*np.sin(s)
                 fig_cont.set_data(shear_data.contour[i][0,:], shear_data.contour[i][1,:])
+                fig_com.set_data(shear_data.xcom[i], shear_data.zcom[i])
                 t_label = str(shear_data.time[i])+' ps'
                 """
                     The position of the time label should be an input (or at leat a macro)
@@ -631,9 +637,9 @@ class fitting_parameters :
 """
 def read_density_file (
     filename,
-    bin,
-    n_bin_x=0,
-    n_bin_z=0
+    bin = 'y',
+    n_bin_x = 0,
+    n_bin_z = 0
     ) :
 
     assert bin=='y' or bin=='n', \
@@ -844,6 +850,20 @@ def detect_contour (
     contour = contour + np.array([[0.5*hx],[0.5*hz]])
 
     return contour
+
+"""
+    Detect x and z coordinates of the c.o.m.
+"""
+def detect_com (
+    density_array,
+    X,
+    Z
+    ) :
+
+    x_com = np.sum(np.multiply(density_array,X))/np.sum(density_array)
+    z_com = np.sum(np.multiply(density_array,Z))/np.sum(density_array)
+
+    return x_com, z_com
 
 def detect_interface_int (
     density_array,
@@ -1131,6 +1151,12 @@ def shear_tracking (
     Nz = density_array.shape[1]
     hx = fit_param.lenght_x/Nx
     hz = fit_param.lenght_z/Nz
+    # For c.o.m. computation #
+    x = hx*np.arange(0.0,Nx,1.0, dtype=float)
+    z = hz*np.arange(0.0,Nz,1.0, dtype=float)
+    X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
+    x_com, z_com = detect_com(density_array, X, Z)
+    # ###################### #
     print("[densmap] Initialize smoothing kernel")
     """
         Should actually check if r_mol is less than the bin size; in that case
@@ -1227,6 +1253,8 @@ def shear_tracking (
     CD.circle_xc_r.append(xc_r)
     CD.circle_zc_r.append(zc_r)
     CD.circle_res_r.append(residue_r)
+    CD.xcom.append(x_com)
+    CD.zcom.append(z_com)
 
     for k in range(k_init+1, k_end+1) :
         file_name = folder_name+file_root+str(k).zfill(5)+'.dat'
@@ -1244,6 +1272,8 @@ def shear_tracking (
             density_array /= ens
         else :
             density_array = read_density_file(file_name, bin='y')
+
+        x_com, z_com = detect_com(density_array, X, Z)
 
         # density_array = read_density_file(file_name, bin='y')
         if mode == 'sk' :
@@ -1335,6 +1365,8 @@ def shear_tracking (
         CD.circle_xc_r.append(xc_r)
         CD.circle_zc_r.append(zc_r)
         CD.circle_res_r.append(residue_r)
+        CD.xcom.append(x_com)
+        CD.zcom.append(z_com)
 
     return CD
 
