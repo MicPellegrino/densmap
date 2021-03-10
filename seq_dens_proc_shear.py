@@ -2,7 +2,6 @@ import densmap as dm
 import matplotlib.pyplot as plt
 import numpy as np
 
-# FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
 FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
 
 # NB: contour tracking should check whether there are actually kfin-kinit files!!!
@@ -40,7 +39,7 @@ mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 """
 # Shear
-CD.save_to_file('ShearDynamic/Q5_Ca005')
+CD.save_to_file('ShearDynamic/Q4_Ca005')
 
 """
 t = np.array(CD.time)

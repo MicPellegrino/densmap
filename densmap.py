@@ -27,11 +27,16 @@ import circle_fit as cf
 ################################################################################
 ################################################################################
 
+READ_HEADER = False
+
 """
     #########################################################
     ### From strata program (courtesy of Petter Johanson) ###
     #########################################################
 """
+
+# 2021
+FIELDS = ['X', 'Y', 'N', 'T', 'M', 'U', 'V']
 
 def read_data(filename, decimals=5):
     """Read field data from a file name.
@@ -52,45 +57,74 @@ def read_data(filename, decimals=5):
             strata.dataformats.read.read_data_file for more information.
 
     """
+    
+    # 2021
+    if READ_HEADER :
+    
+        with open(filename, 'rb') as fp:
+            fields, num_values, info = read_header(fp)
+            data = read_values(fp, num_values, fields)
 
-    def guess_read_function(filename):
-        """Return handle to binary or plaintext function."""
+        x0, y0 = info['origin']
+        nx, ny = info['shape']
+        dx, dy = info['spacing']
 
-        def is_binary(filename, checksize=512):
-            with open(filename, 'r') as fp:
-                try:
-                    fp.read(checksize)
-                    return False
-                except UnicodeDecodeError:
-                    return True
+        x = x0 + dx * (np.arange(nx) + 0.5)
+        y = y0 + dy * (np.arange(ny) + 0.5)
+        xs, ys = np.meshgrid(x, y, indexing='ij')
 
-        if is_binary(filename):
-            return read_binsimple
-        else:
-            return read_plainsimple
+        grid = np.zeros((nx, ny), dtype=[(l, np.float) for l in FIELDS])
+        grid['X'] = xs
+        grid['Y'] = ys
 
-    read_function = guess_read_function(filename)
-    data = read_function(filename)
-    for coord in ['X', 'Y']:
-        data[coord] = data[coord].round(decimals)
+        for l in ['N', 'T', 'M', 'U', 'V']:
+            grid[l][data['IX'], data['IY']] = data[l]
 
-    info = calc_information(data['X'], data['Y'])
+        grid = grid.ravel()
 
-    x0, y0 = info['origin']
-    dx, dy = info['spacing']
-    nx, ny = info['shape']
+        return {l: grid[l] for l in FIELDS}, info
+    
+    # 2020
+    else:
 
-    x = x0 + dx * np.arange(nx, dtype=np.float64)
-    y = y0 + dy * np.arange(ny, dtype=np.float64)
+        def guess_read_function(filename):
+            """Return handle to binary or plaintext function."""
 
-    xs, ys = np.meshgrid(x, y, indexing='ij')
+            def is_binary(filename, checksize=512):
+                with open(filename, 'r') as fp:
+                    try:
+                        fp.read(checksize)
+                        return False
+                    except UnicodeDecodeError:
+                        return True
 
-    data['X'] = xs.ravel()
-    data['Y'] = ys.ravel()
+            if is_binary(filename):
+                return read_binsimple
+            else:
+                return read_plainsimple
 
-    return data, info
+        read_function = guess_read_function(filename)
+        data = read_function(filename)
+        for coord in ['X', 'Y']:
+            data[coord] = data[coord].round(decimals)
 
+        info = calc_information(data['X'], data['Y'])
 
+        x0, y0 = info['origin']
+        dx, dy = info['spacing']
+        nx, ny = info['shape']
+
+        x = x0 + dx * np.arange(nx, dtype=np.float64)
+        y = y0 + dy * np.arange(ny, dtype=np.float64)
+
+        xs, ys = np.meshgrid(x, y, indexing='ij')
+
+        data['X'] = xs.ravel()
+        data['Y'] = ys.ravel()
+
+        return data, info
+
+#2020
 def calc_information(X, Y):
     """Return a dict of system information calculated from input cell positions.
 
@@ -159,7 +193,7 @@ def calc_information(X, Y):
 
     return info
 
-
+# 2020
 def read_binsimple(filename):
     """Return data and information read from a simple binary format.
 
@@ -188,7 +222,7 @@ def read_binsimple(filename):
 
     return data
 
-
+# 2020
 def read_plainsimple(filename):
     """Return field data from a simple plaintext format.
 
@@ -212,6 +246,79 @@ def read_plainsimple(filename):
     data = read_file(filename)
 
     return data
+
+# 2021
+def read_values(fp, num_values, fields):
+    dtypes = {
+        'IX': np.uint64,
+        'IY': np.uint64,
+        'N': np.float32,
+        'T': np.float32,
+        'M': np.float32,
+        'U': np.float32,
+        'V': np.float32,
+    }
+
+    return {
+        l: np.fromfile(fp, dtype=dtypes[l], count=num_values)
+        for l in fields
+    }
+
+#2021
+def read_header(fp):
+    """Read header information and forward the pointer to the data."""
+
+    def read_shape(line):
+        return tuple(int(v) for v in line.split()[1:3])
+
+    def read_spacing(line):
+        return tuple(float(v) for v in line.split()[1:3])
+
+    def read_num_values(line):
+        return int(line.split()[1].strip())
+
+    def parse_field_labels(line):
+        return line.split()[1:]
+
+    def read_header_string(fp):
+        buf_size = 1024
+        header_str = ""
+
+        while True:
+            buf = fp.read(buf_size)
+
+            pos = buf.find(b'\0')
+
+            if pos != -1:
+                header_str += buf[:pos].decode("ascii")
+                offset = buf_size - pos - 1
+                fp.seek(-offset, 1)
+                break
+            else:
+                header_str += buf.decode("ascii")
+
+        return header_str
+
+    info = {}
+    header_str = read_header_string(fp)
+
+    for line in header_str.splitlines():
+        line_type = line.split(maxsplit=1)[0].upper()
+
+        if line_type == "SHAPE":
+            info['shape'] = read_shape(line)
+        elif line_type == "SPACING":
+            info['spacing'] = read_spacing(line)
+        elif line_type == "ORIGIN":
+            info['origin'] = read_spacing(line)
+        elif line_type == "FIELDS":
+            fields = parse_field_labels(line)
+        elif line_type == "NUMDATA":
+            num_values = read_num_values(line)
+
+    info['num_bins'] = info['shape'][0] * info['shape'][1]
+
+    return fields, num_values, info
 
 ################################################################################
 ################################################################################
@@ -359,9 +466,9 @@ class droplet_data :
                 textvar.remove()
         mpl.use("TkAgg")
 
-    def save_xvg(shear_data, folder) :
-        for k in range(len(shear_data.contour)) : 
-            output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
+    def save_xvg(droplet_data, folder) :
+        for k in range(len(droplet_data.contour)) : 
+            output_interface_xmgrace(droplet_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
 
 class shear_data :
 
@@ -405,6 +512,8 @@ class shear_data :
         shear_data.circle_xc_r = []
         shear_data.circle_zc_r = []
         shear_data.circle_res_r = []
+        shear_data.xcom = []
+        shear_data.zcom = []
 
     def save_to_file(shear_data, save_dir):
         print("[densmap] Saving to .txt files")
@@ -421,6 +530,8 @@ class shear_data :
         np.savetxt(save_dir+'/angle_br.txt', shear_data.angle['br'])
         np.savetxt(save_dir+'/angle_tl.txt', shear_data.angle['tl'])
         np.savetxt(save_dir+'/angle_tr.txt', shear_data.angle['tr'])
+        np.savetxt(save_dir+'/xcom.txt', shear_data.xcom)
+        np.savetxt(save_dir+'/zcom.txt', shear_data.zcom)
 
     def plot_radius(shear_data, fig_name='spreading_radius.eps'):
         mpl.use("Agg")
@@ -478,6 +589,7 @@ class shear_data :
         fig_pos_lw, = plt.plot([], [], 'gx', linewidth=1.5)
         fig_cir_right, = plt.plot([], [], 'k--', linewidth=1.00)
         fig_cir_left, = plt.plot([], [], 'k--', linewidth=1.00)
+        fig_com, = plt.plot([], [], 'ks', linewidth=1.5)
         plt.title('Droplet Shear')
         plt.xlabel('x [nm]')
         plt.ylabel('z [nm]')
@@ -494,6 +606,7 @@ class shear_data :
                     circle_x_r = shear_data.circle_xc_r[i] + shear_data.circle_rad_r[i]*np.cos(s)
                     circle_z_r = shear_data.circle_zc_r[i] + shear_data.circle_rad_r[i]*np.sin(s)
                 fig_cont.set_data(shear_data.contour[i][0,:], shear_data.contour[i][1,:])
+                fig_com.set_data(shear_data.xcom[i], shear_data.zcom[i])
                 t_label = str(shear_data.time[i])+' ps'
                 """
                     The position of the time label should be an input (or at leat a macro)
@@ -631,9 +744,9 @@ class fitting_parameters :
 """
 def read_density_file (
     filename,
-    bin,
-    n_bin_x=0,
-    n_bin_z=0
+    bin = 'y',
+    n_bin_x = 0,
+    n_bin_z = 0
     ) :
 
     assert bin=='y' or bin=='n', \
@@ -643,7 +756,6 @@ def read_density_file (
     if bin=='y' :
 
         # print('[densmap] Reading binary file in -flow format')
-
         data, info = read_data(filename)
         Nx = info['shape'][0]
         Nz = info['shape'][1]
@@ -844,6 +956,20 @@ def detect_contour (
     contour = contour + np.array([[0.5*hx],[0.5*hz]])
 
     return contour
+
+"""
+    Detect x and z coordinates of the c.o.m.
+"""
+def detect_com (
+    density_array,
+    X,
+    Z
+    ) :
+
+    x_com = np.sum(np.multiply(density_array,X))/np.sum(density_array)
+    z_com = np.sum(np.multiply(density_array,Z))/np.sum(density_array)
+
+    return x_com, z_com
 
 def detect_interface_int (
     density_array,
@@ -1131,6 +1257,12 @@ def shear_tracking (
     Nz = density_array.shape[1]
     hx = fit_param.lenght_x/Nx
     hz = fit_param.lenght_z/Nz
+    # For c.o.m. computation #
+    x = hx*np.arange(0.0,Nx,1.0, dtype=float)
+    z = hz*np.arange(0.0,Nz,1.0, dtype=float)
+    X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
+    x_com, z_com = detect_com(density_array, X, Z)
+    # ###################### #
     print("[densmap] Initialize smoothing kernel")
     """
         Should actually check if r_mol is less than the bin size; in that case
@@ -1227,6 +1359,8 @@ def shear_tracking (
     CD.circle_xc_r.append(xc_r)
     CD.circle_zc_r.append(zc_r)
     CD.circle_res_r.append(residue_r)
+    CD.xcom.append(x_com)
+    CD.zcom.append(z_com)
 
     for k in range(k_init+1, k_end+1) :
         file_name = folder_name+file_root+str(k).zfill(5)+'.dat'
@@ -1244,6 +1378,8 @@ def shear_tracking (
             density_array /= ens
         else :
             density_array = read_density_file(file_name, bin='y')
+
+        x_com, z_com = detect_com(density_array, X, Z)
 
         # density_array = read_density_file(file_name, bin='y')
         if mode == 'sk' :
@@ -1335,6 +1471,8 @@ def shear_tracking (
         CD.circle_xc_r.append(xc_r)
         CD.circle_zc_r.append(zc_r)
         CD.circle_res_r.append(residue_r)
+        CD.xcom.append(x_com)
+        CD.zcom.append(z_com)
 
     return CD
 
