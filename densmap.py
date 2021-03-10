@@ -27,11 +27,16 @@ import circle_fit as cf
 ################################################################################
 ################################################################################
 
+READ_HEADER = False
+
 """
     #########################################################
     ### From strata program (courtesy of Petter Johanson) ###
     #########################################################
 """
+
+# 2021
+FIELDS = ['X', 'Y', 'N', 'T', 'M', 'U', 'V']
 
 def read_data(filename, decimals=5):
     """Read field data from a file name.
@@ -52,45 +57,74 @@ def read_data(filename, decimals=5):
             strata.dataformats.read.read_data_file for more information.
 
     """
+    
+    # 2021
+    if READ_HEADER :
+    
+        with open(filename, 'rb') as fp:
+            fields, num_values, info = read_header(fp)
+            data = read_values(fp, num_values, fields)
 
-    def guess_read_function(filename):
-        """Return handle to binary or plaintext function."""
+        x0, y0 = info['origin']
+        nx, ny = info['shape']
+        dx, dy = info['spacing']
 
-        def is_binary(filename, checksize=512):
-            with open(filename, 'r') as fp:
-                try:
-                    fp.read(checksize)
-                    return False
-                except UnicodeDecodeError:
-                    return True
+        x = x0 + dx * (np.arange(nx) + 0.5)
+        y = y0 + dy * (np.arange(ny) + 0.5)
+        xs, ys = np.meshgrid(x, y, indexing='ij')
 
-        if is_binary(filename):
-            return read_binsimple
-        else:
-            return read_plainsimple
+        grid = np.zeros((nx, ny), dtype=[(l, np.float) for l in FIELDS])
+        grid['X'] = xs
+        grid['Y'] = ys
 
-    read_function = guess_read_function(filename)
-    data = read_function(filename)
-    for coord in ['X', 'Y']:
-        data[coord] = data[coord].round(decimals)
+        for l in ['N', 'T', 'M', 'U', 'V']:
+            grid[l][data['IX'], data['IY']] = data[l]
 
-    info = calc_information(data['X'], data['Y'])
+        grid = grid.ravel()
 
-    x0, y0 = info['origin']
-    dx, dy = info['spacing']
-    nx, ny = info['shape']
+        return {l: grid[l] for l in FIELDS}, info
+    
+    # 2020
+    else:
 
-    x = x0 + dx * np.arange(nx, dtype=np.float64)
-    y = y0 + dy * np.arange(ny, dtype=np.float64)
+        def guess_read_function(filename):
+            """Return handle to binary or plaintext function."""
 
-    xs, ys = np.meshgrid(x, y, indexing='ij')
+            def is_binary(filename, checksize=512):
+                with open(filename, 'r') as fp:
+                    try:
+                        fp.read(checksize)
+                        return False
+                    except UnicodeDecodeError:
+                        return True
 
-    data['X'] = xs.ravel()
-    data['Y'] = ys.ravel()
+            if is_binary(filename):
+                return read_binsimple
+            else:
+                return read_plainsimple
 
-    return data, info
+        read_function = guess_read_function(filename)
+        data = read_function(filename)
+        for coord in ['X', 'Y']:
+            data[coord] = data[coord].round(decimals)
 
+        info = calc_information(data['X'], data['Y'])
 
+        x0, y0 = info['origin']
+        dx, dy = info['spacing']
+        nx, ny = info['shape']
+
+        x = x0 + dx * np.arange(nx, dtype=np.float64)
+        y = y0 + dy * np.arange(ny, dtype=np.float64)
+
+        xs, ys = np.meshgrid(x, y, indexing='ij')
+
+        data['X'] = xs.ravel()
+        data['Y'] = ys.ravel()
+
+        return data, info
+
+#2020
 def calc_information(X, Y):
     """Return a dict of system information calculated from input cell positions.
 
@@ -159,7 +193,7 @@ def calc_information(X, Y):
 
     return info
 
-
+# 2020
 def read_binsimple(filename):
     """Return data and information read from a simple binary format.
 
@@ -188,7 +222,7 @@ def read_binsimple(filename):
 
     return data
 
-
+# 2020
 def read_plainsimple(filename):
     """Return field data from a simple plaintext format.
 
@@ -212,6 +246,79 @@ def read_plainsimple(filename):
     data = read_file(filename)
 
     return data
+
+# 2021
+def read_values(fp, num_values, fields):
+    dtypes = {
+        'IX': np.uint64,
+        'IY': np.uint64,
+        'N': np.float32,
+        'T': np.float32,
+        'M': np.float32,
+        'U': np.float32,
+        'V': np.float32,
+    }
+
+    return {
+        l: np.fromfile(fp, dtype=dtypes[l], count=num_values)
+        for l in fields
+    }
+
+#2021
+def read_header(fp):
+    """Read header information and forward the pointer to the data."""
+
+    def read_shape(line):
+        return tuple(int(v) for v in line.split()[1:3])
+
+    def read_spacing(line):
+        return tuple(float(v) for v in line.split()[1:3])
+
+    def read_num_values(line):
+        return int(line.split()[1].strip())
+
+    def parse_field_labels(line):
+        return line.split()[1:]
+
+    def read_header_string(fp):
+        buf_size = 1024
+        header_str = ""
+
+        while True:
+            buf = fp.read(buf_size)
+
+            pos = buf.find(b'\0')
+
+            if pos != -1:
+                header_str += buf[:pos].decode("ascii")
+                offset = buf_size - pos - 1
+                fp.seek(-offset, 1)
+                break
+            else:
+                header_str += buf.decode("ascii")
+
+        return header_str
+
+    info = {}
+    header_str = read_header_string(fp)
+
+    for line in header_str.splitlines():
+        line_type = line.split(maxsplit=1)[0].upper()
+
+        if line_type == "SHAPE":
+            info['shape'] = read_shape(line)
+        elif line_type == "SPACING":
+            info['spacing'] = read_spacing(line)
+        elif line_type == "ORIGIN":
+            info['origin'] = read_spacing(line)
+        elif line_type == "FIELDS":
+            fields = parse_field_labels(line)
+        elif line_type == "NUMDATA":
+            num_values = read_num_values(line)
+
+    info['num_bins'] = info['shape'][0] * info['shape'][1]
+
+    return fields, num_values, info
 
 ################################################################################
 ################################################################################
@@ -649,7 +756,6 @@ def read_density_file (
     if bin=='y' :
 
         # print('[densmap] Reading binary file in -flow format')
-
         data, info = read_data(filename)
         Nx = info['shape'][0]
         Nz = info['shape'][1]
