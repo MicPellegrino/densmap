@@ -10,9 +10,9 @@ import matplotlib.animation as manimation
 mpl.use("Agg")
 
 # Output file name
-output_file_name = "theta124_ca01.mp4"
+output_file_name = "com.mp4"
 
-folder_name = 'Theta124Ca010'
+folder_name = ''
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -45,7 +45,7 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 754
+n_fin = 750
 dt = 12.5
 delta_th = 2.0
 
@@ -78,14 +78,14 @@ with writer.saving(fig, output_file_name, 250):
         density_array = dm.read_density_file(folder_name+'/'+file_root+ \
             '{:05d}'.format(idx)+'.dat', bin='y')
         # PLOT ORIGINAL DENSITY
-        plt.pcolormesh(X, Z, density_array, cmap=cm.bone)
+        # plt.pcolormesh(X, Z, density_array, cmap=cm.bone)
         # PLOT SMOOTHED DENSITY
-        # smooth_density_array = dm.convolute(density_array, smoother)
-        # plt.pcolormesh(X, Z, smooth_density_array, cmap=cm.bone)
+        smooth_density_array = dm.convolute(density_array, smoother)
+        plt.pcolormesh(X, Z, smooth_density_array, cmap=cm.bone)
         
         x_com.append( np.sum(np.multiply(density_array,X))/np.sum(density_array) )
         z_com.append( np.sum(np.multiply(density_array,Z))/np.sum(density_array) )
-        t_com.append( idx )
+        t_com.append( (1e-3)*idx*dt )
 
         """
         bulk_density = dm.detect_bulk_density(smooth_density_array, delta_th)
@@ -112,14 +112,15 @@ with writer.saving(fig, output_file_name, 250):
 
 mpl.use("TkAgg")
 
-plt.plot(t_com, x_com, 'r-', linewidth=1.5, label='x')
-plt.plot(t_com, z_com, 'b-', linewidth=1.5, label='z')
-plt.legend(fontsize=20.0)
-plt.title("COM", fontsize=20.0)
-plt.xlabel("t [-1]", fontsize=20.0)
-plt.ylabel("pos [-1]", fontsize=20.0)
-plt.xticks(fontsize=20.0)
-plt.yticks(fontsize=20.0)
+plt.plot(t_com, x_com, 'r-', linewidth=5.0, label='x')
+plt.plot(t_com, z_com, 'b-', linewidth=5.0, label='z')
+plt.legend(fontsize=40.0)
+plt.title("COM", fontsize=45.0)
+plt.xlabel("t [ns]", fontsize=42.5)
+plt.ylabel("pos [nm]", fontsize=42.5)
+plt.xticks(fontsize=40.0)
+plt.yticks(fontsize=40.0)
+plt.xlim([t_com[0],t_com[-1]])
 plt.show()
 
 # Saving COM position

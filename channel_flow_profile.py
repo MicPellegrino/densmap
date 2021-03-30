@@ -61,7 +61,10 @@ profile_kinetic_energy /= n_fin-n_init
 
 Ly = 4.65840
 volume = Lx*Ly*Lz
-h2o_density = 1.66053904020*tot_amu/(volume)
+# 2020
+# h2o_density = 1.66053904020*tot_amu/(volume)
+# 2021
+h2o_density = 1.66053904020*tot_amu / (Nx*Nz)
 print("density = "+str(h2o_density))
 
 # Linear regression on velocity profile

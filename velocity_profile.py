@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 # FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
-FP = dm.fitting_parameters( par_file='parameters_test.txt' )
+# FP = dm.fitting_parameters( par_file='parameters_test.txt' )
+FP = dm.fitting_parameters( par_file='parameters_viscosity.txt' )
 folder_name = FP.folder_name
 file_root = 'flow_'
 Lx = FP.lenght_x
@@ -47,13 +48,14 @@ U = 0.0
 velocity_profile = np.zeros( Nz, dtype=float )
 ### Vertical velocity profile ###
 vervel_profile = np.zeros( Nz, dtype=float )
-density_profile = np.zeros( Nz, dtype=float )
+density_profile_z = np.zeros( Nz, dtype=float )
 ###
 vx_bin_upp = np.zeros( Nx, dtype=float )
 vx_bin_low = np.zeros( Nx, dtype=float )
 vx_bin_half = np.zeros( Nx, dtype=float )
 vz_bin_upp = np.zeros( Nx, dtype=float )
 vz_bin_low = np.zeros( Nx, dtype=float )
+density_profile_x = np.zeros( Nx, dtype=float )
 for idx in range(n_init, n_fin+1) :
     if idx%n_dump==0 :
         print("Obtainig frame "+str(idx))
@@ -64,23 +66,25 @@ for idx in range(n_init, n_fin+1) :
     velocity_profile += np.mean(v_x[i_min:i_max+1,], axis=0)
     ### Vertical velocity profile ###
     vervel_profile += np.mean(v_z[i_min:i_max+1,], axis=0) 
-    density_profile += np.mean(rho[i_min:i_max+1,], axis=0)
+    density_profile_z += np.mean(rho[i_min:i_max+1,], axis=0)
     ###
     vx_bin_upp += v_x[:,idx_bin_upp]
     vx_bin_low += v_x[:,idx_bin_low]
     vz_bin_upp += v_z[:,idx_bin_upp]
     vz_bin_low += v_z[:,idx_bin_low]
     vx_bin_half += v_x[:,idx_half_plane]
+    density_profile_x += rho[:,idx_half_plane]
 velocity_profile /= (n_fin-n_init+1)
 vx_bin_upp /= (n_fin-n_init+1)
 vx_bin_low /= (n_fin-n_init+1)
 vz_bin_upp /= (n_fin-n_init+1)
 vz_bin_low /= (n_fin-n_init+1)
 vx_bin_half /= (n_fin-n_init+1)
+density_profile_x /= (n_fin-n_init+1)
 ### Vertical velocity profile ###
 vervel_profile /= (n_fin-n_init+1)
-density_profile /= (n_fin-n_init+1)
-rho0 = np.mean(density_profile[int(0.25*Nz):int(0.75*Nz)])
+density_profile_z /= (n_fin-n_init+1)
+rho0 = np.mean(density_profile_z[int(0.25*Nz):int(0.75*Nz)])
 ###
 
 # Polyfit velocity profile (escluding a few bins close to the wall)
@@ -92,8 +96,6 @@ print("z_+ = "+str(z_p))
 print("z_- = "+str(z_m))
 
 plt.plot(z, vervel_profile, 'r-', linewidth=2.5)
-# plt.plot(z, density_profile, 'k-', linewidth=2.5)
-# plt.ylabel("v, rho [-1]", fontsize=25)
 plt.ylabel("v [nm/ps]", fontsize=25)
 plt.xlabel("z [nm]", fontsize=25)
 plt.title(FP.folder_name, fontsize=30)
@@ -146,4 +148,18 @@ plt.yticks(fontsize=20)
 plt.legend(fontsize=20)
 plt.xlim([0,Lx])
 # plt.ylim([- 2.0*U, 2.0*U])
+plt.show()
+
+plt.plot(z, density_profile_z, 'b-', linewidth=2.0)
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.legend(fontsize=20)
+plt.xlim([0,Lz])
+plt.show()
+
+plt.plot(x, density_profile_x, 'b-', linewidth=2.0)
+plt.xticks(fontsize=20)
+plt.yticks(fontsize=20)
+plt.legend(fontsize=20)
+plt.xlim([0,Lx])
 plt.show()

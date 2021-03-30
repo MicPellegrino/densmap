@@ -32,21 +32,21 @@ def func_egg(t, b) :
 
 # equil_contact_angles = np.array([124.86, 95.67, 70.58, 42.76, 23.68])
 # equil_contact_angles = np.array([95.67, 70.58, 42.76, 23.68])
-equil_contact_angles = np.deg2rad(np.array([95.0, 69.1, 38.8, 14.7]))
+equil_contact_angles = np.deg2rad(np.array([127.4, 95.0, 69.1, 38.8, 14.7]))
 
-# last_steady = np.array([0.6, 0.25, 0.10, 0.05, 0.01])
-# first_unsteady = np.array([0.9, 0.3, 0.20, 0.10, 0.05])
-last_steady = np.array([0.25, 0.10, 0.05, 0.01])
-first_unsteady = np.array([0.3, 0.20, 0.10, 0.05])
+last_steady = np.array([0.6, 0.25, 0.10, 0.03, 0.01])
+first_unsteady = np.array([0.9, 0.3, 0.15, 0.05, 0.05])
+# last_steady = np.array([0.25, 0.10, 0.05, 0.01])
+# first_unsteady = np.array([0.3, 0.20, 0.10, 0.05])
 
 critical_estimate = 0.5*(last_steady + first_unsteady)
 
 popt, pcov = opt.curve_fit(func_pow3, equil_contact_angles, critical_estimate, p0=1.0)
 a = popt[0]
 print("a="+str(a))
-theta = np.deg2rad(np.linspace(0.0, 120.0, 150))
+theta = np.deg2rad(np.linspace(0.0, 130.0, 100))
 ca_cr_est = a*theta**3
-plt.plot(np.rad2deg(theta), ca_cr_est, 'k-', label=r'$Ca_{cr}\sim a\cdot\theta_0^3$')
+plt.plot(np.rad2deg(theta), ca_cr_est, 'k--', linewidth=2.5, label=r'$Ca_{cr}\sim a_0\cdot\theta_0^3$')
 
 """
 popt, pcov = opt.curve_fit(lambda t, b : func_egg(t, b, a), \
@@ -71,15 +71,15 @@ plt.plot( equil_contact_angles, critical_estimate, \
         'x', color='black', markersize=17.5, markeredgewidth=2.5 )
 """
 plt.plot( np.rad2deg(equil_contact_angles), first_unsteady, \
-        'x', color='red', markersize=17.5, markeredgewidth=2.5, label='first unsteady' )
+        'x', color='red', markersize=17.5, markeredgewidth=3.5, label='first unsteady' )
 plt.plot( np.rad2deg(equil_contact_angles), last_steady, \
-        'o', color='green', markersize=12.0, label='last steady' )
+        'o', color='green', markersize=13.5, label='last steady' )
 
-plt.title(r'Critical capillary number ($L_z\sim30$nm)', fontsize=40.0)
+plt.title(r'Critical capillary number ($L_z\sim30$nm, $\mu_l/\mu_v=\infty$)', fontsize=40.0)
 plt.legend(fontsize=30.0)
-plt.xticks(fontsize=25.0)
-plt.yticks(fontsize=25.0)
+plt.xticks(fontsize=27.5)
+plt.yticks(fontsize=27.5)
 plt.xlabel('Contact angle [deg]', fontsize=37.5)
 plt.ylabel('Capillary number [-1]', fontsize=37.5)
-plt.xlim([0.0, 120.0])
+plt.xlim([0.0, 130.0])
 plt.show()
