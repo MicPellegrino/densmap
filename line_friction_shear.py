@@ -14,6 +14,7 @@ def array_from_file( filename ):
             my_list.append(float(line.split()[0]))
     return np.array(my_list)
 
+# Theta0 = 95deg
 avg_theta_0 = 95.67050716578869
 std_theta_0 = 4.299262399062776
 
@@ -25,8 +26,21 @@ folders = [ 'ShearDynamic/Q2_Ca005',
 
 capillary_number = np.array([ 0.05, 0.10, 0.15, 0.20, 0.25])
 
+# Theta0 = 70deg
+"""
+avg_theta_0 = 70.57848168277057
+std_theta_0 = 4.165214790945542
+
+folders = [ 'ShearDynamic/Q3_Ca005', 
+            'ShearDynamic/Q3_Ca006', 
+            'ShearDynamic/Q3_Ca008',
+            'ShearDynamic/Q3_Ca010' ]
+
+capillary_number = np.array([ 0.05, 0.06, 0.08, 0.10])
+"""
+
 # Init averaging
-t_0 = 4500
+t_0 = 3200
 
 adv_collect = []
 rec_collect = []
@@ -54,6 +68,9 @@ avg_angle_adv = np.array( avg_angle_adv )
 avg_angle_rec = np.array( avg_angle_rec )
 std_angle_adv = np.array( std_angle_adv )
 std_angle_rec = np.array( std_angle_rec )
+
+print("Ca =         "+str(capillary_number))
+print("theta_d =    "+str(avg_angle_adv))
 
 def mkt_formula(cap, a_mkt, t0) :
     din_t = np.rad2deg( np.arccos( np.cos(np.deg2rad(t0)) - cap*a_mkt )  )
@@ -118,8 +135,8 @@ plt.plot(capillary_adv, mkt_adv(capillary_adv), 'r--', linewidth=2.0, \
 plt.plot(capillary_rec, mkt_rec(capillary_rec), 'b--', linewidth=2.0, \
         label=r'MKT, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_rec)+ \
         '+/-'+'{:.3f}'.format( std_rec ) )
-plt.plot([0.275, 0.275], [50.0, 140.0], 'k--', label='stab. threshold')
-plt.plot([-0.275, -0.275], [50.0, 140.0], 'k--')
+plt.plot([0.275, 0.275], [0.0, 140.0], 'k--', label='stab. threshold')
+plt.plot([-0.275, -0.275], [0.0, 140.0], 'k--')
 
 # Plotting +/- standard deviation #
 """
@@ -136,8 +153,8 @@ plt.xticks(fontsize=20.0)
 plt.yticks(fontsize=20.0)
 plt.ylabel(r'$\theta_d$ [deg]', fontsize=25.0)
 plt.xlabel(r'$Ca$ [-1]', fontsize=25.0)
-plt.xlim([-0.3, 0.3])
-plt.ylim([50.0, 140.0])
+plt.xlim([-0.4, 0.4])
+plt.ylim([40.0, 140.0])
 plt.show()
 
 # Fitting PF #
@@ -154,8 +171,8 @@ popt_rec, pcov_rec = \
 mu_ratio_adv = popt_adv[0]
 mu_ratio_rec = popt_rec[0]
 
-capillary_adv = np.linspace(0, 0.3, 100)
-capillary_rec = np.linspace(-0.30, 0.0, 100)
+capillary_adv = np.linspace(0, 0.4, 100)
+capillary_rec = np.linspace(-0.40, 0.0, 100)
 lin_pf_adv = np.vectorize(lambda u : pf_fit(u, mu_ratio_adv))
 lin_pf_rec = np.vectorize(lambda u : pf_fit(u, mu_ratio_rec))
 
@@ -186,8 +203,8 @@ plt.plot(capillary_adv, lin_pf_adv(capillary_adv), 'r--', linewidth=2.0, \
 plt.plot(capillary_rec, lin_pf_rec(capillary_rec), 'b--', linewidth=2.0, \
         label=r'PF, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_rec)+ \
         '+/-'+'{:.3f}'.format( std_rec ) )
-plt.plot([0.275, 0.275], [50.0, 140.0], 'k--', label='stab. threshold')
-plt.plot([-0.275, -0.275], [50.0, 140.0], 'k--')
+plt.plot([0.275, 0.275], [0.0, 140.0], 'k--', label='stab. threshold')
+plt.plot([-0.275, -0.275], [0.0, 140.0], 'k--')
 
 plt.title("Fit of PF (Yue&Feng) and estimate of c.l. friction", fontsize=30.0)
 plt.legend(fontsize=20.0, loc='lower right')
@@ -195,6 +212,6 @@ plt.xticks(fontsize=20.0)
 plt.yticks(fontsize=20.0)
 plt.ylabel(r'$\theta_d$ [deg]', fontsize=25.0)
 plt.xlabel(r'$Ca$ [-1]', fontsize=25.0)
-plt.xlim([-0.3, 0.3])
-plt.ylim([50.0, 140.0])
+plt.xlim([-0.4, 0.4])
+plt.ylim([40.0, 140.0])
 plt.show()

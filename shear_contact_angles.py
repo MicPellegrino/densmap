@@ -77,6 +77,7 @@ popt, pcov = curve_fit(func, tau, acf, p0=(4,0.05))
 print("Time constrant: tau="+str(1.0/popt[1])+"ps")
 
 mean_angle_2 = mean_angle**2
+"""
 plt.plot(tau, acf/mean_angle_2, 'b-', linewidth=2.00, label='ACF')
 plt.plot(tau, np.ones(tau.shape), 'r--', linewidth=2.00, label='mean^2='+'{:.2f}'.format(mean_angle_2)+"deg^2")
 plt.plot(tau, 1.0 + popt[0]*np.exp(-popt[1]*tau)/mean_angle_2, 'k-.', linewidth=2.00, label='exp. fit')
@@ -88,6 +89,7 @@ plt.xlim([tau[0], tau[-1]])
 plt.xticks(fontsize=15.0)
 plt.yticks(fontsize=15.0)
 plt.show()
+"""
 
 # Averaging
 array = dict()
@@ -105,13 +107,13 @@ plt.figure()
 for l in labels :
     array[l] = array_from_file('/home/michele/densmap/ShearDropModes/'+folder_label+'/angle_'+l+'.txt')
     mean[l], std[l], bins[l], dist[l] = dm.position_distribution(array[l][idx_0:], int(np.sqrt(len(array[l][idx_0:]))))
-    plt.step(bins[l], dist[l], cols[l], label=l.upper()+r', $<\theta>$='+"{:.3f}".format(mean[l])+"deg", linewidth=3.5)
-plt.title('Equilibrium distribution of the contact angle', fontsize=40.0)
+    plt.step(bins[l], dist[l], cols[l], label=l.upper()+r', $<\theta>$='+"{:.3f}".format(mean[l])+"deg", linewidth=7.5)
+plt.title('Equilibrium c. a. distribution', fontsize=40.0)
 plt.xlabel(r'$\theta-<\theta>$ [deg]', fontsize=37.5)
 plt.ylabel('pdf', fontsize=37.5)
-plt.xticks(fontsize=25.0)
-plt.yticks(fontsize=25.0)
-plt.legend(fontsize=30.0)
+plt.xticks(fontsize=35.0)
+plt.yticks(fontsize=35.0)
+plt.legend(fontsize=37.5)
 plt.show()
 
 theta_eq = 0.25 * ( tl + tr + bl + br )
@@ -123,16 +125,17 @@ print("<theta>="+str(mean_angle)+"; std(theta)="+str(std_angle)+"; err(theta)="+
 
 for l in labels :
     plt.plot(time, array[l], cols[l], label=l+', mean='+"{:.3f}".format(mean[l])+"deg")
-plt.title('Equilibrium contact angle', fontsize=30.0)
-plt.xlabel('time [ps]', fontsize=30.0)
-plt.ylabel('angle [deg]', fontsize=30.0)
-plt.xticks(fontsize=15.0)
-plt.yticks(fontsize=15.0)
-plt.legend(fontsize=20.0)
+plt.title('Equilibrium c. a. signal', fontsize=40.0)
+plt.xlabel('time [ps]', fontsize=37.5)
+plt.ylabel('angle [deg]', fontsize=37.5)
+plt.xticks(fontsize=35.0)
+plt.yticks(fontsize=35.0)
+plt.legend(fontsize=37.5)
 plt.xlim([time[0], time[-1]])
 plt.show()
 
 # Correlation matrix
+"""
 data = {'TL': array['tl'][idx_0:],
         'BL': array['bl'][idx_0:],
         'TR': array['tr'][idx_0:],
@@ -144,4 +147,3 @@ sn.heatmap(covMatrix, annot=True, fmt='.3g', cmap="YlGnBu")
 plt.title('Covariance matrix for equilibrium c. a. [deg^2]', fontsize=40.0)
 plt.axis('equal')
 plt.show()
-

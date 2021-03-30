@@ -81,8 +81,10 @@ foot_l = foot_l[Nb:]
 foot_r = foot_r[Nb:]
 angle_l = angle_l[Nb:]
 angle_r = angle_r[Nb:]
+radius = radius[Nb:]
 center = 0.5*(foot_r+foot_l)
-branch_right = foot_r - center
+# branch_right = foot_r - center
+branch_right = 0.5*radius
 
 ### SIMULATION ###
 # Macroscopic angle (given by circular cap)
@@ -97,19 +99,17 @@ f = lambda x : sin( phi(x) )
 V = lambda x : ( cos( theta_e ) - cos( phi(x) ) ) / ( dsdx(x)*f(x) )
 # Numerical integration
 # Final time [ps]
-t_fin = 9140.0
-T_fin = t_fin/tau
+Nt = int(10*len(time))
 dt = 0.1*t_bin/tau
-Nt = int(round(T_fin/dt))
 
 ### LINE FRICTION ###
 # Tolerance on the reduced error
 toll = 0.0001
 Kmax = 12
 rel_err = 1+toll
-mu_star_a = 13.0
+mu_star_a = 10.5
 rel_err_a = 0.00096282223226555
-mu_star_b = 14.0
+mu_star_b = 12.5
 rel_err_b = 0.00128886989252967
 
 k=0
