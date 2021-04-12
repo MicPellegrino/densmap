@@ -425,7 +425,7 @@ class droplet_data :
         plt.savefig('contact_angles.eps')
         mpl.use("TkAgg")
 
-    def movie_contour(droplet_data, crop_x, crop_z, dz, circle=True, contact_line=True):
+    def movie_contour(droplet_data, crop_x, crop_z, dz, circle=True, contact_line=True, fun_sub=None, dfun_sub=None):
         mpl.use("Agg")
         print("[densmap] Producing movie of the interface dynamics")
         FFMpegWriter = manimation.writers['ffmpeg']
@@ -434,10 +434,22 @@ class droplet_data :
         writer = FFMpegWriter(fps=30, metadata=metadata)
         fig = plt.figure()
         fig_cont, = plt.plot([], [], 'k-', linewidth=1.5)
+        # CURRENTLY TESTING: CONTACT LINE OVER ROUGH SUBSTRATES #
+        """
         fig_left, = plt.plot([], [], 'r-', linewidth=1.0)
         fig_right, = plt.plot([], [], 'b-', linewidth=1.0)
         fig_pl, = plt.plot([], [], 'r.', linewidth=1.5)
         fig_pr, = plt.plot([], [], 'b.', linewidth=1.5)
+        """
+        fig_pl, = plt.plot([], [], 'b.', linewidth=1.5)
+        fig_pr, = plt.plot([], [], 'b.', linewidth=1.5)
+        x_eval = np.linspace(0, crop_x, 500)
+        fig_substrate, = plt.plot([], [], 'r-', linewidth=1.0)
+        fig_cl_slope_l, = plt.plot([], [], 'm-', linewidth=1.0)
+        fig_cl_slope_r, = plt.plot([], [], 'm-', linewidth=1.0)
+        if contact_line :
+            fig_substrate.set_data(x_eval, fun_sub(x_eval))
+        #########################################################
         fig_cir, = plt.plot([], [], 'g-', linewidth=0.75)
         plt.title('Droplet Spreading')
         plt.xlabel('x [nm]')
@@ -454,17 +466,30 @@ class droplet_data :
                 t_label = str(droplet_data.time[i])+' ps'
                 textvar = plt.text(1.5, 14.0, t_label)
                 if contact_line :
+                    # CURRENTLY TESTING: CONTACT LINE OVER ROUGH SUBSTRATES #
+                    xl, xr = detect_contact_rough( droplet_data.contour[i], 0.3, fun_sub )
+                    fig_pl.set_data(xl, fun_sub(xl))
+                    fig_pr.set_data(xr, fun_sub(xr))
+                    sp_xl = xl + np.linspace(-3.0,3.0, 3)
+                    sp_xr = xr + np.linspace(-3.0,3.0, 3)
+                    sp_zl = fun_sub(xl) + dfun_sub(xl)*np.linspace(-3.0,3.0, 3)
+                    sp_zr = fun_sub(xr) + dfun_sub(xr)*np.linspace(-3.0,3.0, 3)
+                    fig_cl_slope_l.set_data(sp_xl, sp_zl)
+                    fig_cl_slope_r.set_data(sp_xr, sp_zr)
+                    """
                     fig_left.set_data([droplet_data.foot_left[i][0], droplet_data.foot_left[i][0]+dx_l],
                         [droplet_data.foot_left[i][1], droplet_data.foot_left[i][1]+dz])
                     fig_right.set_data([droplet_data.foot_right[i][0], droplet_data.foot_right[i][0]+dx_r],
                         [droplet_data.foot_right[i][1], droplet_data.foot_right[i][1]+dz])
                     fig_pl.set_data(droplet_data.foot_left[i][0], droplet_data.foot_left[i][1])
                     fig_pr.set_data(droplet_data.foot_right[i][0], droplet_data.foot_right[i][1])
+                    """
+                    #########################################################
                 if circle :
                     fig_cir.set_data(circle_x, circle_z)
                 plt.axis('scaled')
-                plt.xlim(0, crop_x)
-                plt.ylim(0, crop_z)
+                plt.xlim(0.0, crop_x)
+                plt.ylim(0.0, crop_z)
                 writer.grab_frame()
                 textvar.remove()
         mpl.use("TkAgg")
@@ -959,6 +984,28 @@ def detect_contour (
     contour = contour + np.array([[0.5*hx],[0.5*hz]])
 
     return contour
+
+"""
+    Pin-point the contact line position over a corrugated substrate
+"""
+def detect_contact_rough(
+    contour,
+    delta_th,
+    fun_sub
+    ) :
+
+    N = len(contour[0,:])
+    delta = np.abs( contour[1,:] - fun_sub(contour[0,:]) )
+    for i in range(N) :
+        if delta[i] > delta_th :
+            delta[i] = np.nan
+        else :
+            delta[i] = 0
+    x = contour[0,:] + delta
+    x_cl_left =  np.nanmin(x)
+    x_cl_right = np.nanmax(x)
+
+    return x_cl_left, x_cl_right
 
 """
     Detect x and z coordinates of the c.o.m.
