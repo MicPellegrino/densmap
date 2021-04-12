@@ -173,28 +173,24 @@ cox = lambda t, p : p*t
 p_cox, _ = opt.curve_fit(cox, vec_cox, diff3)
 length_ratio = np.exp(p_cox[0]/9.0)
 print("L/L_m (Cox) = "+str(length_ratio))
-# plt.plot(vec_cox[0::plot_sampling], diff3[0::plot_sampling], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
-plt.plot(vec_cox[0::2*plot_sampling], diff3[0::2*plot_sampling], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
-Ca = np.linspace(0.0, max(vec_cox), 25)
-plt.plot(Ca, p_cox[0]*Ca, 'm--', linewidth=3.0, label=r'fit: $U\sim p_0(\theta_{app}^3-\theta_m^3)$')
-plt.legend(fontsize=20.0)
-plt.show()
 
-# Variance of dynamic contact angle
-"""
-young_stress_r = -cos(angle_r[N_avg:-N_avg]) + cos(contact_angle[N_avg:-N_avg])
-young_stress_l = -cos(angle_l[N_avg:-N_avg]) + cos(contact_angle[N_avg:-N_avg])
-std_stress =  0.5* ( np.cumsum(young_stress_r*young_stress_r) \
-        + np.cumsum(young_stress_l*young_stress_l) ) / np.arange(1, len(young_stress_r)+1)
-plt.plot(time_ns[N_avg:-N_avg], std_stress)
+plt.title('Viscous bending effect', fontsize=30.0)
+# plt.plot(vec_cox[0::plot_sampling], diff3[0::plot_sampling], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
+plt.semilogx(vec_cox[0::2*plot_sampling], diff3[0::2*plot_sampling], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
+Ca = np.linspace(0.004, max(vec_cox+0.05), 250)
+plt.semilogx(Ca, p_cox[0]*Ca, 'm--', linewidth=3.0, label=r'fit: $(\theta_c^3-\theta_m^3)\sim p_0\cdot U$')
+plt.legend(fontsize=20.0)
+plt.ylabel(r'$\theta_c^3-\theta_m^3$ [-1]', fontsize=30.0)
+plt.xlabel(r'$U/U_{ref}$ [-1]', fontsize=30.0)
+plt.yticks(fontsize=plot_tcksize)
+plt.xticks(fontsize=plot_tcksize)
+plt.xlim([Ca[0], Ca[-1]])
 plt.show()
-print("s2(Fy/gamma) = "+str(std_stress[-1]))
-"""
 
 # Transform into cos and plot againts velocity
 cos_ca = cos(theta_0)-cos_vec(contact_angle[N_avg:-N_avg])
 # cos_ca = cos(theta_0)-cos_vec(angle_circle[N_avg:-N_avg])
-cos_range = np.linspace(0, max(cos_ca), 25)
+cos_range = np.linspace(0.02, max(cos_ca), 250)
 
 # Fit polynomial of desired order
 # coef_ca = np.polyfit(cos_ca, velocity_fit_red, 3, w=weights)
@@ -224,16 +220,14 @@ t_range  = np.linspace(0.0, 180.0, 500)
 
 fig2, (ax3, ax4) = plt.subplots(1, 2)
 
-# plt.title(r'Linear regression: $U\sim-a\cdot\cos(\theta)+b$', fontsize=30.0)
-# plt.plot(cos_ca, velocity_fit_red, 'k.')
-# plt.plot(cos_range, np.polyval(coef_ca, cos_range), 'r--', linewidth=2.0, label='lin. fit')
-
 ax3.set_title('MKT expression fit', fontsize=30.0)
 ax3.plot(cos_ca[0::plot_sampling], velocity_fit_red[0::plot_sampling], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
-ax3.plot(cos_range, mkt_3(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim a_1 x + a_3 x^3$')
-ax3.plot(cos_range, popt[0]*cos_range, 'g--', linewidth=3.0, label=r'linear limit for $\delta\cos\rightarrow 0$')
+ax3.semilogy(cos_range, mkt_3(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim a_1 x + a_3 x^3$')
+ax3.semilogy(cos_range, popt[0]*cos_range, 'g--', linewidth=3.0, label=r'linear limit for $\delta\cos\rightarrow 0$')
 # Johansson 2018
-# ax3.plot(cos_ca, therm_fun(contact_angle[N_avg:-N_avg], *popt_therm), 'c-', linewidth=2.5, label='Johansson & Hess 2018')
+theta_thermo = np.linspace(min(contact_angle[N_avg:-N_avg]), max(contact_angle[N_avg:-N_avg]), 250)
+cos_thermo = cos(theta_0)-cos(theta_thermo)
+ax3.semilogy(cos_thermo[10:], therm_fun(theta_thermo[10:], *popt_therm), 'c-', linewidth=2.5, label='Johansson & Hess 2018')
 # ------------ #
 ax3.set_xlabel(r'$\cos\theta_0-\cos\theta$ [-1]', fontsize=30.0)
 ax3.set_ylabel(r'$U/U_{ref}$ [-1]', fontsize=30.0)

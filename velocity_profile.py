@@ -6,9 +6,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
-# FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
+FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
 # FP = dm.fitting_parameters( par_file='parameters_test.txt' )
-FP = dm.fitting_parameters( par_file='parameters_viscosity.txt' )
+# FP = dm.fitting_parameters( par_file='parameters_viscosity.txt' )
 folder_name = FP.folder_name
 file_root = 'flow_'
 Lx = FP.lenght_x

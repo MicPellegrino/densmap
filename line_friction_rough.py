@@ -66,8 +66,17 @@ radius = radius[N_ini:N_fin]
 angle_circle = angle_circle[N_ini:N_fin]
 init_center = 0.5*(foot_l[0]+foot_r[0])
 
+fig1, (ax11, ax22) = plt.subplots(1, 2)
+
+ax11.plot(time, radius)
+ax11.plot(time, foot_r-foot_l)
+
+ax22.plot(time, radius-(foot_r-foot_l))
+
+plt.show()
+
 # Savitzky-Golay filter
-sav_gol_win = int(1000/dt)
+sav_gol_win = int(800/dt)
 sav_gol_win = sav_gol_win + (1-sav_gol_win%2)
 sav_gol_deg = 3
 foot_l_sg = sgn.savgol_filter(foot_l, sav_gol_win, sav_gol_deg)
@@ -175,11 +184,11 @@ velocity_r_red = velocity_r_filter[N_avg:-N_avg]/U_ref
 velocity_fit_red = np.concatenate((velocity_l_red, velocity_r_red), axis=None)
 
 # Transform into cos and plot againts velocity
-# cos_ca_l = cos(theta_0)-cos_vec(contact_angle_l[N_avg:-N_avg])
-# cos_ca_r = cos(theta_0)-cos_vec(contact_angle_r[N_avg:-N_avg])
-# cos_ca = np.concatenate((cos_ca_l, cos_ca_r), axis=None)
-cos_ca = cos(theta_0)-cos_vec(angle_circle[N_avg:-N_avg])
-cos_ca = np.concatenate((cos_ca, cos_ca), axis=None)
+cos_ca_l = cos(theta_0)-cos_vec(contact_angle_l[N_avg:-N_avg])
+cos_ca_r = cos(theta_0)-cos_vec(contact_angle_r[N_avg:-N_avg])
+cos_ca = np.concatenate((cos_ca_l, cos_ca_r), axis=None)
+# cos_ca = cos(theta_0)-cos_vec(angle_circle[N_avg:-N_avg])
+# cos_ca = np.concatenate((cos_ca, cos_ca), axis=None)
 cos_range = np.linspace(0, max(cos_ca), 25)
 
 # Fit y = a1*x + a3*x^3
@@ -189,7 +198,7 @@ t_disc = 0;
 N_disc = np.argmin(np.abs(time-t_disc))
 
 mkt_exp = lambda x, p0, p1 : p0*np.exp(-p1*x)
-popt, _ = opt.curve_fit(mkt_exp, cos_ca[N_disc:], velocity_fit_red[N_disc:])
+popt, _ = opt.curve_fit(mkt_exp, cos_ca[N_disc:], np.abs(velocity_fit_red[N_disc:]))
 
 # Example: Ca=0.1
 # theta_d = 105.5
@@ -205,10 +214,10 @@ fig2, (ax3) = plt.subplots(1, 1)
 # plt.plot(cos_range, np.polyval(coef_ca, cos_range), 'r--', linewidth=2.0, label='lin. fit')
 
 ax3.set_title('MKT expression fit', fontsize=30.0)
-ax3.plot(cos_ca[N_disc::int(0.75*plot_sampling)], velocity_fit_red[N_disc::int(0.75*plot_sampling)], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
+ax3.plot(cos_ca[N_disc::int(0.75*plot_sampling)], np.abs(velocity_fit_red[N_disc::int(0.75*plot_sampling)]), 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
 ax3.plot(cos_range, mkt_exp(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim p_0 \cdot \exp(p_1 x)$')
 ax3.set_xlabel(r'$\cos\theta_0-\cos\theta$ [-1]', fontsize=30.0)
-ax3.set_ylabel(r'$U/U_{ref}$ [-1]', fontsize=30.0)
+ax3.set_ylabel(r'$|U/U_{ref}|$ [-1]', fontsize=30.0)
 ax3.legend(fontsize=20.0)
 ax3.tick_params(axis='x', labelsize=plot_tcksize)
 ax3.tick_params(axis='y', labelsize=plot_tcksize)
