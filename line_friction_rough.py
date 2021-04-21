@@ -52,8 +52,8 @@ angle_circle = array_from_file(folder_name+'/angle_fit.txt')
 
 # Cutoff inertial phase
 dt = time[1]-time[0]
-T_ini = 50.0                  # [ps]
-T_fin = 28000.0
+T_ini = 20.0                  # [ps]
+T_fin = 29000.0
 time_window = T_fin-T_ini
 print("Time window = "+str(time_window))
 print("Time step   = "+str(dt))
@@ -70,19 +70,10 @@ radius = radius[N_ini:N_fin]
 angle_circle = angle_circle[N_ini:N_fin]
 init_center = 0.5*(foot_l[0]+foot_r[0])
 
-"""
-fig1, (ax11, ax22) = plt.subplots(1, 2)
-ax11.plot(time, radius)
-ax11.plot(time, foot_r-foot_l)
-ax22.plot(time, radius-(foot_r-foot_l))
-plt.show()
-"""
-
 # Savitzky-Golay filter
-# sav_gol_win = int(800/dt)
 sav_gol_win = int(2210/dt)
 sav_gol_win = sav_gol_win + (1-sav_gol_win%2)
-sav_gol_deg = 3
+sav_gol_deg = 4
 foot_l_sg = sgn.savgol_filter(foot_l, sav_gol_win, sav_gol_deg)
 foot_r_sg = sgn.savgol_filter(foot_r, sav_gol_win, sav_gol_deg)
 
@@ -180,18 +171,34 @@ ax6.tick_params(axis='y', labelsize=plot_tcksize)
 
 plt.show()
 
-# plt.plot(time_ns, init_center-foot_l, 'b-', linewidth=2.0, label='left (raw)')
-# plt.plot(time_ns, foot_r-init_center, 'r-', linewidth=2.0, label='right (raw)')
-# plt.plot(time_ns, angle_l, 'b-', linewidth=2.0, label='contact line (right)')
-# plt.plot(time_ns, angle_r, 'r-', linewidth=2.0, label='contact line (left)')
+# Assessing Cox law
+# diff3 = np.deg2rad(angle_circle[N_avg:-N_avg])**3 - np.deg2rad(contact_angle[N_avg:-N_avg])**3
+diff3 = np.concatenate( (np.deg2rad(angle_circle[N_avg:-N_avg]+sub_angle_l[N_avg:-N_avg])**3 - np.deg2rad(angle_l[N_avg:-N_avg]+sub_angle_l[N_avg:-N_avg])**3,np.deg2rad(angle_circle[N_avg:-N_avg]-sub_angle_r[N_avg:-N_avg])**3 - np.deg2rad(angle_r[N_avg:-N_avg]-sub_angle_r[N_avg:-N_avg])**3), axis=None )
+# vec_cox = velocity_fit_red
+vec_cox = np.concatenate( (velocity_l_filter[N_avg:-N_avg],velocity_r_filter[N_avg:-N_avg]), axis=None)/U_ref
+cox = lambda t, p : p*t
+p_cox, _ = opt.curve_fit(cox, vec_cox, diff3)
+length_ratio = np.exp(p_cox[0]/9.0)
+print("L/L_m (Cox) = "+str(length_ratio))
+
+plt.title('Viscous bending effect', fontsize=30.0)
+plt.semilogx(vec_cox[0::plot_sampling], diff3[0::plot_sampling], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
+Ca = np.linspace(0.004, max(vec_cox+0.05), 250)
+plt.semilogx(Ca, p_cox[0]*Ca, 'm--', linewidth=3.0, label=r'fit: $(\theta_c-\alpha)^3-\theta_m^3\sim p_0\cdot U$')
+plt.legend(fontsize=20.0)
+plt.ylabel(r'$(\theta_c-\alpha)^3-\theta_m^3$ [-1]', fontsize=30.0)
+plt.xlabel(r'$U/U_{ref}$ [-1]', fontsize=30.0)
+plt.yticks(fontsize=plot_tcksize)
+plt.xticks(fontsize=plot_tcksize)
+plt.xlim([Ca[0], Ca[-1]])
+plt.show()
+
+"""
 plt.plot(time_ns, angle_l+sub_angle_l, 'b-', linewidth=2.0, label='left')
 plt.plot(time_ns, angle_r-sub_angle_r, 'r-', linewidth=2.0, label='right')
 plt.plot(time_ns, 37.8*np.ones(time_ns.shape), 'k--', linewidth=2.0, label='right')
-# plt.plot(time_ns, sub_angle_l, 'b-', linewidth=2.0, label='left')
-# plt.plot(time_ns, sub_angle_r, 'r-', linewidth=2.0, label='right')
 plt.show()
-
-# Variance of dynamic contact angle
+"""
 
 # Rescale speed
 velocity_l_red = velocity_l_filter[N_avg:-N_avg]/U_ref
@@ -202,12 +209,7 @@ velocity_fit_red = np.concatenate((velocity_l_red, velocity_r_red), axis=None)
 cos_ca_l = cos(theta_0)-cos_vec(contact_angle_l[N_avg:-N_avg])
 cos_ca_r = cos(theta_0)-cos_vec(contact_angle_r[N_avg:-N_avg])
 cos_ca = np.concatenate((cos_ca_l, cos_ca_r), axis=None)
-# cos_ca = cos(theta_0)-cos_vec(angle_circle[N_avg:-N_avg])
-# cos_ca = np.concatenate((cos_ca, cos_ca), axis=None)
 cos_range = np.linspace(0, max(cos_ca), 25)
-
-# Fit y = a1*x + a3*x^3
-# mkt_exp = lambda x, p0, p1, p2 : p0*np.exp(-p1*x)-p2
 
 t_disc = 0;
 N_disc = np.argmin(np.abs(time-t_disc))
@@ -215,18 +217,10 @@ N_disc = np.argmin(np.abs(time-t_disc))
 mkt_exp = lambda x, p0, p1 : p0*np.exp(-p1*x)
 popt, _ = opt.curve_fit(mkt_exp, cos_ca[N_disc:], np.abs(velocity_fit_red[N_disc:]))
 
-# Example: Ca=0.1
-# theta_d = 105.5
-# theta_d = 84.0
-# xi_d = cos(theta_0) - cos(theta_d)
 xi_range = np.linspace(-2.0, 2.0, 500)
 t_range  = np.linspace(0.0, 180.0, 500)
 
 fig2, (ax3) = plt.subplots(1, 1)
-
-# plt.title(r'Linear regression: $U\sim-a\cdot\cos(\theta)+b$', fontsize=30.0)
-# plt.plot(cos_ca, velocity_fit_red, 'k.')
-# plt.plot(cos_range, np.polyval(coef_ca, cos_range), 'r--', linewidth=2.0, label='lin. fit')
 
 ax3.set_title('MKT expression fit', fontsize=30.0)
 ax3.plot(cos_ca[N_disc::int(0.75*plot_sampling)], np.abs(velocity_fit_red[N_disc::int(0.75*plot_sampling)]), 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
