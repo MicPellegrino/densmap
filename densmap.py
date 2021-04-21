@@ -354,6 +354,8 @@ class droplet_data :
         droplet_data.foot_right = []
         droplet_data.angle_left = []
         droplet_data.angle_right = []
+        droplet_data.sub_angle_left = []
+        droplet_data.sub_angle_right = []
         droplet_data.cotangent_left = []
         droplet_data.cotangent_right = []
         droplet_data.circle_rad = []
@@ -389,6 +391,8 @@ class droplet_data :
         np.savetxt(save_dir+'/foot_r.txt', np.array(droplet_data.foot_right)[:,0])
         np.savetxt(save_dir+'/angle_l.txt', np.array(droplet_data.angle_left))
         np.savetxt(save_dir+'/angle_r.txt', np.array(droplet_data.angle_right))
+        np.savetxt(save_dir+'/sub_angle_r.txt', np.array(droplet_data.sub_angle_right))
+        np.savetxt(save_dir+'/sub_angle_l.txt', np.array(droplet_data.sub_angle_left))
         np.savetxt(save_dir+'/radius_fit.txt', droplet_data.radius_circle)
         np.savetxt(save_dir+'/angle_fit.txt', droplet_data.angle_circle)
 
@@ -435,19 +439,23 @@ class droplet_data :
         fig = plt.figure()
         fig_cont, = plt.plot([], [], 'k-', linewidth=1.5)
         # CURRENTLY TESTING: CONTACT LINE OVER ROUGH SUBSTRATES #
-        """
         fig_left, = plt.plot([], [], 'r-', linewidth=1.0)
         fig_right, = plt.plot([], [], 'b-', linewidth=1.0)
         fig_pl, = plt.plot([], [], 'r.', linewidth=1.5)
         fig_pr, = plt.plot([], [], 'b.', linewidth=1.5)
         """
         fig_pl, = plt.plot([], [], 'b.', linewidth=1.5)
-        fig_pr, = plt.plot([], [], 'b.', linewidth=1.5)
-        x_eval = np.linspace(0, crop_x, 500)
-        fig_substrate, = plt.plot([], [], 'r-', linewidth=1.0)
-        fig_cl_slope_l, = plt.plot([], [], 'm-', linewidth=1.0)
-        fig_cl_slope_r, = plt.plot([], [], 'm-', linewidth=1.0)
-        if contact_line :
+        fig_pr, = plt.plot([], [], 'b.', linewidth=1.5) 
+        fig_cl_slope_l, = plt.plot([], [], 'b-', linewidth=1.0)
+        fig_cl_slope_r, = plt.plot([], [], 'b-', linewidth=1.0)
+        fig_fit_l, = plt.plot([], [], 'm-', linewidth=1.0)
+        fig_fit_r, = plt.plot([], [], 'm-', linewidth=1.0)
+        fig_fit_slope_l, = plt.plot([], [], 'm-', linewidth=1.0)
+        fig_fit_slope_r, = plt.plot([], [], 'm-', linewidth=1.0)
+        """
+        if not(fun_sub==None) :
+            x_eval = np.linspace(crop_x[0], crop_x[1], 500)
+            fig_substrate, = plt.plot([], [], 'm-', linewidth=1.0)
             fig_substrate.set_data(x_eval, fun_sub(x_eval))
         #########################################################
         fig_cir, = plt.plot([], [], 'g-', linewidth=0.75)
@@ -467,16 +475,6 @@ class droplet_data :
                 textvar = plt.text(1.5, 14.0, t_label)
                 if contact_line :
                     # CURRENTLY TESTING: CONTACT LINE OVER ROUGH SUBSTRATES #
-                    xl, xr = detect_contact_rough( droplet_data.contour[i], 0.3, fun_sub )
-                    fig_pl.set_data(xl, fun_sub(xl))
-                    fig_pr.set_data(xr, fun_sub(xr))
-                    sp_xl = xl + np.linspace(-3.0,3.0, 3)
-                    sp_xr = xr + np.linspace(-3.0,3.0, 3)
-                    sp_zl = fun_sub(xl) + dfun_sub(xl)*np.linspace(-3.0,3.0, 3)
-                    sp_zr = fun_sub(xr) + dfun_sub(xr)*np.linspace(-3.0,3.0, 3)
-                    fig_cl_slope_l.set_data(sp_xl, sp_zl)
-                    fig_cl_slope_r.set_data(sp_xr, sp_zr)
-                    """
                     fig_left.set_data([droplet_data.foot_left[i][0], droplet_data.foot_left[i][0]+dx_l],
                         [droplet_data.foot_left[i][1], droplet_data.foot_left[i][1]+dz])
                     fig_right.set_data([droplet_data.foot_right[i][0], droplet_data.foot_right[i][0]+dx_r],
@@ -484,12 +482,41 @@ class droplet_data :
                     fig_pl.set_data(droplet_data.foot_left[i][0], droplet_data.foot_left[i][1])
                     fig_pr.set_data(droplet_data.foot_right[i][0], droplet_data.foot_right[i][1])
                     """
+                    idx_cll, idx_clr = detect_contact_rough( droplet_data.contour[i], 0.6, fun_sub )
+                    xl = droplet_data.contour[i][0,idx_cll]
+                    xr = droplet_data.contour[i][0,idx_clr]
+                    zl = droplet_data.contour[i][1,idx_cll]
+                    zr = droplet_data.contour[i][1,idx_clr]
+                    fig_pl.set_data(xl, zl)
+                    fig_pr.set_data(xr, zr)
+                    sp_xl = xl + np.linspace(-3.0,3.0, 3)
+                    sp_xr = xr + np.linspace(-3.0,3.0, 3)
+                    sp_zl = zl + dfun_sub(xl)*np.linspace(-3.0,3.0, 3)
+                    sp_zr = zr + dfun_sub(xr)*np.linspace(-3.0,3.0, 3)
+                    fig_cl_slope_l.set_data(sp_xl, sp_zl)
+                    fig_cl_slope_r.set_data(sp_xr, sp_zr)
+                    local_l, local_r = retrace_local_profile(droplet_data.contour[i], 2.0, idx_cll, idx_clr)
+                    p_l = np.polyfit( local_l[1,:] , local_l[0,:] , 2 )
+                    p_r = np.polyfit( local_r[1,:] , local_r[0,:] , 2 )
+                    fit_l = np.stack( ( np.polyval( p_l, local_l[1,:] ), local_l[1,:] ) )
+                    fit_r = np.stack( ( np.polyval( p_r, local_r[1,:] ), local_r[1,:] ) )
+                    fig_fit_l.set_data(fit_l[0,:], fit_l[1,:])
+                    fig_fit_r.set_data(fit_r[0,:], fit_r[1,:])
+                    dxdz_l = 2*p_l[0]*zl+p_l[1]
+                    dxdz_r = 2*p_r[0]*zr+p_r[1]
+                    sp_xl = xl + dxdz_l*np.linspace(-3.0,3.0, 3)
+                    sp_xr = xr + dxdz_r*np.linspace(-3.0,3.0, 3)
+                    sp_zl = zl + np.linspace(-3.0,3.0, 3)
+                    sp_zr = zr + np.linspace(-3.0,3.0, 3)
+                    fig_fit_slope_l.set_data( sp_xl, sp_zl )
+                    fig_fit_slope_r.set_data( sp_xr, sp_zr )
+                    """
                     #########################################################
                 if circle :
                     fig_cir.set_data(circle_x, circle_z)
                 plt.axis('scaled')
-                plt.xlim(0.0, crop_x)
-                plt.ylim(0.0, crop_z)
+                plt.xlim(crop_x[0], crop_x[1])      
+                plt.ylim(crop_z[0], crop_z[1])
                 writer.grab_frame()
                 textvar.remove()
         mpl.use("TkAgg")
@@ -1002,10 +1029,49 @@ def detect_contact_rough(
         else :
             delta[i] = 0
     x = contour[0,:] + delta
-    x_cl_left =  np.nanmin(x)
-    x_cl_right = np.nanmax(x)
+    idx_l = np.nanargmin(x)
+    idx_r = np.nanargmax(x)
 
-    return x_cl_left, x_cl_right
+    return idx_l, idx_r
+
+"""
+    Left and right branch
+"""
+def retrace_local_profile (
+    contour,
+    z_th,
+    idx_l,
+    idx_r
+    ) :
+
+    fl = True
+    fr = True
+    
+    # Left branch
+    x_l = []
+    z_l = []
+    i = idx_l
+    while (fl) :
+        if contour[1,i] < z_th + contour[1,idx_l] :
+            x_l.append(contour[0,i])
+            z_l.append(contour[1,i])
+            i += 1
+        else :
+            fl = False
+
+    # Right branch
+    x_r = []
+    z_r = []
+    i = idx_r
+    while (fr) :
+        if contour[1,i] < z_th + contour[1,idx_r] :
+            x_r.append(contour[0,i])
+            z_r.append(contour[1,i])
+            i -= 1
+        else :
+            fr = False
+
+    return np.stack((np.array(x_l), np.array(z_l))), np.stack((np.array(x_r), np.array(z_r)))
 
 """
     Detect x and z coordinates of the c.o.m.
@@ -1149,7 +1215,9 @@ def droplet_tracking (
     k_end,
     fit_param,
     file_root = '/flow_',
-    contact_line = True
+    contact_line = True,
+    f_sub = None,
+    df_sub = None
     ) :
 
     # Data structure that will be outputted
@@ -1171,11 +1239,30 @@ def droplet_tracking (
     bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
     intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
     if contact_line :
-        left_branch, right_branch, points_l, points_r = \
-            detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
-            z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-        foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
-            detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+        # Flat substrate
+        if f_sub == None :
+            left_branch, right_branch, points_l, points_r = \
+                detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+            foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+            sub_theta_l = 0.0
+            sub_theta_r = 0.0
+        # Rough substrate
+        else :
+            ### THIS SHOULD BE USER-DEFINED! ###
+            hbins = 0.6
+            hdz = 2.0
+            ### ############################ ###
+            idx_cll, idx_clr = detect_contact_rough( intf_contour, hbins, f_sub )
+            points_l, points_r = retrace_local_profile(intf_contour, hdz, idx_cll, idx_clr)
+            foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+            left_branch = np.NaN
+            right_branch = np.NaN
+            # SUB THETA 
+            sub_theta_l = - np.rad2deg( np.arctan( df_sub(foot_l[0]) ) )
+            sub_theta_r = - np.rad2deg( np.arctan( df_sub(foot_r[0]) ) )
     else :
         left_branch = np.NaN
         right_branch = np.NaN
@@ -1185,6 +1272,8 @@ def droplet_tracking (
         foot_r = np.NaN
         theta_l = np.NaN
         theta_r = np.NaN
+        sub_theta_l = np.NaN
+        sub_theta_r = np.NaN
         cot_l = np.NaN
         cot_r = np.NaN
     xc, zc, R, residue = circle_fit_droplet(intf_contour, z_th=fit_param.substrate_location)
@@ -1196,6 +1285,8 @@ def droplet_tracking (
     CD.foot_right.append( foot_r )
     CD.angle_left.append( theta_l )
     CD.angle_right.append( theta_r )
+    CD.sub_angle_left.append( sub_theta_l )
+    CD.sub_angle_right.append( sub_theta_r )
     CD.cotangent_left.append( cot_l )
     CD.cotangent_right.append( cot_r )
     CD.circle_rad.append(R)
@@ -1222,11 +1313,30 @@ def droplet_tracking (
         bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
         intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
         if contact_line :
-            left_branch, right_branch, points_l, points_r = \
-                detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
-                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-            foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
-                detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+            # Flat substrate
+            if f_sub == None :
+                left_branch, right_branch, points_l, points_r = \
+                    detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+                    z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+                foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                    detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+                sub_theta_l = 0.0
+                sub_theta_r = 0.0
+            # Rough substate
+            else :
+                ### THIS SHOULD BE USER-DEFINED! ###
+                hbins = 0.6
+                hdz = 2.0
+                ### ############################ ###
+                idx_cll, idx_clr = detect_contact_rough(intf_contour, hbins, f_sub )
+                points_l, points_r = retrace_local_profile(intf_contour, hdz, idx_cll, idx_clr)
+                foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                    detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+                left_branch = np.NaN
+                right_branch = np.NaN
+                # SUB THETA 
+                sub_theta_l = - np.rad2deg( np.arctan( df_sub(foot_l[0]) ) )
+                sub_theta_r = - np.rad2deg( np.arctan( df_sub(foot_r[0]) ) )
         else :
             left_branch = np.NaN
             right_branch = np.NaN
@@ -1236,6 +1346,8 @@ def droplet_tracking (
             foot_r = np.NaN
             theta_l = np.NaN
             theta_r = np.NaN
+            sub_theta_l = np.NaN
+            sub_theta_r = np.NaN
             cot_l = np.NaN
             cot_r = np.NaN
         xc, zc, R, residue = circle_fit_droplet(intf_contour, z_th=fit_param.substrate_location)
@@ -1247,6 +1359,8 @@ def droplet_tracking (
         CD.foot_right.append( foot_r )
         CD.angle_left.append( theta_l )
         CD.angle_right.append( theta_r )
+        CD.sub_angle_left.append( sub_theta_l )
+        CD.sub_angle_right.append( sub_theta_r )
         CD.cotangent_left.append( cot_l )
         CD.cotangent_right.append( cot_r )
         CD.circle_rad.append(R)

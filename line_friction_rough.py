@@ -45,13 +45,15 @@ foot_l = array_from_file(folder_name+'/foot_l.txt')
 foot_r = array_from_file(folder_name+'/foot_r.txt')
 angle_l = array_from_file(folder_name+'/angle_l.txt')
 angle_r = array_from_file(folder_name+'/angle_r.txt')
+sub_angle_l = array_from_file(folder_name+'/sub_angle_l.txt')
+sub_angle_r = array_from_file(folder_name+'/sub_angle_r.txt')
 radius = array_from_file(folder_name+'/radius_fit.txt')
 angle_circle = array_from_file(folder_name+'/angle_fit.txt')
 
 # Cutoff inertial phase
 dt = time[1]-time[0]
-T_ini = 250.0                  # [ps]
-T_fin = 24500.0
+T_ini = 50.0                  # [ps]
+T_fin = 28000.0
 time_window = T_fin-T_ini
 print("Time window = "+str(time_window))
 print("Time step   = "+str(dt))
@@ -62,21 +64,23 @@ foot_l = foot_l[N_ini:N_fin]
 foot_r = foot_r[N_ini:N_fin]
 angle_l = angle_l[N_ini:N_fin]
 angle_r = angle_r[N_ini:N_fin]
+sub_angle_l = sub_angle_l[N_ini:N_fin]
+sub_angle_r = sub_angle_r[N_ini:N_fin]
 radius = radius[N_ini:N_fin]
 angle_circle = angle_circle[N_ini:N_fin]
 init_center = 0.5*(foot_l[0]+foot_r[0])
 
+"""
 fig1, (ax11, ax22) = plt.subplots(1, 2)
-
 ax11.plot(time, radius)
 ax11.plot(time, foot_r-foot_l)
-
 ax22.plot(time, radius-(foot_r-foot_l))
-
 plt.show()
+"""
 
 # Savitzky-Golay filter
-sav_gol_win = int(800/dt)
+# sav_gol_win = int(800/dt)
+sav_gol_win = int(2210/dt)
 sav_gol_win = sav_gol_win + (1-sav_gol_win%2)
 sav_gol_deg = 3
 foot_l_sg = sgn.savgol_filter(foot_l, sav_gol_win, sav_gol_deg)
@@ -174,6 +178,17 @@ ax6.legend(fontsize=20.0)
 ax6.tick_params(axis='x', labelsize=plot_tcksize)
 ax6.tick_params(axis='y', labelsize=plot_tcksize)
 
+plt.show()
+
+# plt.plot(time_ns, init_center-foot_l, 'b-', linewidth=2.0, label='left (raw)')
+# plt.plot(time_ns, foot_r-init_center, 'r-', linewidth=2.0, label='right (raw)')
+# plt.plot(time_ns, angle_l, 'b-', linewidth=2.0, label='contact line (right)')
+# plt.plot(time_ns, angle_r, 'r-', linewidth=2.0, label='contact line (left)')
+plt.plot(time_ns, angle_l+sub_angle_l, 'b-', linewidth=2.0, label='left')
+plt.plot(time_ns, angle_r-sub_angle_r, 'r-', linewidth=2.0, label='right')
+plt.plot(time_ns, 37.8*np.ones(time_ns.shape), 'k--', linewidth=2.0, label='right')
+# plt.plot(time_ns, sub_angle_l, 'b-', linewidth=2.0, label='left')
+# plt.plot(time_ns, sub_angle_r, 'r-', linewidth=2.0, label='right')
 plt.show()
 
 # Variance of dynamic contact angle

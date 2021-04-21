@@ -12,7 +12,7 @@ mpl.use("Agg")
 # Output file name
 output_file_name = "com.mp4"
 
-folder_name = ''
+folder_name = 'Q4Ca005'
 file_root = 'flow_'
 
 # PARAMETERS TO TUNE
@@ -45,7 +45,7 @@ r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
 n_init = 1
-n_fin = 750
+n_fin = 2209
 dt = 12.5
 delta_th = 2.0
 

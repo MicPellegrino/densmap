@@ -118,7 +118,7 @@ N_spike_1 = int( T_spike_1 / dt )
 
 min_deg_sg = 3
 max_deg_sg = 6
-max_win_sg = int(1000/dt)
+max_win_sg = int(3000/dt)
 delta_win  = int(100/dt)
 vector_win = np.linspace(delta_win, max_win_sg, int(max_win_sg/delta_win))
 
