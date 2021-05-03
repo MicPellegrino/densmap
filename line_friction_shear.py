@@ -15,8 +15,11 @@ def array_from_file( filename ):
     return np.array(my_list)
 
 # Theta0 = 95deg
-avg_theta_0 = 95.67050716578869
+"""
+# avg_theta_0 = 95.67050716578869
+avg_theta_0 = 95.0
 std_theta_0 = 4.299262399062776
+Ca_cr = 0.275
 
 folders = [ 'ShearDynamic/Q2_Ca005', 
             'ShearDynamic/Q2_Ca010', 
@@ -25,22 +28,22 @@ folders = [ 'ShearDynamic/Q2_Ca005',
             'ShearDynamic/Q2_Ca025' ]
 
 capillary_number = np.array([ 0.05, 0.10, 0.15, 0.20, 0.25])
+"""
 
 # Theta0 = 70deg
-"""
-avg_theta_0 = 70.57848168277057
+# avg_theta_0 = 70.57848168277057
+avg_theta_0 = 68.8
 std_theta_0 = 4.165214790945542
+Ca_cr = 0.125
 
 folders = [ 'ShearDynamic/Q3_Ca005', 
-            'ShearDynamic/Q3_Ca006', 
             'ShearDynamic/Q3_Ca008',
             'ShearDynamic/Q3_Ca010' ]
 
-capillary_number = np.array([ 0.05, 0.06, 0.08, 0.10])
-"""
+capillary_number = np.array([ 0.05, 0.08, 0.10])
 
 # Init averaging
-t_0 = 3200
+t_0 = 5000
 
 adv_collect = []
 rec_collect = []
@@ -135,8 +138,8 @@ plt.plot(capillary_adv, mkt_adv(capillary_adv), 'r--', linewidth=2.0, \
 plt.plot(capillary_rec, mkt_rec(capillary_rec), 'b--', linewidth=2.0, \
         label=r'MKT, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_rec)+ \
         '+/-'+'{:.3f}'.format( std_rec ) )
-plt.plot([0.275, 0.275], [0.0, 140.0], 'k--', label='stab. threshold')
-plt.plot([-0.275, -0.275], [0.0, 140.0], 'k--')
+plt.plot([Ca_cr, Ca_cr], [0.0, 140.0], 'k--', label='stab. threshold')
+plt.plot([-Ca_cr, -Ca_cr], [0.0, 140.0], 'k--')
 
 # Plotting +/- standard deviation #
 """
@@ -153,8 +156,8 @@ plt.xticks(fontsize=20.0)
 plt.yticks(fontsize=20.0)
 plt.ylabel(r'$\theta_d$ [deg]', fontsize=25.0)
 plt.xlabel(r'$Ca$ [-1]', fontsize=25.0)
-plt.xlim([-0.4, 0.4])
-plt.ylim([40.0, 140.0])
+plt.xlim([-1.2*Ca_cr, 1.2*Ca_cr])
+plt.ylim([0.5*avg_theta_0, 1.5*avg_theta_0])
 plt.show()
 
 # Fitting PF #
@@ -203,8 +206,8 @@ plt.plot(capillary_adv, lin_pf_adv(capillary_adv), 'r--', linewidth=2.0, \
 plt.plot(capillary_rec, lin_pf_rec(capillary_rec), 'b--', linewidth=2.0, \
         label=r'PF, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_rec)+ \
         '+/-'+'{:.3f}'.format( std_rec ) )
-plt.plot([0.275, 0.275], [0.0, 140.0], 'k--', label='stab. threshold')
-plt.plot([-0.275, -0.275], [0.0, 140.0], 'k--')
+plt.plot([Ca_cr, Ca_cr], [0.0, 140.0], 'k--', label='stab. threshold')
+plt.plot([-Ca_cr, -Ca_cr], [0.0, 140.0], 'k--')
 
 plt.title("Fit of PF (Yue&Feng) and estimate of c.l. friction", fontsize=30.0)
 plt.legend(fontsize=20.0, loc='lower right')
@@ -212,6 +215,6 @@ plt.xticks(fontsize=20.0)
 plt.yticks(fontsize=20.0)
 plt.ylabel(r'$\theta_d$ [deg]', fontsize=25.0)
 plt.xlabel(r'$Ca$ [-1]', fontsize=25.0)
-plt.xlim([-0.4, 0.4])
-plt.ylim([40.0, 140.0])
+plt.xlim([-1.2*Ca_cr, 1.2*Ca_cr])
+plt.ylim([0.5*avg_theta_0, 1.5*avg_theta_0])
 plt.show()

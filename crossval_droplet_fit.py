@@ -19,13 +19,13 @@ def array_from_file( filename ):
 print("##############################################################################")
 print("# First test: rational polynomial fit for spreading curves over flat surface #")
 print("##############################################################################")
-folder_name = 'SpreadingData/FlatQ4'
+folder_name = 'SpreadingData/FlatQ3'
 time = array_from_file(folder_name+'/time.txt')
 foot_l = array_from_file(folder_name+'/foot_l.txt')
 foot_r = array_from_file(folder_name+'/foot_r.txt')
 dt = time[1]-time[0]
-T_ini = 200.0                  # [ps]
-T_fin = 24500.0
+T_ini = 50.0                  # [ps]
+T_fin = 19940.0
 time_window = T_fin-T_ini
 N_ini = int( T_ini / dt )
 N_fin = int( T_fin / dt )
@@ -103,22 +103,26 @@ time = array_from_file(folder_name+'/time.txt')
 foot_l = array_from_file(folder_name+'/foot_l.txt')
 foot_r = array_from_file(folder_name+'/foot_r.txt')
 dt = time[1]-time[0]
-T_ini = 250.0                   # [ps]
-T_fin = 24500.0
+T_ini = 20.0                   # [ps]
+T_fin = 33760.0
 time_window = T_fin-T_ini
 N_ini = int( T_ini / dt )
 N_fin = int( T_fin / dt )
 time = time[N_ini:N_fin]
 foot_l = foot_l[N_ini:N_fin]
 foot_r = foot_r[N_ini:N_fin]
-T_spike_0 = 8000                # [ps]
-T_spike_1 = 16000           
+T_spike_0 = 8500                # [ps]
+T_spike_1 = 14500           
 N_spike_0 = int( T_spike_0 / dt )
 N_spike_1 = int( T_spike_1 / dt )
+T_pin_0 = 14500                # [ps]
+T_pin_1 = 23000           
+N_pin_0 = int( T_pin_0 / dt )
+N_pin_1 = int( T_pin_1 / dt )
 
 min_deg_sg = 3
 max_deg_sg = 6
-max_win_sg = int(3000/dt)
+max_win_sg = int(2000/dt)
 delta_win  = int(100/dt)
 vector_win = np.linspace(delta_win, max_win_sg, int(max_win_sg/delta_win))
 
@@ -144,7 +148,7 @@ for deg_sg in range(min_deg_sg,max_deg_sg+1) :
         velocity_l[-1] = -( foot_l_sg[-1]-foot_l_sg[-2] ) / dt
         velocity_r[-1] = ( foot_r_sg[-1]-foot_r_sg[-2] ) / dt
         signal = min( max( velocity_l[N_spike_0:N_spike_1] ), max( velocity_r[N_spike_0:N_spike_1] ) )
-        noise  = max( np.std(velocity_l[N_spike_1:]), np.std(velocity_r[N_spike_1:]) )
+        noise  = max( np.std(velocity_l[N_pin_0:N_pin_1]), np.std(velocity_r[N_pin_0:N_pin_1]) )
         sn_ratio = signal/noise
         if sn_ratio > max_sn_ratio :
             max_sn_ratio = sn_ratio
@@ -191,6 +195,9 @@ ax5.set_title('Contact line speed', fontsize=25.0)
 ax5.plot(time_ns[N_avg:-N_avg], 1e3*velocity_l_filter[N_avg:-N_avg], 'b-', linewidth=2.5, label='left (filter)')
 ax5.plot(time_ns[N_avg:-N_avg], 1e3*velocity_r_filter[N_avg:-N_avg], 'r-', linewidth=2.5, label='right (filter)')
 ax5.plot(time_ns[N_avg:-N_avg], np.zeros(time_ns[N_avg:-N_avg].shape), 'k--', linewidth=1.5)
+ax5.plot([T_spike_0*1e-3, T_spike_0*1e-3], [0.0, max(1e3*velocity_l_filter[N_avg:-N_avg])], 'k--')
+ax5.plot([T_spike_1*1e-3, T_spike_1*1e-3], [0.0, max(1e3*velocity_l_filter[N_avg:-N_avg])], 'k--')
+ax5.plot([T_pin_1*1e-3, T_pin_1*1e-3],     [0.0, max(1e3*velocity_l_filter[N_avg:-N_avg])], 'k--')
 ax5.set_xlabel('t [ns]', fontsize=30.0)
 ax5.set_ylabel('dx/dt [nm/ns]', fontsize=30.0)
 ax5.set_xlim([time_ns[0], time_ns[-1]])

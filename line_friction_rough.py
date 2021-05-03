@@ -53,7 +53,7 @@ angle_circle = array_from_file(folder_name+'/angle_fit.txt')
 # Cutoff inertial phase
 dt = time[1]-time[0]
 T_ini = 20.0                  # [ps]
-T_fin = 29000.0
+T_fin = 33760.0
 time_window = T_fin-T_ini
 print("Time window = "+str(time_window))
 print("Time step   = "+str(dt))
@@ -71,9 +71,9 @@ angle_circle = angle_circle[N_ini:N_fin]
 init_center = 0.5*(foot_l[0]+foot_r[0])
 
 # Savitzky-Golay filter
-sav_gol_win = int(2210/dt)
+sav_gol_win = int(1510/dt)
 sav_gol_win = sav_gol_win + (1-sav_gol_win%2)
-sav_gol_deg = 4
+sav_gol_deg = 3
 foot_l_sg = sgn.savgol_filter(foot_l, sav_gol_win, sav_gol_deg)
 foot_r_sg = sgn.savgol_filter(foot_r, sav_gol_win, sav_gol_deg)
 
@@ -193,12 +193,15 @@ plt.xticks(fontsize=plot_tcksize)
 plt.xlim([Ca[0], Ca[-1]])
 plt.show()
 
-"""
-plt.plot(time_ns, angle_l+sub_angle_l, 'b-', linewidth=2.0, label='left')
-plt.plot(time_ns, angle_r-sub_angle_r, 'r-', linewidth=2.0, label='right')
-plt.plot(time_ns, 37.8*np.ones(time_ns.shape), 'k--', linewidth=2.0, label='right')
+plt.title('Microscopic contact angle', fontsize=30.0)
+plt.plot(time_ns, angle_l+sub_angle_l, 'b-', linewidth=1.5, label='left')
+plt.plot(time_ns, angle_r-sub_angle_r, 'r-', linewidth=1.5, label='right')
+plt.plot(time_ns, 37.8*np.ones(time_ns.shape), 'k--', linewidth=3.0, label='equilibrium (flat)')
+plt.legend(fontsize=20.0)
+plt.yticks(fontsize=plot_tcksize)
+plt.xticks(fontsize=plot_tcksize)
+plt.xlim([time_ns[0], time_ns[-1]])
 plt.show()
-"""
 
 # Rescale speed
 velocity_l_red = velocity_l_filter[N_avg:-N_avg]/U_ref
@@ -206,8 +209,10 @@ velocity_r_red = velocity_r_filter[N_avg:-N_avg]/U_ref
 velocity_fit_red = np.concatenate((velocity_l_red, velocity_r_red), axis=None)
 
 # Transform into cos and plot againts velocity
-cos_ca_l = cos(theta_0)-cos_vec(contact_angle_l[N_avg:-N_avg])
-cos_ca_r = cos(theta_0)-cos_vec(contact_angle_r[N_avg:-N_avg])
+# cos_ca_l = cos(theta_0)-cos_vec(contact_angle_l[N_avg:-N_avg])
+# cos_ca_r = cos(theta_0)-cos_vec(contact_angle_r[N_avg:-N_avg])
+cos_ca_l = cos(theta_0)-cos_vec(angle_circle[N_avg:-N_avg])
+cos_ca_r = cos(theta_0)-cos_vec(angle_circle[N_avg:-N_avg])
 cos_ca = np.concatenate((cos_ca_l, cos_ca_r), axis=None)
 cos_range = np.linspace(0, max(cos_ca), 25)
 
@@ -224,7 +229,7 @@ fig2, (ax3) = plt.subplots(1, 1)
 
 ax3.set_title('MKT expression fit', fontsize=30.0)
 ax3.plot(cos_ca[N_disc::int(0.75*plot_sampling)], np.abs(velocity_fit_red[N_disc::int(0.75*plot_sampling)]), 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
-ax3.plot(cos_range, mkt_exp(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim p_0 \cdot \exp(p_1 x)$')
+# ax3.plot(cos_range, mkt_exp(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim p_0 \cdot \exp(p_1 x)$')
 ax3.set_xlabel(r'$\cos\theta_0-\cos\theta$ [-1]', fontsize=30.0)
 ax3.set_ylabel(r'$|U/U_{ref}|$ [-1]', fontsize=30.0)
 ax3.legend(fontsize=20.0)

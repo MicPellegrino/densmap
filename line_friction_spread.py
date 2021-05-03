@@ -34,10 +34,10 @@ plot_tcksize = 25
 mu = 0.877                  # mPa*s
 gamma = 57.8                # mPa*m
 U_ref = (gamma/mu)*1e-3     # nm/ps
-theta_0 = 37.8              # deg
+theta_0 = 68.8              # deg
 
 # Obtaining the signal from saved .txt files
-folder_name = 'SpreadingData/FlatQ4'
+folder_name = 'SpreadingData/FlatQ3'
 time = array_from_file(folder_name+'/time.txt')
 foot_l = array_from_file(folder_name+'/foot_l.txt')
 foot_r = array_from_file(folder_name+'/foot_r.txt')
@@ -48,8 +48,8 @@ angle_circle = array_from_file(folder_name+'/angle_fit.txt')
 
 # Cutoff inertial phase
 dt = time[1]-time[0]
-T_ini = 200.0                  # [ps]
-T_fin = 24500.0
+T_ini = 50.0                  # [ps]
+T_fin = 19940.0
 time_window = T_fin-T_ini
 print("Time window = "+str(time_window))
 print("Time step   = "+str(dt))
@@ -75,7 +75,11 @@ def rational(x, p, q):
 def rational_3_3(x, p0, p1, p2, q1, q2):
     return rational(x, [p0, p1, p2], [q1, q2])
 
-popt, pcov = opt.curve_fit(rational_3_3, time, contact_line_pos)
+def rational_4_2(x, p0, p1, p2, p4, q1):
+    return rational(x, [p0, p1, p2, p4], [q1,])
+
+# popt, pcov = opt.curve_fit(rational_3_3, time, contact_line_pos)
+popt, pcov = opt.curve_fit(rational_4_2, time, contact_line_pos)
 
 # Velocity from raw data (very noisy)
 velocity_l = np.zeros(len(foot_l))
@@ -87,10 +91,22 @@ velocity_r[0] = ( foot_r[1]-foot_r[0] ) / dt
 velocity_l[-1] = -( foot_l[-1]-foot_l[-2] ) / dt
 velocity_r[-1] = ( foot_r[-1]-foot_r[-2] ) / dt
 
-# Velocity from rational approximation
+# Velocity from rational approximation (3,3)
+"""
 p_0 = np.array(popt[0:3])
 p_1 = np.polyder(p_0, m=1)
 q_0 = np.concatenate((popt[3:5],[1.0]))
+q_1 = np.polyder(q_0, m=1)
+def velocity_fit(t) :
+    num = ( np.polyval(p_1,t)*np.polyval(q_0,t) - np.polyval(p_0,t)*np.polyval(q_1,t) )
+    den = ( np.polyval(q_0,t) )**2
+    return num/den
+velocity_fit = velocity_fit(time)
+"""
+# Velocity from rational approximation (4,2)
+p_0 = np.array(popt[0:4])
+p_1 = np.polyder(p_0, m=1)
+q_0 = np.concatenate((popt[4:5],[1.0]))
 q_1 = np.polyder(q_0, m=1)
 def velocity_fit(t) :
     num = ( np.polyval(p_1,t)*np.polyval(q_0,t) - np.polyval(p_0,t)*np.polyval(q_1,t) )
@@ -106,7 +122,8 @@ ax1.set_title('Spreading branches', fontsize=25.0)
 ax1.plot(time_ns, foot_l, 'b-', linewidth=2.0, label='left (raw)')
 ax1.plot(time_ns, foot_r, 'r-', linewidth=2.0, label='right (raw)')
 ax1.plot(time_ns, contact_line_pos, 'k-', linewidth=2.0, label=r'1/2$\cdot$(right-left)')
-ax1.plot(time_ns, rational_3_3(time, *popt), 'k--', linewidth=3.5, label='r. p. fit')
+# ax1.plot(time_ns, rational_3_3(time, *popt), 'k--', linewidth=3.5, label='r. p. fit')
+ax1.plot(time_ns, rational_4_2(time, *popt), 'k--', linewidth=3.5, label='r. p. fit')
 ax1.set_xlabel('t [ns]', fontsize=30.0)
 ax1.set_ylabel('x [nm]', fontsize=30.0)
 ax1.set_ylim([0.0, 175.0])
