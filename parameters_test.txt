@@ -1,0 +1,13 @@
+time_step = 12.5
+lenght_x = 7.2
+lenght_z = 20.0
+r_mol = 0.09584
+max_vapour_density = 2.0
+substrate_location = 1.5
+bulk_location = 2.5
+simmetry_plane = 30.0
+interpolation_order = 2
+folder_name = ChannelFlowPoiseuille
+first_stamp = 140
+last_stamp = 640
+dz = 0.7
