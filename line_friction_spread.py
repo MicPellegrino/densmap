@@ -28,7 +28,7 @@ sin_vec = np.vectorize(sin)
 
 # Plotting params
 plot_sampling = 15
-plot_tcksize = 25
+plot_tcksize = 17.5
 
 # Reference units
 mu = 0.877                  # mPa*s
@@ -37,7 +37,7 @@ U_ref = (gamma/mu)*1e-3     # nm/ps
 theta_0 = 68.8              # deg
 
 # Obtaining the signal from saved .txt files
-folder_name = 'SpreadingData/FlatQ3'
+folder_name = 'SpreadingData/FlatQ3ADV'
 time = array_from_file(folder_name+'/time.txt')
 foot_l = array_from_file(folder_name+'/foot_l.txt')
 foot_r = array_from_file(folder_name+'/foot_r.txt')
@@ -48,8 +48,8 @@ angle_circle = array_from_file(folder_name+'/angle_fit.txt')
 
 # Cutoff inertial phase
 dt = time[1]-time[0]
-T_ini = 50.0                  # [ps]
-T_fin = 19940.0
+T_ini = 250.0                  # [ps]
+T_fin = 19000.0
 time_window = T_fin-T_ini
 print("Time window = "+str(time_window))
 print("Time step   = "+str(dt))
@@ -143,7 +143,7 @@ ax2.legend(fontsize=20.0)
 plt.show()
 
 # Rolling average
-delta_t_avg = 500           # [ps]
+delta_t_avg = 250           # [ps]
 N_avg = int(delta_t_avg/dt)
 contact_angle = np.convolve(contact_angle, np.ones(N_avg)/N_avg, mode='same')
 
@@ -214,7 +214,7 @@ cos_range = np.linspace(0.02, max(cos_ca), 250)
 
 # Fit y = a1*x + a3*x^3
 mkt_3 = lambda x, a1, a3 : a1*x + a3*(x**3)
-therm_fun = lambda t, b0, b1 : b0 * np.exp(-b1*(0.5*sin(t)+cos(t))**2) * (cos(theta_0)-cos(t)) 
+therm_fun = lambda t, b0, b1 : b0 * np.exp(-b1*(0.5*sin(t)+cos(t))**2) * (cos(theta_0)-cos(t))
 popt, _ = opt.curve_fit(mkt_3, cos_ca, velocity_fit_red)
 popt_therm, _ = opt.curve_fit(therm_fun, contact_angle[N_avg:-N_avg], velocity_fit_red)
 
@@ -228,6 +228,9 @@ beta = popt[1] * mu_st
 mu_st_fun = lambda xi : mu_st / (1.0 + beta*xi**2 )
 mu_th_fun = lambda t : mu_th * np.exp(popt_therm[1]*(0.5*sin(t)+cos(t))**2)
 
+print('beta = '+str(beta))
+print('a    = '+str(popt_therm[1]))
+
 # Example: Ca=0.1
 # theta_d = 105.5
 # theta_d = 84.0
@@ -235,33 +238,48 @@ mu_th_fun = lambda t : mu_th * np.exp(popt_therm[1]*(0.5*sin(t)+cos(t))**2)
 xi_range = np.linspace(-2.0, 2.0, 500)
 t_range  = np.linspace(0.0, 180.0, 500)
 
-fig2, (ax3, ax4) = plt.subplots(1, 2)
-
-ax3.set_title('MKT expression fit', fontsize=30.0)
+fig2, ((ax3, ax4), (ax33, ax44)) = plt.subplots(2, 2)
+### MKT FORMULA ###
+ax3.set_title('MKT expression fit', fontsize=25.0)
 ax3.plot(cos_ca[0::plot_sampling], velocity_fit_red[0::plot_sampling], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
-ax3.semilogy(cos_range, mkt_3(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim a_1 x + a_3 x^3$')
-ax3.semilogy(cos_range, popt[0]*cos_range, 'g--', linewidth=3.0, label=r'linear limit for $\delta\cos\rightarrow 0$')
-# Johansson 2018
-theta_thermo = np.linspace(min(contact_angle[N_avg:-N_avg]), max(contact_angle[N_avg:-N_avg]), 250)
-cos_thermo = cos(theta_0)-cos(theta_thermo)
-ax3.semilogy(cos_thermo[10:], therm_fun(theta_thermo[10:], *popt_therm), 'c-', linewidth=2.5, label='Johansson & Hess 2018')
-# ------------ #
-ax3.set_xlabel(r'$\cos\theta_0-\cos\theta$ [-1]', fontsize=30.0)
-ax3.set_ylabel(r'$U/U_{ref}$ [-1]', fontsize=30.0)
+ax3.plot(cos_range, mkt_3(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim a_1 x + a_3 x^3$')
+ax3.plot(cos_range, popt[0]*cos_range, 'g--', linewidth=3.0, label=r'linear limit for $\delta\cos\rightarrow 0$')
+ax3.set_xlabel(r'$\cos\theta_0-\cos\theta$ [-1]', fontsize=25.0)
+ax3.set_ylabel(r'$U/U_{ref}$ [-1]', fontsize=25.0)
 ax3.legend(fontsize=20.0)
 ax3.tick_params(axis='x', labelsize=plot_tcksize)
 ax3.tick_params(axis='y', labelsize=plot_tcksize)
 
 ax4.set_title('Angle-dependent contact line friction', fontsize=30.0)
 ax4.plot(xi_range, mu_st_fun(xi_range), 'k-', linewidth=2.75, label=r'$\hat{\mu}_f^*\;/\;[1+\beta(\delta\cos)^2]$')
-# ax4.plot(xi_d, mu_st_fun(xi_d), 'rx', markersize=15.0, linewidth=10.0, markeredgewidth=3.5, label=r'shear: $Ca=0.1$' )
-# ax4.plot([xi_d, xi_d], [0.0, mu_st_fun(xi_d)], 'r--', linewidth=2.0 )
-ax4.set_xlabel(r'$\delta\cos$ [-1]', fontsize=30.0)
-ax4.set_ylabel(r'$\mu_f^*$ [-1]', fontsize=30.0)
-ax4.legend(fontsize=20.0)
+ax4.set_xlabel(r'$\delta\cos$ [-1]', fontsize=25.0)
+ax4.set_ylabel(r'$\mu_f^*$ [-1]', fontsize=25.0)
+# ax4.legend(fontsize=20.0)
 ax4.tick_params(axis='x', labelsize=plot_tcksize)
 ax4.tick_params(axis='y', labelsize=plot_tcksize)
 ax4.set_xlim([-2.0, 2.0])
 ax4.set_ylim([0.0, 1.25*mu_st])
+###################
 
+# plt.show()
+# fig3, (ax33, ax44) = plt.subplots(1, 2)
+
+### P&B FORMULA ###
+angle_abs = contact_angle[N_avg:-N_avg]
+ax33.plot(angle_abs[0::plot_sampling], velocity_fit_red[0::plot_sampling], 'k.', markerfacecolor="None", markersize=22.5, markeredgewidth=2.0, label='MD')
+theta_thermo = np.linspace(min(angle_abs), max(angle_abs), 250)
+ax33.plot(theta_thermo, therm_fun(theta_thermo, *popt_therm), 'c-', linewidth=2.5, label='Johansson & Hess 2018')
+ax33.set_xlabel(r'$\theta$ [deg]', fontsize=25.0)
+ax33.set_ylabel(r'$U/U_{ref}$ [-1]', fontsize=25.0)
+ax33.legend(fontsize=20.0)
+ax33.tick_params(axis='x', labelsize=plot_tcksize)
+ax33.tick_params(axis='y', labelsize=plot_tcksize)
+
+# therm_fun = lambda t, b0, b1 : b0 * np.exp(-b1*(0.5*sin(t)+cos(t))**2) * (cos(theta_0)-cos(t))
+ax44.plot(theta_thermo, mu_th_fun(theta_thermo), 'k-', linewidth=2.75)
+ax44.set_xlabel(r'$\theta$ [deg]', fontsize=25.0)
+ax44.set_ylabel(r'$\mu_f^*$ [-1]', fontsize=25.0)
+ax44.tick_params(axis='x', labelsize=plot_tcksize)
+ax44.tick_params(axis='y', labelsize=plot_tcksize)
+###################
 plt.show()
