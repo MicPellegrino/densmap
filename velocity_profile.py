@@ -23,6 +23,7 @@ hx = Lx/Nx
 hz = Lz/Nz
 x = hx*np.arange(0.0,Nx,1.0, dtype=float)+0.5*hx
 z = hz*np.arange(0.0,Nz,1.0, dtype=float)+0.5*hz
+X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
 
 idx_bin_upp = np.argmin(np.abs(z-dz))
 idx_bin_low = np.argmin(np.abs(z-Lz+dz))
@@ -45,6 +46,9 @@ U = 0.0
 # U = 0.00668
 # U = 0.00835
 
+rho = dm.read_density_file(folder_name+'/'+file_root+'00001.dat')
+x_com_0 = np.sum(np.multiply(rho,X))/np.sum(rho)
+
 velocity_profile = np.zeros( Nz, dtype=float )
 ### Vertical velocity profile ###
 vervel_profile = np.zeros( Nz, dtype=float )
@@ -62,16 +66,21 @@ for idx in range(n_init, n_fin+1) :
     v_x, v_z = dm.read_velocity_file(folder_name+'/'+file_root+'{:05d}'.format(idx)+'.dat')
     if idx%n_dump==0 :
         print("Sample velocity = "+str(np.mean(np.mean(v_z)))+" nm/ps")
+    # Compute the center of mass of the system
     rho = dm.read_density_file(folder_name+'/'+file_root+'{:05d}'.format(idx)+'.dat')
-    velocity_profile += np.mean(v_x[i_min:i_max+1,], axis=0)
-    ### Vertical velocity profile ###
-    vervel_profile += np.mean(v_z[i_min:i_max+1,], axis=0) 
-    density_profile_z += np.mean(rho[i_min:i_max+1,], axis=0)
+    x_com = np.sum(np.multiply(rho,X))/np.sum(rho)
+    bins_com = int((x_com-x_com_0)/hx)
+    # Horizontal velocity profile 
+    velocity_profile += np.mean(v_x[i_min+bins_com:i_max+1+bins_com,], axis=0)
+    # Vertical velocity profile 
+    vervel_profile += np.mean(v_z[i_min+bins_com:i_max+1+bins_com,], axis=0) 
+    # Density profile
+    density_profile_z += np.mean(rho[i_min+bins_com:i_max+1+bins_com,], axis=0)
     ###
-    vx_bin_upp += v_x[:,idx_bin_upp]
-    vx_bin_low += v_x[:,idx_bin_low]
-    vz_bin_upp += v_z[:,idx_bin_upp]
-    vz_bin_low += v_z[:,idx_bin_low]
+    vx_bin_upp += np.roll( v_x[:,idx_bin_upp], bins_com )
+    vx_bin_low += np.roll( v_x[:,idx_bin_low], bins_com )
+    vz_bin_upp += np.roll( v_z[:,idx_bin_upp], bins_com )
+    vz_bin_low += np.roll( v_z[:,idx_bin_low], bins_com )
     vx_bin_half += v_x[:,idx_half_plane]
     density_profile_x += rho[:,idx_half_plane]
 velocity_profile /= (n_fin-n_init+1)

@@ -14,207 +14,139 @@ def array_from_file( filename ):
             my_list.append(float(line.split()[0]))
     return np.array(my_list)
 
-# Theta0 = 95deg
-"""
-# avg_theta_0 = 95.67050716578869
-avg_theta_0 = 95.0
-std_theta_0 = 4.299262399062776
-Ca_cr = 0.275
+theta0    = dict()
+theta_adv = dict()
+theta_rec = dict()
+ca        = dict()
+theta_rec_fit = dict()
+theta_adv_fit = dict()
 
-folders = [ 'ShearDynamic/Q2_Ca005', 
-            'ShearDynamic/Q2_Ca010', 
-            'ShearDynamic/Q2_Ca015',
-            'ShearDynamic/Q2_Ca020', 
-            'ShearDynamic/Q2_Ca025' ]
+theta0['q1'] = 126.01
+theta_rec['q1'] = np.array([126.65, 126.06, 124.32, 125.42])
+theta_adv['q1'] = np.array([130.88, 131.49, 137.93, 142.13])
+ca['q1'] = np.array([0.15, 0.30, 0.60, 0.90])
 
-capillary_number = np.array([ 0.05, 0.10, 0.15, 0.20, 0.25])
-"""
+theta0['q2'] = 94.9
+theta_rec['q2'] = np.array([91.92, 89.29, 84.71, 80.10, 70.97])
+theta_adv['q2'] = np.array([100.29, 104.47, 106.63, 110.03, 116.12])
+ca['q2'] = np.array([0.05, 0.10, 0.15, 0.20, 0.25])
 
-# Theta0 = 70deg
-# avg_theta_0 = 70.57848168277057
-avg_theta_0 = 68.8
-std_theta_0 = 4.165214790945542
-Ca_cr = 0.125
+theta0['q3'] = 70.5
+theta_rec['q3'] = np.array([67.04, 64.84, 62.39, 55.35, 50.16])
+theta_adv['q3'] = np.array([78.32, 81.25, 84.77, 86.10, 87.19])
+ca['q3'] = np.array([0.03, 0.05, 0.06, 0.08, 0.10])
 
-folders = [ 'ShearDynamic/Q3_Ca005', 
-            'ShearDynamic/Q3_Ca008',
-            'ShearDynamic/Q3_Ca010' ]
+theta0['q4'] = 39.2
+theta_rec['q4'] = np.array([36.54, 31.2, 29.34])
+theta_adv['q4'] = np.array([40.09, 43.36, 42.43])
+ca['q4'] = np.array([0.010, 0.015, 0.020])
 
-capillary_number = np.array([ 0.05, 0.08, 0.10])
+for l in theta0.keys():
+   
+    low_bound = min(theta_rec[l])
+    upp_bound = max(theta_adv[l])
+    theta_rec_fit[l] = np.linspace(low_bound, theta0[l], 25)
+    theta_adv_fit[l] = np.linspace(theta0[l], upp_bound, 25)
 
-# Init averaging
-t_0 = 5000
 
-adv_collect = []
-rec_collect = []
-avg_angle_adv = []
-std_angle_adv = []
-avg_angle_rec = []
-std_angle_rec = []
-for fn in folders :
-    time = array_from_file(fn+'/time.txt')
-    idx_0 = np.abs( time-t_0 ).argmin()
-    tl = array_from_file(fn+'/angle_tl.txt')[idx_0:]
-    br = array_from_file(fn+'/angle_br.txt')[idx_0:]
-    tr = array_from_file(fn+'/angle_tr.txt')[idx_0:]
-    bl = array_from_file(fn+'/angle_bl.txt')[idx_0:]
-    adv = 0.5 * ( tl + br )
-    adv_collect.append( adv )
-    rec = 0.5 * ( tr + bl )
-    rec_collect.append( rec )
-    avg_angle_adv.append( np.mean( adv ) )
-    std_angle_adv.append( np.std( adv ) )
-    avg_angle_rec.append( np.mean( rec ) )
-    std_angle_rec.append( np.std( rec ) )
+cos = lambda t : np.cos(np.deg2rad(t))
+sin = lambda t : np.sin(np.deg2rad(t))
 
-avg_angle_adv = np.array( avg_angle_adv )
-avg_angle_rec = np.array( avg_angle_rec )
-std_angle_adv = np.array( std_angle_adv )
-std_angle_rec = np.array( std_angle_rec )
+def lin_pf_formula(t, a_pf, t0) :
+    return (3.0/np.sqrt(2.0))*((cos(t0)-cos(t))/sin(t))/a_pf
 
-print("Ca =         "+str(capillary_number))
-print("theta_d =    "+str(avg_angle_adv))
+mkt_fit = dict()
+pf_fit  = dict()
+muf_mkt_adv = dict()
+muf_mkt_rec = dict()
+muf_pf_adv = dict()
+muf_pf_rec = dict()
+err_mkt_adv = dict()
+err_mkt_rec = dict()
+err_pf_adv = dict()
+err_pf_rec = dict()
+friction_ratio_0 = 0.1
 
-def mkt_formula(cap, a_mkt, t0) :
-    din_t = np.rad2deg( np.arccos( np.cos(np.deg2rad(t0)) - cap*a_mkt )  )
-    return din_t
+for l in theta0.keys() :
 
-def lin_pf_formula(cap, a_pf, t0) :
-    din_t = np.rad2deg( np.deg2rad(t0) + 2.0*np.sqrt(2.0)*a_pf*cap/3.0 )
-    return din_t
+    pf_fit[l]  = lambda t, a_pf : lin_pf_formula(t, a_pf, theta0[l])
+    popt_adv, pcov_adv = opt.curve_fit(pf_fit[l], theta_adv[l], ca[l], p0=friction_ratio_0)
+    muf_pf_adv[l] = popt_adv[0]
+    err_pf_adv[l] = np.sqrt( pcov_adv[0,0]/len(ca[l]) )
+    popt_rec, pcov_rec = opt.curve_fit(pf_fit[l], theta_rec[l], -ca[l], p0=friction_ratio_0)
+    muf_pf_rec[l] = popt_rec[0]
+    err_pf_rec[l] = np.sqrt( pcov_rec[0,0]/len(ca[l]) )
 
-mkt_fit = lambda cap, a_mkt : mkt_formula(cap, a_mkt, avg_theta_0)
-mkt_fit_ps = lambda cap, a_mkt : mkt_formula(cap, a_mkt, avg_theta_0+std_theta_0)
-mkt_fit_ms = lambda cap, a_mkt : mkt_formula(cap, a_mkt, avg_theta_0-std_theta_0)
+print("muf_pf_adv")
+print(muf_pf_adv)
 
-# MKT #
-friction_ratio_0 = 3.0
-popt_adv, pcov_adv = \
-        opt.curve_fit(mkt_fit, capillary_number, avg_angle_adv, p0=friction_ratio_0)
-popt_rec, pcov_rec = \
-        opt.curve_fit(mkt_fit, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
+print("err_pf_adv")
+print(err_pf_adv)
 
-mu_ratio_adv = popt_adv[0]
-mu_ratio_rec = popt_rec[0]
+print("muf_pf_rec")
+print(muf_pf_rec)
 
-capillary_adv = np.linspace(0, 0.3, 100)
-capillary_rec = np.linspace(-0.30, 0.0, 100)
-mkt_adv = np.vectorize(lambda u : mkt_fit(u, mu_ratio_adv))
-mkt_rec = np.vectorize(lambda u : mkt_fit(u, mu_ratio_rec))
+print("err_pf_rec")
+print(err_pf_rec)
 
-# Fitting for +/- standard deviation #
-friction_ratio_0 = 0.5*(mu_ratio_adv+mu_ratio_rec)
-popt_adv_p = opt.curve_fit(mkt_fit_ps, capillary_number, avg_angle_adv, p0=friction_ratio_0)
-popt_rec_p = opt.curve_fit(mkt_fit_ps, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
-popt_adv_m = opt.curve_fit(mkt_fit_ms, capillary_number, avg_angle_adv, p0=friction_ratio_0)
-popt_rec_m = opt.curve_fit(mkt_fit_ms, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
-mkt_adv_p = np.vectorize(lambda u : mkt_fit_ps(u, popt_adv_p[0]))
-mkt_rec_p = np.vectorize(lambda u : mkt_fit_ps(u, popt_rec_p[0]))
-mkt_adv_m = np.vectorize(lambda u : mkt_fit_ms(u, popt_adv_m[0]))
-mkt_rec_m = np.vectorize(lambda u : mkt_fit_ms(u, popt_rec_m[0]))
-std_adv = (0.5*np.abs(popt_adv_p[0]-popt_adv_m[0]))[0]
-std_rec = (0.5*np.abs(popt_rec_p[0]-popt_rec_m[0]))[0]
-######################################
+size_markers = 10.0
+size_lines = 2.0
 
-eb1 = plt.errorbar( capillary_number, avg_angle_adv, yerr=std_angle_adv, \
-        ecolor='r', fmt='ro', elinewidth=2, capsize=7.5, capthick=2.5, ms=8.0, \
-        label='MD adv (+/-std)' )
-eb2 = plt.errorbar( -capillary_number, avg_angle_rec, yerr=std_angle_rec, \
-        ecolor='b', fmt='bs', elinewidth=2, capsize=7.5, capthick=2.5, ms=8.0, \
-        label='MD rec (+/-std)' )
-"""
-eb3 = plt.violinplot(adv_collect, positions=capillary_number, \
-        widths=0.035, showmeans=False, showmedians=False, showextrema=False)
-for pc in eb3['bodies']:
-    pc.set_facecolor('red')
-eb4 = plt.violinplot(rec_collect, positions=-capillary_number, \
-    widths=0.03, showmeans=False, showmedians=False, showextrema=False)
-for pc in eb4['bodies']:
-    pc.set_facecolor('blue')
-"""
-plt.plot(capillary_adv, mkt_adv(capillary_adv), 'r--', linewidth=2.0, \
-        label=r'MKT, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_adv)+ \
-        '+/-'+'{:.3f}'.format( std_adv ) )
-plt.plot(capillary_rec, mkt_rec(capillary_rec), 'b--', linewidth=2.0, \
-        label=r'MKT, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_rec)+ \
-        '+/-'+'{:.3f}'.format( std_rec ) )
-plt.plot([Ca_cr, Ca_cr], [0.0, 140.0], 'k--', label='stab. threshold')
-plt.plot([-Ca_cr, -Ca_cr], [0.0, 140.0], 'k--')
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 
-# Plotting +/- standard deviation #
-"""
-plt.plot(capillary_adv, mkt_adv_p(capillary_adv), 'r-.', linewidth=1.0 )
-plt.plot(capillary_rec, mkt_rec_p(capillary_rec), 'b-.', linewidth=1.0 )
-plt.plot(capillary_adv, mkt_adv_m(capillary_adv), 'r-.', linewidth=1.0 )
-plt.plot(capillary_rec, mkt_rec_m(capillary_rec), 'b-.', linewidth=1.0 )
-"""
-###################################
+ax1.set_ylabel(r'$Ca$', fontsize=20.0)
+ax1.tick_params(axis='both', labelsize=15)
+ax1.plot( theta_adv_fit['q1'], lin_pf_formula(theta_adv_fit['q1'], muf_pf_adv['q1'], theta0['q1']), \
+        'r-.', linewidth=size_lines, label='fit (adv.)' )
+ax1.plot( theta_rec_fit['q1'], lin_pf_formula(theta_rec_fit['q1'], muf_pf_rec['q1'], theta0['q1']), \
+        'b--', linewidth=size_lines, label='fit (rec.)' )
+ax1.plot( [min(theta_rec_fit['q1']), max(theta_adv_fit['q1'])], [0.0, 0.0], 'k:'  )
+ax1.plot( [theta0['q1'], theta0['q1']], [-ca['q1'][-1], ca['q1'][-1]], 'k:'  )
+ax1.plot( theta_adv['q1'], ca['q1'], 'rs', markersize=size_markers, label='MD (adv.)' )
+ax1.plot( theta_rec['q1'], -ca['q1'], 'bD', markersize=size_markers, label='MD (rec.)' )
+ax1.tick_params(axis='both', labelsize=15)
+ax1.legend(fontsize=15.0)
+ax1.text(min(theta_rec_fit['q1']), ca['q1'][-2], r'$q_1$', fontsize=22.5)
 
-plt.title("Fit of MKT and estimate of c.l. friction", fontsize=30.0)
-plt.legend(fontsize=20.0, loc='lower right')
-plt.xticks(fontsize=20.0)
-plt.yticks(fontsize=20.0)
-plt.ylabel(r'$\theta_d$ [deg]', fontsize=25.0)
-plt.xlabel(r'$Ca$ [-1]', fontsize=25.0)
-plt.xlim([-1.2*Ca_cr, 1.2*Ca_cr])
-plt.ylim([0.5*avg_theta_0, 1.5*avg_theta_0])
-plt.show()
+ax2.plot( theta_adv_fit['q2'], lin_pf_formula(theta_adv_fit['q2'], muf_pf_adv['q2'], theta0['q2']), \
+        'r-.', linewidth=size_lines, label='fit (adv.)' )
+ax2.plot( theta_rec_fit['q2'], lin_pf_formula(theta_rec_fit['q2'], muf_pf_rec['q2'], theta0['q2']), \
+        'b--', linewidth=size_lines, label='fit (rec.)' )
+ax2.plot( theta_adv['q2'], ca['q2'], 'rs', markersize=size_markers, label='MD (adv.)' )
+ax2.plot( theta_rec['q2'], -ca['q2'], 'bD', markersize=size_markers, label='MD (rec.)' )
+ax2.plot( [min(theta_rec_fit['q2']), max(theta_adv_fit['q2'])], [0.0, 0.0], 'k:'  )
+ax2.plot( [theta0['q2'], theta0['q2']], [-ca['q2'][-1], ca['q2'][-1]], 'k:'  )
+# ax2.set_xlabel(r'$\theta$', fontsize=20.0)
+# ax2.set_ylabel(r'$Ca$', fontsize=20.0)
+ax2.tick_params(axis='both', labelsize=15)
+# ax2.legend(fontsize=15.0)
+ax2.text(min(theta_rec_fit['q2']), ca['q2'][-2], r'$q_2$', fontsize=22.5)
 
-# Fitting PF #
-pf_fit = lambda cap, a_pf : lin_pf_formula(cap, a_pf, avg_theta_0)
-pf_fit_ps = lambda cap, a_pf : lin_pf_formula(cap, a_pf, avg_theta_0+std_theta_0)
-pf_fit_ms = lambda cap, a_pf : lin_pf_formula(cap, a_pf, avg_theta_0-std_theta_0)
+ax3.plot( theta_adv_fit['q3'], lin_pf_formula(theta_adv_fit['q3'], muf_pf_adv['q3'], theta0['q3']), \
+        'r-.', linewidth=size_lines )
+ax3.plot( theta_rec_fit['q3'], lin_pf_formula(theta_rec_fit['q3'], muf_pf_rec['q3'], theta0['q3']), \
+        'b--', linewidth=size_lines )
+ax3.plot( theta_adv['q3'], ca['q3'], 'rs', markersize=size_markers )
+ax3.plot( theta_rec['q3'], -ca['q3'], 'bD', markersize=size_markers )
+ax3.plot( [min(theta_rec_fit['q3']), max(theta_adv_fit['q3'])], [0.0, 0.0], 'k:'  )
+ax3.plot( [theta0['q3'], theta0['q3']], [-ca['q3'][-1], ca['q3'][-1]], 'k:'  )
+ax3.set_xlabel(r'$\theta$', fontsize=20.0)
+ax3.set_ylabel(r'$Ca$', fontsize=20.0)
+ax3.tick_params(axis='both', labelsize=15)
+ax3.text(min(theta_rec_fit['q3']), ca['q3'][-2], r'$q_3$', fontsize=22.5)
 
-friction_ratio_0 = 1.5
-popt_adv, pcov_adv = \
-        opt.curve_fit(pf_fit, capillary_number, avg_angle_adv, p0=friction_ratio_0)
-popt_rec, pcov_rec = \
-        opt.curve_fit(pf_fit, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
+ax4.set_title(r'$q_4$', fontsize=20.0)
+ax4.plot( theta_adv_fit['q4'], lin_pf_formula(theta_adv_fit['q4'], muf_pf_adv['q4'], theta0['q4']), \
+        'r-.', linewidth=size_lines )
+ax4.plot( theta_rec_fit['q4'], lin_pf_formula(theta_rec_fit['q4'], muf_pf_rec['q4'], theta0['q4']), \
+        'b--', linewidth=size_lines )
+ax4.plot( theta_adv['q4'], ca['q4'], 'rs' , markersize=size_markers)
+ax4.plot( theta_rec['q4'], -ca['q4'], 'bD' , markersize=size_markers)
+ax4.plot( [min(theta_rec_fit['q4']), max(theta_adv_fit['q4'])], [0.0, 0.0], 'k:'  )
+ax4.plot( [theta0['q4'], theta0['q4']], [-ca['q4'][-1], ca['q4'][-1]], 'k:'  )
+ax4.set_xlabel(r'$\theta$', fontsize=20.0)
+# ax4.set_ylabel(r'$Ca$', fontsize=20.0)
+ax4.tick_params(axis='both', labelsize=15)
+ax4.text(min(theta_rec_fit['q4']), ca['q4'][-2], r'$q_4$', fontsize=22.5)
 
-mu_ratio_adv = popt_adv[0]
-mu_ratio_rec = popt_rec[0]
-
-capillary_adv = np.linspace(0, 0.4, 100)
-capillary_rec = np.linspace(-0.40, 0.0, 100)
-lin_pf_adv = np.vectorize(lambda u : pf_fit(u, mu_ratio_adv))
-lin_pf_rec = np.vectorize(lambda u : pf_fit(u, mu_ratio_rec))
-
-# Fitting for +/- standard deviation #
-friction_ratio_0 = 0.5*(mu_ratio_adv+mu_ratio_rec)
-popt_adv_p = opt.curve_fit(pf_fit_ps, capillary_number, avg_angle_adv, p0=friction_ratio_0)
-popt_rec_p = opt.curve_fit(pf_fit_ps, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
-popt_adv_m = opt.curve_fit(pf_fit_ms, capillary_number, avg_angle_adv, p0=friction_ratio_0)
-popt_rec_m = opt.curve_fit(pf_fit_ms, -capillary_number, avg_angle_rec, p0=friction_ratio_0)
-mkt_adv_p = np.vectorize(lambda u : pf_fit_ps(u, popt_adv_p[0]))
-mkt_rec_p = np.vectorize(lambda u : pf_fit_ps(u, popt_rec_p[0]))
-mkt_adv_m = np.vectorize(lambda u : pf_fit_ms(u, popt_adv_m[0]))
-mkt_rec_m = np.vectorize(lambda u : pf_fit_ms(u, popt_rec_m[0]))
-std_adv = (0.5*np.abs(popt_adv_p[0]-popt_adv_m[0]))[0]
-std_rec = (0.5*np.abs(popt_rec_p[0]-popt_rec_m[0]))[0]
-######################################
-
-eb1 = plt.errorbar( capillary_number, avg_angle_adv, yerr=std_angle_adv, \
-        ecolor='r', fmt='ro', elinewidth=2, capsize=7.5, capthick=2.5, ms=8.0, \
-        label='MD adv (+/-std)' )
-eb2 = plt.errorbar( -capillary_number, avg_angle_rec, yerr=std_angle_rec, \
-        ecolor='b', fmt='bs', elinewidth=2, capsize=7.5, capthick=2.5, ms=8.0, \
-        label='MD rec (+/-std)' )
-
-plt.plot(capillary_adv, lin_pf_adv(capillary_adv), 'r--', linewidth=2.0, \
-        label=r'PF, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_adv)+ \
-        '+/-'+'{:.3f}'.format( std_adv ) )
-plt.plot(capillary_rec, lin_pf_rec(capillary_rec), 'b--', linewidth=2.0, \
-        label=r'PF, $\mu_f/\mu=$'+'{:.2f}'.format(mu_ratio_rec)+ \
-        '+/-'+'{:.3f}'.format( std_rec ) )
-plt.plot([Ca_cr, Ca_cr], [0.0, 140.0], 'k--', label='stab. threshold')
-plt.plot([-Ca_cr, -Ca_cr], [0.0, 140.0], 'k--')
-
-plt.title("Fit of PF (Yue&Feng) and estimate of c.l. friction", fontsize=30.0)
-plt.legend(fontsize=20.0, loc='lower right')
-plt.xticks(fontsize=20.0)
-plt.yticks(fontsize=20.0)
-plt.ylabel(r'$\theta_d$ [deg]', fontsize=25.0)
-plt.xlabel(r'$Ca$ [-1]', fontsize=25.0)
-plt.xlim([-1.2*Ca_cr, 1.2*Ca_cr])
-plt.ylim([0.5*avg_theta_0, 1.5*avg_theta_0])
 plt.show()

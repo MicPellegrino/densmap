@@ -39,7 +39,7 @@ U_ref = (gamma/mu)*1e-3     # nm/ps
 theta_0 = 29.8              # deg
 
 # Obtaining the signal from saved .txt files
-folder_name = 'SpreadingData/A07R15Q4'
+folder_name = 'SpreadingData/A07R05Q4'
 time = array_from_file(folder_name+'/time.txt')
 foot_l = array_from_file(folder_name+'/foot_l.txt')
 foot_r = array_from_file(folder_name+'/foot_r.txt')
@@ -53,7 +53,7 @@ angle_circle = array_from_file(folder_name+'/angle_fit.txt')
 # Cutoff inertial phase
 dt = time[1]-time[0]
 T_ini = 20.0                  # [ps]
-T_fin = 33760.0
+T_fin = 20560
 time_window = T_fin-T_ini
 print("Time window = "+str(time_window))
 print("Time step   = "+str(dt))

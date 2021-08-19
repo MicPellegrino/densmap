@@ -8,6 +8,9 @@ FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
 CD = dm.shear_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
     file_root = '/flow_', contact_line = True, mode='int', ens=0)
 
+# CD = dm.shear_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
+#     file_root = '/flow_', contact_line = True)
+
 # Testing xmgrace output
 # CD.save_xvg('InterfaceTest', mode='interface')
 
@@ -39,7 +42,7 @@ mean_contact_angle = 0.5*(np.array(CD.angle_right)+np.array(CD.angle_left))
 hysteresis = np.array(CD.angle_right)-np.array(CD.angle_left)
 """
 # Shear
-CD.save_to_file('ShearDynamic/Q3_Ca005')
+CD.save_to_file('ShearDynamic/Q5_Ca001')
 
 """
 t = np.array(CD.time)

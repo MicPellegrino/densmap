@@ -13,8 +13,8 @@ file_root = 'flow_'
 # Linear flow profile fit
 print("[densmap] Fitting LINEAR flow profile")
 
-# FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
-FP = dm.fitting_parameters( par_file='parameters_viscosity.txt' )
+FP = dm.fitting_parameters( par_file='parameters_shear.txt' )
+# FP = dm.fitting_parameters( par_file='parameters_viscosity.txt' )
 folder_name = FP.folder_name
 
 Lx = FP.lenght_x

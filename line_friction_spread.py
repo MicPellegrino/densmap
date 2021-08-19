@@ -34,10 +34,10 @@ plot_tcksize = 17.5
 mu = 0.877                  # mPa*s
 gamma = 57.8                # mPa*m
 U_ref = (gamma/mu)*1e-3     # nm/ps
-theta_0 = 68.8              # deg
+theta_0 = 38.7              # deg
 
 # Obtaining the signal from saved .txt files
-folder_name = 'SpreadingData/FlatQ3ADV'
+folder_name = 'SpreadingData/FlatQ4'
 time = array_from_file(folder_name+'/time.txt')
 foot_l = array_from_file(folder_name+'/foot_l.txt')
 foot_r = array_from_file(folder_name+'/foot_r.txt')
@@ -49,7 +49,7 @@ angle_circle = array_from_file(folder_name+'/angle_fit.txt')
 # Cutoff inertial phase
 dt = time[1]-time[0]
 T_ini = 250.0                  # [ps]
-T_fin = 19000.0
+T_fin = 33470.0
 time_window = T_fin-T_ini
 print("Time window = "+str(time_window))
 print("Time step   = "+str(dt))

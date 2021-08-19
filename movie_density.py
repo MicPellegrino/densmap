@@ -19,9 +19,12 @@ file_root = 'flow_'
 Lx = 159.75000
 Lz = 30.63400
 
+n_init = 8626
+n_fin = 8628
+
 # CREATING MESHGRID
 print("Creating meshgrid")
-density_array = dm.read_density_file(folder_name+'/'+file_root+'00100.dat', bin='y')
+density_array = dm.read_density_file(folder_name+'/'+file_root+'04000.dat', bin='y')
 Nx = density_array.shape[0]
 Nz = density_array.shape[1]
 hx = Lx/Nx
@@ -44,8 +47,6 @@ N_upp = int(np.ceil(90.0/hx))
 r_mol = 0.39876
 smoother = dm.smooth_kernel(r_mol, hx, hz)
 
-n_init = 1
-n_fin = 2209
 dt = 12.5
 delta_th = 2.0
 
@@ -65,6 +66,7 @@ density_profile = np.zeros( Nz, dtype=float )
 x_com = []
 z_com = []
 t_com = []
+avg_dens = []
 print(np.sum(density_array))
 
 with writer.saving(fig, output_file_name, 250):
@@ -78,14 +80,17 @@ with writer.saving(fig, output_file_name, 250):
         density_array = dm.read_density_file(folder_name+'/'+file_root+ \
             '{:05d}'.format(idx)+'.dat', bin='y')
         # PLOT ORIGINAL DENSITY
-        # plt.pcolormesh(X, Z, density_array, cmap=cm.bone)
+        plt.pcolormesh(X, Z, density_array, cmap=cm.bone)
         # PLOT SMOOTHED DENSITY
-        smooth_density_array = dm.convolute(density_array, smoother)
-        plt.pcolormesh(X, Z, smooth_density_array, cmap=cm.bone)
+        # smooth_density_array = dm.convolute(density_array, smoother)
+        # plt.pcolormesh(X, Z, smooth_density_array, cmap=cm.bone)
         
         x_com.append( np.sum(np.multiply(density_array,X))/np.sum(density_array) )
         z_com.append( np.sum(np.multiply(density_array,Z))/np.sum(density_array) )
         t_com.append( (1e-3)*idx*dt )
+        avg_dens.append( np.mean(density_array) )
+        if idx%n_dump==0 :
+            print("Obtainig frame "+str(np.sum(density_array)))
 
         """
         bulk_density = dm.detect_bulk_density(smooth_density_array, delta_th)
@@ -112,12 +117,29 @@ with writer.saving(fig, output_file_name, 250):
 
 mpl.use("TkAgg")
 
+idx = n_fin
+density_array = dm.read_density_file(folder_name+'/'+file_root+'{:05d}'.format(idx)+'.dat', bin='y')
+# PLOT ORIGINAL DENSITY
+plt.pcolormesh(X, Z, density_array, cmap=cm.Blues)
+plt.axis('scaled')
+plt.show()
+
+"""
 plt.plot(t_com, x_com, 'r-', linewidth=5.0, label='x')
 plt.plot(t_com, z_com, 'b-', linewidth=5.0, label='z')
 plt.legend(fontsize=40.0)
 plt.title("COM", fontsize=45.0)
 plt.xlabel("t [ns]", fontsize=42.5)
 plt.ylabel("pos [nm]", fontsize=42.5)
+plt.xticks(fontsize=40.0)
+plt.yticks(fontsize=40.0)
+plt.xlim([t_com[0],t_com[-1]])
+plt.show()
+"""
+
+plt.plot(t_com, avg_dens, 'b-', linewidth=5.0)
+plt.ylabel("amu/nm^3", fontsize=42.5)
+plt.xlabel("ps", fontsize=42.5)
 plt.xticks(fontsize=40.0)
 plt.yticks(fontsize=40.0)
 plt.xlim([t_com[0],t_com[-1]])
