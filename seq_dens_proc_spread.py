@@ -31,7 +31,7 @@ CD = dm.droplet_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
 
 # Flat substrate
 CD = dm.droplet_tracking(FP.folder_name, FP.first_stamp, FP.last_stamp, FP, \
-    file_root='/flow_', contact_line=True)
+    file_root='/flow_', contact_line=True, mode='int')
 
 # Testing plot
 CD.plot_radius()
@@ -45,5 +45,5 @@ CD.movie_contour([0, FP.lenght_x], [0, FP.lenght_z], dz,  \
         circle=True, contact_line=True)
 
 # Saving data
-CD.save_to_file('SpreadingData/FlatQ3CAP')
+CD.save_to_file('SpreadingData/FlatQ2ADV')
 

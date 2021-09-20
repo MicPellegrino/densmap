@@ -30,7 +30,7 @@ import circle_fit as cf
 # A bit sloppy, but it works:
 # True:  2021 (with header)
 # False: 2020 (without header)
-READ_HEADER = False
+READ_HEADER = True
 
 """
     #########################################################
@@ -1093,7 +1093,7 @@ def detect_interface_int (
     hx,
     hz,
     z0,
-    offset = 1.0
+    offset = 0.5
     ) :
 
     Nx = density_array.shape[0]
@@ -1101,8 +1101,6 @@ def detect_interface_int (
     x = hx*np.arange(0.0, Nx, 1.0, dtype=float)+0.5*hx
     z = hz*np.arange(0.0, Nz, 1.0, dtype=float)+0.5*hz
 
-    # In this way I again fall in the 'half-plane' loophole...
-    # M = int(np.ceil(0.5*Nx))
     M = int(np.ceil(offset*Nx))
     i0 = np.abs(z-z0).argmin()
     
@@ -1125,6 +1123,64 @@ def detect_interface_int (
                 right_branch[0,j-i0] = \
                         ((density_array[i,j]-density_target)*x[i+1]+(density_target-density_array[i+1,j])*x[i])/(density_array[i,j]-density_array[i+1,j])
                 break
+
+    return left_branch, right_branch
+
+def detect_interface_loc (
+    density_array,
+    density_target,
+    hx,
+    hz,
+    z0,
+    zmax,
+    offset = 0.5,
+    wall = 'l'
+    ) :
+    
+    Nx = density_array.shape[0]
+    Nz = density_array.shape[1]
+    x = hx*np.arange(0.0, Nx, 1.0, dtype=float)+0.5*hx
+    z = hz*np.arange(0.0, Nz, 1.0, dtype=float)+0.5*hz
+    Lz = Nz*hz
+
+    M = int(np.ceil(offset*Nx))
+
+    if wall=='l' :
+        i0 = np.abs(z-z0).argmin()
+        imax = np.abs(z-zmax).argmin()
+        left_branch = np.zeros( (2,imax-i0), dtype=float )
+        right_branch = np.zeros( (2,imax-i0), dtype=float )
+        for j in range(i0, imax) :
+            left_branch[1,j-i0] = z[j]
+            right_branch[1,j-i0] = z[j]
+            for i in range(0,M) :
+                if density_array[i,j] > density_target :
+                    left_branch[0,j-i0] = \
+                            ((density_array[i,j]-density_target)*x[i-1]+(density_target-density_array[i-1,j])*x[i])/(density_array[i,j]-density_array[i-1,j])
+                    break
+            for i in range(Nx-1, Nx-M+1, -1) :
+                if density_array[i,j] > density_target :
+                    right_branch[0,j-i0] = \
+                            ((density_array[i,j]-density_target)*x[i+1]+(density_target-density_array[i+1,j])*x[i])/(density_array[i,j]-density_array[i+1,j])
+                    break
+    else :
+        imax = np.abs(z-Lz+z0).argmin()+1
+        i0 = np.abs(z-Lz+zmax).argmin()+1
+        left_branch = np.zeros( (2,imax-i0), dtype=float )
+        right_branch = np.zeros( (2,imax-i0), dtype=float )
+        for j in range(i0, imax) :
+            left_branch[1,j-i0] = z[j]
+            right_branch[1,j-i0] = z[j]
+            for i in range(0,M) :
+                if density_array[i,j] > density_target :
+                    left_branch[0,j-i0] = \
+                            ((density_array[i,j]-density_target)*x[i-1]+(density_target-density_array[i-1,j])*x[i])/(density_array[i,j]-density_array[i-1,j])
+                    break
+            for i in range(Nx-1, Nx-M+1, -1) :
+                if density_array[i,j] > density_target :
+                    right_branch[0,j-i0] = \
+                            ((density_array[i,j]-density_target)*x[i+1]+(density_target-density_array[i+1,j])*x[i])/(density_array[i,j]-density_array[i+1,j])
+                    break
 
     return left_branch, right_branch
 
@@ -1217,8 +1273,16 @@ def droplet_tracking (
     file_root = '/flow_',
     contact_line = True,
     f_sub = None,
-    df_sub = None
+    df_sub = None,
+    mode = 'sk'
     ) :
+
+    # Modes for obtaining the L/R interfaces
+    """
+        'sk'  : marching squares, smoothed density ("soft" way)
+        'int' : bin-wise interpolation, non-smoothed density ("hard" way)
+    """
+    assert mode=='sk' or mode =='int', "Unrecognized interface traking mode"
 
     # Data structure that will be outputted
     CD = droplet_data()
@@ -1235,20 +1299,37 @@ def droplet_tracking (
     smoother = smooth_kernel(fit_param.r_mol, hx, hz)
 
     # Append the values for the first time-step
-    smooth_density_array = convolute(density_array, smoother)
-    bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
-    intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
+    if mode == 'sk' :
+        smooth_density_array = convolute(density_array, smoother)
+        bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
+        intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
+    else :
+        bulk_density = detect_bulk_density(density_array, density_th=fit_param.max_vapour_density)
+        intf_contour = detect_contour(density_array, 0.5*bulk_density, hx, hz)
     if contact_line :
         # Flat substrate
         if f_sub == None :
-            left_branch, right_branch, points_l, points_r = \
-                detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
-                z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-            foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
-                detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
-            sub_theta_l = 0.0
-            sub_theta_r = 0.0
+            if mode == 'sk' :
+                left_branch, right_branch, points_l, points_r = \
+                    detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+                    z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+                foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                    detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+                sub_theta_l = 0.0
+                sub_theta_r = 0.0
+            else :
+                z0 = fit_param.substrate_location
+                zmax = fit_param.bulk_location
+                left_branch, right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax)
+                # Take the first 10 points (change -> make it generic!)
+                points_l = left_branch[:,:]
+                points_r = right_branch[:,:]
+                foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                    detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+                sub_theta_l = 0.0
+                sub_theta_r = 0.0
         # Rough substrate
+        # Leave as it is for the time being...
         else :
             ### THIS SHOULD BE USER-DEFINED! ###
             hbins = 0.6
@@ -1315,14 +1396,27 @@ def droplet_tracking (
         if contact_line :
             # Flat substrate
             if f_sub == None :
-                left_branch, right_branch, points_l, points_r = \
-                    detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
-                    z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-                foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
-                    detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
-                sub_theta_l = 0.0
-                sub_theta_r = 0.0
+                if mode == 'sk' :
+                    left_branch, right_branch, points_l, points_r = \
+                        detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
+                        z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
+                    foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                        detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+                    sub_theta_l = 0.0
+                    sub_theta_r = 0.0
+                else :
+                    z0 = fit_param.substrate_location
+                    zmax = fit_param.bulk_location
+                    left_branch, right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax)
+                    # Take the first 10 points (change -> make it generic!)
+                    points_l = left_branch[:,:]
+                    points_r = right_branch[:,:]
+                    foot_l, foot_r, theta_l, theta_r, cot_l, cot_r = \
+                        detect_contact_angle(points_l, points_r, order=fit_param.interpolation_order)
+                    sub_theta_l = 0.0
+                    sub_theta_r = 0.0
             # Rough substate
+            # Leave as it is for the time being...
             else :
                 ### THIS SHOULD BE USER-DEFINED! ###
                 hbins = 0.6
@@ -1398,8 +1492,9 @@ def shear_tracking (
     """
         'sk'  : marching squares, smoothed density ("soft" way)
         'int' : bin-wise interpolation, non-smoothed density ("hard" way)
+        'loc' : bin-wise interpolation local to the substrate (efficient to extract microscopic c.a.)
     """
-    assert mode=='sk' or mode =='int', "Unrecognized interface traking mode"
+    assert mode=='sk' or mode=='int' or mode=='loc', "Unrecognized interface traking mode"
 
     # Data structure that will be outputted
     CD = shear_data()
@@ -1456,7 +1551,7 @@ def shear_tracking (
                 z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
             t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
                 detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
-        else :
+        elif mode == 'int' :
             z0 = fit_param.substrate_location
             b_left_branch, b_right_branch = detect_interface_int(density_array, 0.5*bulk_density, hx, hz, z0)
             t_left_branch = np.stack( (np.flip(b_left_branch[0,:]), \
@@ -1472,6 +1567,24 @@ def shear_tracking (
                 fit_param.lenght_z-t_right_branch[1,0:15:3] ) )
             b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
                 detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+        else :
+            z0 = fit_param.substrate_location
+            zmax = fit_param.bulk_location
+            b_left_branch, b_right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax, wall='l')
+            b_points_l = b_left_branch[:,:]
+            b_points_r = b_right_branch[:,:]
+            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+            # Add top wall measurement
+            t_left_branch, t_right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax, wall='u')
+            t_left_branch = np.stack( (np.flip(t_left_branch[0,:]), np.flip(t_left_branch[1,:])) )
+            t_right_branch = np.stack( (np.flip(t_right_branch[0,:]), np.flip(t_right_branch[1,:])) )
+            t_points_l = np.stack( (t_left_branch[0,:], \
+                fit_param.lenght_z-t_left_branch[1,:] ) )
+            t_points_r = np.stack( (t_right_branch[0,:], \
+                fit_param.lenght_z-t_right_branch[1,:] ) )
             t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
                 detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
     else :
@@ -1567,7 +1680,7 @@ def shear_tracking (
                     z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
                 t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
                     detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
-            else :
+            elif mode == 'int' :
                 z0 = fit_param.substrate_location
                 b_left_branch, b_right_branch = detect_interface_int(density_array, \
                         0.5*bulk_density, hx, hz, z0)
@@ -1586,6 +1699,24 @@ def shear_tracking (
                     detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
                 t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
                     detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+            else :
+                z0 = fit_param.substrate_location
+                zmax = fit_param.bulk_location
+                b_left_branch, b_right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax, wall='l')
+                b_points_l = b_left_branch[:,:]
+                b_points_r = b_right_branch[:,:]
+                b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+                    detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+                # Add top wall measurement
+                t_left_branch, t_right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax, wall='u')
+                t_left_branch = np.stack( (np.flip(t_left_branch[0,:]), np.flip(t_left_branch[1,:])) )
+                t_right_branch = np.stack( (np.flip(t_right_branch[0,:]), np.flip(t_right_branch[1,:])) )
+                t_points_l = np.stack( (t_left_branch[0,:], \
+                    fit_param.lenght_z-t_left_branch[1,:] ) )
+                t_points_r = np.stack( (t_right_branch[0,:], \
+                    fit_param.lenght_z-t_right_branch[1,:] ) )
+                t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+                    detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)  
         else :
             b_left_branch = np.NaN
             b_right_branch = np.NaN

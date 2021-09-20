@@ -13,23 +13,26 @@ plot_sampling = 15
 plot_tcksize = 25
 
 # From droplet spreading simulations:
+
 """
-muf0 = 10.62596545205442
-beta = 3.117928229483469
-muth = 3.956880636334221
-expa = 2.189903333707836
+muf0 = 7.106528285687076
+beta = 4.45979718788757
+muth = 2.6810468850069893
+expa = 2.0189965532077703
 """
-muf0 = 8.050888747727909
-beta = 2.396325425615895
-muth = 5.373206856611878
-expa = 0.4563979394600973
+
+muf0 = 7.826477525728069
+beta = 3.887523096076031
+muth = 3.472570598923394
+expa = 0.7013225308250497
+
 sin = lambda t : np.sin(np.deg2rad(t))
 cos = lambda t : np.cos(np.deg2rad(t))
 mu_st_fun = lambda xi : muf0 / (1.0 + beta*xi**2 )
 mu_th_fun = lambda t :  muth * np.exp(expa*(0.5*sin(t)+cos(t))**2)
 
 # Theta0 = 68.8deg
-avg_theta_0 = 68.8
+avg_theta_0 = 71.68050154485655
 folders = [ 'ShearDynamic/Q3_Ca005',
             'ShearDynamic/Q3_Ca006',
             'ShearDynamic/Q3_Ca008',

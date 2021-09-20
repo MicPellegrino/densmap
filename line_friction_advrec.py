@@ -199,8 +199,8 @@ N_eq = int(0.667*len(adv.time[N_avg:-N_avg]))
 print("theta_adv = "+str(np.mean(adv.contact_angle[N_eq:-N_avg]))+" deg")
 print("theta_rec = "+str(np.mean(rec.contact_angle[N_eq:-N_avg]))+" deg")
 
-theta_0_adv = 70.92         # [deg]
-theta_0_rec = 68.68         # [deg]
+theta_0_adv = 72.01494775849494         # [deg]
+theta_0_rec = 71.34605533121815         # [deg]
 
 plt.title('Contact angles (rolling average)', fontsize=25.0)
 plt.plot(adv.time[N_avg:-N_avg], adv.contact_angle[N_avg:-N_avg], 'r-', linewidth=2.5, label='adv. (direct)')

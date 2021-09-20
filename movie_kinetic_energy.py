@@ -48,8 +48,8 @@ X_crop, Z_crop = np.meshgrid(x_crop, z_crop, sparse=False, indexing='ij')
 print("Zoom-in window: ["+str(x0_crop)+","+str(x1_crop)+"]x["+str(z0_crop)+","+str(z1_crop)+"], (dX x dZ)")
 
 # Testing .vtk output function
-vtk_folder = "/home/michele/densmap/BreakageVtk"
-dm.export_vector_vtk(x_crop, z_crop, hx, hz, 2.5, vel_x[idx_x0:idx_x1,idx_z0:idx_z1], vel_z[idx_x0:idx_x1,idx_z0:idx_z1])
+# vtk_folder = "/home/michele/densmap/BreakageVtk"
+# dm.export_vector_vtk(x_crop, z_crop, hx, hz, 2.5, vel_x[idx_x0:idx_x1,idx_z0:idx_z1], vel_z[idx_x0:idx_x1,idx_z0:idx_z1])
 
 # INITIALIZING SMOOTHING KERNEL
 p = 2.0
@@ -74,7 +74,7 @@ fig = plt.figure(figsize=(14.0,7.0))
 p_x_list = []
 p_z_list = []
 kin_ener_list = []
-with writer.saving(fig, "shear_q2_ca03.mp4", 250):
+with writer.saving(fig, "shear_q1_ca15.mp4", 250):
     t_label = '0.0'
     for idx in range(n_init, n_fin+1):
         if idx%n_dump==0 :
@@ -117,7 +117,7 @@ with writer.saving(fig, "shear_q2_ca03.mp4", 250):
         smooth_p_z = dm.convolute(smooth_p_z, smoother)
         plt.streamplot(x_crop, z_crop, smooth_p_x.transpose(), smooth_p_z.transpose(), \
             density=2.0, arrowsize=0.5, color='w', linewidth=0.5)
-        plt.pcolormesh(X_crop, Z_crop, smooth_kin_ener, cmap=cm.jet)
+        plt.pcolormesh(X_crop, Z_crop, smooth_kin_ener, cmap=cm.inferno, vmin=0.0, vmax=1.5)
         plt.colorbar()
         plt.xlabel('x [nm]')
         plt.ylabel('z [nm]')
@@ -128,8 +128,10 @@ with writer.saving(fig, "shear_q2_ca03.mp4", 250):
         plt.clf()
 
         # Testing .vtk output function
+        """
         if n_hist==n_aver :
             # print(str(idx).zfill(5))
             dm.export_vector_vtk(x_crop, z_crop, hx, hz, 2.5, smooth_p_x, smooth_p_z,file_name=vtk_folder+"/momentum_"+str(idx).zfill(5)+".vtk")
+        """
 
 mpl.use("TkAgg")

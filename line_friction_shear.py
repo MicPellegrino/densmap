@@ -107,6 +107,7 @@ ax1.plot( theta_rec['q1'], -ca['q1'], 'bD', markersize=size_markers, label='MD (
 ax1.tick_params(axis='both', labelsize=15)
 ax1.legend(fontsize=15.0)
 ax1.text(min(theta_rec_fit['q1']), ca['q1'][-2], r'$q_1$', fontsize=22.5)
+ax1.set_aspect(1 / ax1.get_data_ratio())
 
 ax2.plot( theta_adv_fit['q2'], lin_pf_formula(theta_adv_fit['q2'], muf_pf_adv['q2'], theta0['q2']), \
         'r-.', linewidth=size_lines, label='fit (adv.)' )
@@ -121,6 +122,7 @@ ax2.plot( [theta0['q2'], theta0['q2']], [-ca['q2'][-1], ca['q2'][-1]], 'k:'  )
 ax2.tick_params(axis='both', labelsize=15)
 # ax2.legend(fontsize=15.0)
 ax2.text(min(theta_rec_fit['q2']), ca['q2'][-2], r'$q_2$', fontsize=22.5)
+ax2.set_aspect(1 / ax2.get_data_ratio())
 
 ax3.plot( theta_adv_fit['q3'], lin_pf_formula(theta_adv_fit['q3'], muf_pf_adv['q3'], theta0['q3']), \
         'r-.', linewidth=size_lines )
@@ -134,6 +136,7 @@ ax3.set_xlabel(r'$\theta$', fontsize=20.0)
 ax3.set_ylabel(r'$Ca$', fontsize=20.0)
 ax3.tick_params(axis='both', labelsize=15)
 ax3.text(min(theta_rec_fit['q3']), ca['q3'][-2], r'$q_3$', fontsize=22.5)
+ax3.set_aspect(1 / ax3.get_data_ratio())
 
 ax4.set_title(r'$q_4$', fontsize=20.0)
 ax4.plot( theta_adv_fit['q4'], lin_pf_formula(theta_adv_fit['q4'], muf_pf_adv['q4'], theta0['q4']), \
@@ -148,5 +151,6 @@ ax4.set_xlabel(r'$\theta$', fontsize=20.0)
 # ax4.set_ylabel(r'$Ca$', fontsize=20.0)
 ax4.tick_params(axis='both', labelsize=15)
 ax4.text(min(theta_rec_fit['q4']), ca['q4'][-2], r'$q_4$', fontsize=22.5)
+ax4.set_aspect(1 / ax4.get_data_ratio())
 
 plt.show()
