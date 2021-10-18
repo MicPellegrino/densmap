@@ -36,10 +36,10 @@ T_ini = 100.0               # [ps]
 T_fin = 24310.0             # [ps]
 
 # Minimum CL advancement velocity threshold (rough estimate, a bit arbitrary)
-vmin = 0.0001                # [nm/ps]
+vmin = 1e-4                 # [nm/ps]
 
 # Rolling average
-delta_t_avg = 600           # [ps]
+delta_t_avg = 880           # [ps]
 
 # Obtaining the signal from saved .txt files
 folder_name = 'SpreadingData/FlatQ3ADV'

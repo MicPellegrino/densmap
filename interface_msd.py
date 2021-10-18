@@ -6,6 +6,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
+import pandas as pd
+
 
 ## ## ### # ## ###
 # INITIALIZATION #
@@ -178,9 +180,9 @@ X_int['tr'] -= X_top
 ###
 
 
-### #### ## ### # ## #
-# CROSS-CORRELATIONS #
-# ### ### ## #### # ##
+### #### ## ## #### #
+# AUTO-CORRELATIONS #
+# ### ### ## ### # ##
 
 # Fluctuations (signal - average)
 for l in X_int.keys() :
@@ -198,6 +200,17 @@ for l in X_int.keys() :
         ACF[l][k] = np.sum(X_int[l]*np.roll(X_int[l], k))/N
     ACF[l] = ACF[l][:len(ACF[l])//2] 
 
+### #### ## ## ### # #
+# CROSS-CORRELATIONS #
+# ### ### ## ### ## ##
+
+data = {'TL': X_int['bl'],
+        'BL': X_int['br'],
+        'TR': X_int['tl'],
+        'BR': X_int['tr'] }
+df = pd.DataFrame(data,columns=['TL','BL','TR','BR'])
+corrMatrix = pd.DataFrame.corr(df)
+print(corrMatrix)
 
 ### ### #
 # PLOTS #
@@ -287,4 +300,11 @@ plt.yticks(fontsize=20.0)
 plt.xlim([left_intf_mean[1,0], left_intf_mean[1,-1]])
 plt.xlabel('z [nm]', fontsize=20.0)
 plt.ylabel('k [1/nm]', fontsize=20.0)
+plt.show()
+
+import seaborn as sn
+sn.set(font_scale=2.5)
+sn.heatmap(corrMatrix, annot=True, fmt='.3g', cmap="YlGnBu", vmin=-1.0, vmax=1.0)
+plt.title('Correlation matrix for equilibrium c. l. positions [1]', fontsize=40.0)
+plt.axis('equal')
 plt.show()

@@ -22,6 +22,8 @@ def sin( theta ) :
     return np.sin(np.deg2rad(theta))
 sin_vec = np.vectorize(sin)
 
+tan = lambda t : sin(t)/cos(t)
+
 # Plotting params
 plot_sampling = 30
 plot_tcksize = 17.5
@@ -37,6 +39,13 @@ folder_name_adv = 'SpreadingData/FlatQ3ADV'
 folder_name_rec = 'SpreadingData/FlatQ3REC'
 folder_name_cap = 'SpreadingData/FlatQ3CAP'
 folder_name_rec2 = 'SpreadingData/FlatQ3REC2'
+
+# Double-checking theta0
+
+theta0_meniscus = array_from_file('ShearDropModes/NeoQ3/angle_circle.txt')
+Nmen = int(0.5*len(theta0_meniscus))
+theta0_meniscus_average = np.mean(theta0_meniscus[Nmen:-1])
+print("equuil. meniscus -> theta0 = "+str(theta0_meniscus_average))
 
 # Rational polynomial fit
 def rational(x, p, q):
@@ -57,6 +66,7 @@ class ContactLine :
         self.radius = r
         self.angle_circle = ac
         self.contact_line_pos = 0.5*(fr-fl)
+        self.idx_steady=-1
 
     def fit_cl(self, fit_fun) :
         popt, pcov = opt.curve_fit(fit_fun, self.time, self.contact_line_pos)
@@ -79,6 +89,9 @@ class ContactLine :
         self.angle_l_avg = np.convolve(self.angle_l, np.ones(N_avg)/N_avg, mode='same')
         self.angle_r_avg = np.convolve(self.angle_r, np.ones(N_avg)/N_avg, mode='same')
         self.contact_angle = np.convolve(ca, np.ones(N_avg)/N_avg, mode='same')
+
+# Minimum CL advancement velocity threshold (rough estimate, a bit arbitrary)
+vmin = 1e-4                 # [nm/ps]
 
 # Time window
 time = array_from_file(folder_name_adv+'/time.txt')
@@ -184,23 +197,29 @@ plt.xlabel('t [ps]', fontsize=25.0)
 plt.ylabel('u_cl [nm/ps]', fontsize=25.0)
 plt.show()
 
+adv.idx_steady = np.argmin(np.abs(adv.velocity_fit-vmin))
+cap.idx_steady = np.argmin(np.abs(cap.velocity_fit-vmin))
+rec.idx_steady = np.argmin(np.abs(rec.velocity_fit-vmin))
+rec2.idx_steady = np.argmin(np.abs(rec2.velocity_fit-vmin))
+
 # Rolling average
-delta_t_avg = 500               # [ps]
+delta_t_avg = 880               # [ps]
 N_avg = int(delta_t_avg/dt)
 adv.average_angles(N_avg)
 rec.average_angles(N_avg)
 cap.average_angles(N_avg)
 rec2.average_angles(N_avg)
 
-# N_eq = int(0.55*len(adv.time[N_avg:-N_avg]))
-# print(np.mean(adv.contact_angle[N_eq:-N_avg]))
-
 N_eq = int(0.667*len(adv.time[N_avg:-N_avg]))
-print("theta_adv = "+str(np.mean(adv.contact_angle[N_eq:-N_avg]))+" deg")
-print("theta_rec = "+str(np.mean(rec.contact_angle[N_eq:-N_avg]))+" deg")
+# print("theta_adv = "+str(np.mean(adv.contact_angle[N_eq:-N_avg]))+" deg")
+# print("theta_rec = "+str(np.mean(rec.contact_angle[N_eq:-N_avg]))+" deg")
+print("theta_adv = "+str(np.mean(adv.angle_circle[N_eq:-N_avg]))+" deg")
+print("theta_rec = "+str(np.mean(rec.angle_circle[N_eq:-N_avg]))+" deg")
 
-theta_0_adv = 72.01494775849494         # [deg]
-theta_0_rec = 71.34605533121815         # [deg]
+theta_0_adv = 73.13203235002977         # [deg]
+theta_0_rec = 71.45227316787968         # [deg]
+# theta_0 = 0.5*(theta_0_adv+theta_0_rec)
+theta_0 = 72.29215275895473
 
 plt.title('Contact angles (rolling average)', fontsize=25.0)
 plt.plot(adv.time[N_avg:-N_avg], adv.contact_angle[N_avg:-N_avg], 'r-', linewidth=2.5, label='adv. (direct)')
@@ -217,41 +236,61 @@ plt.xlabel('t [ps]', fontsize=25.0)
 plt.ylabel('theta [deg]', fontsize=25.0)
 plt.show()
 
+"""
 c = cos(theta_0)-cos(adv.contact_angle[N_avg:-N_avg])
 v = adv.velocity_fit[N_avg:-N_avg]/U_ref
-plt.plot(c[0::plot_sampling], v[0::plot_sampling], \
-        'r.', markerfacecolor="None", markersize=17.5, markeredgewidth=1.5)
 c = cos(theta_0)-cos(cap.contact_angle[N_avg:-N_avg])
 v = cap.velocity_fit[N_avg:-N_avg]/U_ref
-plt.plot(c[0::plot_sampling], v[0::plot_sampling], \
-        'g.', markerfacecolor="None", markersize=17.5, markeredgewidth=1.5)
 c = cos(theta_0)-cos(rec.contact_angle[N_avg:-N_avg])
 v = rec.velocity_fit[N_avg:-N_avg]/U_ref
-plt.plot(c[0::plot_sampling], v[0::plot_sampling], \
-        'b.', markerfacecolor="None", markersize=17.5, markeredgewidth=1.5)
 c = cos(theta_0)-cos(rec2.contact_angle[N_avg:-N_avg])
 v = rec2.velocity_fit[N_avg:-N_avg]/U_ref
-plt.plot(c[0::plot_sampling], v[0::plot_sampling], \
-        'm.', markerfacecolor="None", markersize=17.5, markeredgewidth=1.5)
-plt.show()
+"""
 
 reduced_velocity_micro = np.concatenate( 
-        (adv.velocity_fit[N_avg:-N_avg]/U_ref, \
-        cap.velocity_fit[N_avg:-N_avg]/U_ref, \
-        rec.velocity_fit[N_avg:-N_avg]/U_ref, \
-        rec2.velocity_fit[N_avg:-N_avg]/U_ref), \
+        (adv.velocity_fit[N_avg:min(len(adv.velocity_fit)-N_avg,adv.idx_steady)]/U_ref, \
+        cap.velocity_fit[N_avg:min(len(cap.velocity_fit)-N_avg,cap.idx_steady)]/U_ref, \
+        rec.velocity_fit[N_avg:min(len(rec.velocity_fit)-N_avg,rec.idx_steady)]/U_ref, \
+        rec2.velocity_fit[N_avg:min(len(rec2.velocity_fit)-N_avg,rec2.idx_steady)]/U_ref), \
         axis=None )
 reduced_cosine_micro = np.concatenate( 
-        (cos(theta_0)-cos(adv.contact_angle[N_avg:-N_avg]), \
-        cos(theta_0)-cos(cap.contact_angle[N_avg:-N_avg]),  \
-        cos(theta_0)-cos(rec.contact_angle[N_avg:-N_avg]), \
-        cos(theta_0)-cos(rec2.contact_angle[N_avg:-N_avg])), \
+        (cos(theta_0)-cos(adv.contact_angle[N_avg:min(len(adv.contact_angle)-N_avg,adv.idx_steady)]), \
+        cos(theta_0)-cos(cap.contact_angle[N_avg:min(len(cap.contact_angle)-N_avg,cap.idx_steady)]),  \
+        cos(theta_0)-cos(rec.contact_angle[N_avg:min(len(rec.contact_angle)-N_avg,rec.idx_steady)]), \
+        cos(theta_0)-cos(rec2.contact_angle[N_avg:min(len(rec2.contact_angle)-N_avg,rec2.idx_steady)])), \
         axis=None )
 angle_micro = np.concatenate( 
-        (adv.contact_angle[N_avg:-N_avg], \
-        cap.contact_angle[N_avg:-N_avg],  \
-        rec.contact_angle[N_avg:-N_avg], \
-        rec2.contact_angle[N_avg:-N_avg]), \
+        (adv.contact_angle[N_avg:min(len(adv.contact_angle)-N_avg,adv.idx_steady)], \
+        cap.contact_angle[N_avg:min(len(cap.contact_angle)-N_avg,cap.idx_steady)],  \
+        rec.contact_angle[N_avg:min(len(rec.contact_angle)-N_avg,rec.idx_steady)], \
+        rec2.contact_angle[N_avg:min(len(rec2.contact_angle)-N_avg,rec2.idx_steady)]), \
+        axis=None )
+
+
+reduced_velocity_advance = np.concatenate(
+        (adv.velocity_fit[N_avg:min(len(adv.velocity_fit)-N_avg,adv.idx_steady)]/U_ref, \
+        cap.velocity_fit[N_avg:min(len(cap.velocity_fit)-N_avg,cap.idx_steady)]/U_ref), \
+        axis=None)
+reduced_cosine_advance = np.concatenate(
+        (cos(theta_0)-cos(adv.contact_angle[N_avg:min(len(adv.contact_angle)-N_avg,adv.idx_steady)]), \
+        cos(theta_0)-cos(cap.contact_angle[N_avg:min(len(cap.contact_angle)-N_avg,cap.idx_steady)])), \
+        axis=None)
+angle_advance = np.concatenate(
+        (adv.contact_angle[N_avg:min(len(adv.contact_angle)-N_avg,adv.idx_steady)], \
+        cap.contact_angle[N_avg:min(len(cap.contact_angle)-N_avg,cap.idx_steady)]), \
+        axis=None)
+
+reduced_velocity_recede = np.concatenate( 
+        (rec.velocity_fit[N_avg:min(len(rec.velocity_fit)-N_avg,rec.idx_steady)]/U_ref, \
+        rec2.velocity_fit[N_avg:min(len(rec2.velocity_fit)-N_avg,rec2.idx_steady)]/U_ref), \
+        axis=None )
+reduced_cosine_recede = np.concatenate( 
+        (cos(theta_0)-cos(rec.contact_angle[N_avg:min(len(rec.contact_angle)-N_avg,rec.idx_steady)]), \
+        cos(theta_0)-cos(rec2.contact_angle[N_avg:min(len(rec2.contact_angle)-N_avg,rec2.idx_steady)])), \
+        axis=None )
+angle_recede = np.concatenate( 
+        (rec.contact_angle[N_avg:min(len(rec.contact_angle)-N_avg,rec.idx_steady)], \
+        rec2.contact_angle[N_avg:min(len(rec2.contact_angle)-N_avg,rec2.idx_steady)]), \
         axis=None )
 
 cos_lim = 0.2   # +/-
@@ -261,33 +300,43 @@ p_micro = np.polyfit( reduced_cosine_micro[idx_micro], reduced_velocity_micro[id
 
 print("mu_f = "+str(1/p_micro[0]))
 
-plt.title('CL speed vs CA cosine difference', fontsize=25.0)
-plt.plot(reduced_cosine_micro[0::plot_sampling], reduced_velocity_micro[0::plot_sampling], \
-        'k.', markerfacecolor="None", markersize=17.5, markeredgewidth=1.5, label='microscopic')
-
-# # # 
-plt.plot([-0.2, 0.2], [0.025, 0.025], 'r-')
-plt.plot([-0.2, 0.2], [-0.035, -0.035], 'r-')
-plt.plot([0.2, 0.2], [-0.035, 0.025], 'r-')
-plt.plot([-0.2, -0.2], [-0.035, 0.025], 'r-')
-plt.plot([-0.2, 0.2], np.polyval(p_micro, [-0.2, 0.2]), 'k--', linewidth=5.0)
-# # #
-plt.xticks(fontsize=plot_tcksize)
-plt.yticks(fontsize=plot_tcksize)
-plt.legend(fontsize=20.0)
-plt.ylabel('U/U_ref [-1]', fontsize=25.0)
-plt.xlabel('dcos [-1]', fontsize=25.0)
-plt.show()
-
 theta_0 = 0.5*( theta_0_adv + theta_0_rec )
 
 # Petter
 therm_fun = lambda t, b0, b1 : b0 * np.exp(-b1*(0.5*sin(t)+cos(t))**2) * (cos(theta_0)-cos(t))
-popt_therm, _ = opt.curve_fit(therm_fun, angle_micro, reduced_velocity_micro)
 
 # MKT
 mkt_3 = lambda x, a1, a3 : a1*x + a3*(x**3)
-popt, _ = opt.curve_fit(mkt_3, reduced_cosine_micro, reduced_velocity_micro)
+
+# Prior
+print("PRIOR")
+popt_therm, pcov_therm = opt.curve_fit(therm_fun, angle_advance, reduced_velocity_advance)
+print("cov_thermo: ")
+print(pcov_therm)
+error_therm_receding = \
+        np.sqrt(np.sum((reduced_velocity_recede-therm_fun(angle_recede, *popt_therm))**2))/len(angle_recede)
+print("err_thermo = "+str(error_therm_receding))
+popt, pcov_mkt = opt.curve_fit(mkt_3, reduced_cosine_advance, reduced_velocity_advance)
+print("cov_mkt: ")
+print(pcov_mkt)
+error_mkt_receding = \
+        np.sqrt(np.sum((reduced_velocity_recede-mkt_3(reduced_cosine_recede, *popt))**2))/len(reduced_cosine_recede)
+print("err_mkt = "+str(error_mkt_receding))
+
+# Posterior
+print("POSTERIOR")
+popt_therm, pcov_therm = opt.curve_fit(therm_fun, angle_micro, reduced_velocity_micro)
+print("cov_thermo: ")
+print(pcov_therm)
+error_therm_receding = \
+        np.sqrt(np.sum((reduced_velocity_recede-therm_fun(angle_recede, *popt_therm))**2))/len(angle_recede)
+print("err_thermo = "+str(error_therm_receding))
+popt, pcov_mkt = opt.curve_fit(mkt_3, reduced_cosine_micro, reduced_velocity_micro)
+print("cov_mkt: ")
+print(pcov_mkt)
+error_mkt_receding = \
+        np.sqrt(np.sum((reduced_velocity_recede-mkt_3(reduced_cosine_recede, *popt))**2))/len(reduced_cosine_recede)
+print("err_mkt = "+str(error_mkt_receding))
 
 mu_st_fun = lambda xi : mu_st / (1.0 + beta*xi**2 )
 mu_th_fun = lambda t : mu_th * np.exp(popt_therm[1]*(0.5*sin(t)+cos(t))**2)
@@ -300,11 +349,12 @@ beta = popt[1] * mu_st
 print("beta = "+str(beta))
 print("expa = "+str(popt_therm[1]))
 cos_range = np.linspace(min(reduced_cosine_micro), max(reduced_cosine_micro), 250)
+# cos_range = np.linspace(-1.0, 1.0, 250)
 xi_range = np.linspace(-2.0, 2.0, 500)
 
 fig2, ((ax3, ax4), (ax33, ax44)) = plt.subplots(2, 2)
 ### MKT FORMULA ###
-ax3.set_title('MKT expression fit', fontsize=25.0)
+# ax3.set_title('MKT expression fit', fontsize=25.0)
 ax3.plot(reduced_cosine_micro[0::plot_sampling], reduced_velocity_micro[0::plot_sampling], 'k.', markerfacecolor="None", markersize=20.0, markeredgewidth=1.75, label='MD')
 ax3.plot(cos_range, mkt_3(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim a_1 x + a_3 x^3$')
 ax3.plot(cos_range, popt[0]*cos_range, 'g--', linewidth=3.0, label=r'linear limit for $\delta\cos\rightarrow 0$')
@@ -314,7 +364,7 @@ ax3.legend(fontsize=20.0)
 ax3.tick_params(axis='x', labelsize=plot_tcksize)
 ax3.tick_params(axis='y', labelsize=plot_tcksize)
 
-ax4.set_title('Angle-dependent contact line friction', fontsize=30.0)
+# ax4.set_title('Angle-dependent contact line friction', fontsize=30.0)
 ax4.plot(xi_range, mu_st_fun(xi_range), 'k-', linewidth=2.75, label=r'$\hat{\mu}_f^*\;/\;[1+\beta(\delta\cos)^2]$')
 ax4.set_xlabel(r'$\delta\cos$ [1]', fontsize=25.0)
 ax4.set_ylabel(r'$\mu_f^*$ [1]', fontsize=25.0)
@@ -325,12 +375,10 @@ ax4.set_xlim([-2.0, 2.0])
 ax4.set_ylim([0.0, 1.25*mu_st])
 ###################
 
-# plt.show()
-# fig3, (ax33, ax44) = plt.subplots(1, 2)
-
 ### P&B FORMULA ###
-ax33.plot(angle_micro[0::plot_sampling], reduced_velocity_micro[0::plot_sampling], 'k.', markerfacecolor="None", markersize=20.0, markeredgewidth=1.75, label='MD')
+ax33.plot(angle_micro[0::plot_sampling], reduced_velocity_micro[0::plot_sampling], 'k.', markerfacecolor="None", markersize=20.0, markeredgewidth=1.75)
 theta_thermo = np.linspace(min(angle_micro), max(angle_micro), 250)
+# theta_thermo = np.linspace(0.0, 180.0, 250)
 ax33.plot(theta_thermo, therm_fun(theta_thermo, *popt_therm), 'c-', linewidth=2.5, label='Johansson & Hess 2018')
 ax33.set_xlabel(r'$\theta$ [deg]', fontsize=25.0)
 ax33.set_ylabel(r'$U/U_{ref}$ [1]', fontsize=25.0)

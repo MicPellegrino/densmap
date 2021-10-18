@@ -20,11 +20,28 @@ beta = 4.45979718788757
 muth = 2.6810468850069893
 expa = 2.0189965532077703
 """
-
+"""
 muf0 = 7.826477525728069
 beta = 3.887523096076031
 muth = 3.472570598923394
 expa = 0.7013225308250497
+"""
+"""
+muf0 = 5.022451046269512
+beta = 3.1945412208177566
+muth = 1.7798311811670215
+expa = 1.0226149350876883
+"""
+"""
+muf0 = 5.490595931179681
+beta = 4.001367517106868
+muth = 3.403975947252455
+expa = 0.6356135670182949
+"""
+muf0 = 5.587731071215932
+beta = 4.570032390160676
+muth = 3.403975947252455
+expa = 0.6356135670182949
 
 sin = lambda t : np.sin(np.deg2rad(t))
 cos = lambda t : np.cos(np.deg2rad(t))
@@ -32,20 +49,24 @@ mu_st_fun = lambda xi : muf0 / (1.0 + beta*xi**2 )
 mu_th_fun = lambda t :  muth * np.exp(expa*(0.5*sin(t)+cos(t))**2)
 
 # Theta0 = 68.8deg
-avg_theta_0 = 71.68050154485655
+# avg_theta_0 = 71.65334344790341
+avg_theta_0 = 72.29215275895473
 folders = [ 'ShearDynamic/Q3_Ca005',
             'ShearDynamic/Q3_Ca006',
             'ShearDynamic/Q3_Ca008',
             'ShearDynamic/Q3_Ca010' ]
 capillary_number = 0.5*np.array([ 0.05, 0.06, 0.08, 0.10])
 # Init averaging
-t_0 = 5000
+t_0 = 10000
 adv_collect = []
 rec_collect = []
 avg_angle_adv = []
-std_angle_adv = []
 avg_angle_rec = []
+std_angle_adv = []
 std_angle_rec = []
+std_cos_adv = []
+std_cos_rec = []
+n_decorr = 80
 for fn in folders :
     time = array_from_file(fn+'/time.txt')
     idx_0 = np.abs( time-t_0 ).argmin()
@@ -61,10 +82,14 @@ for fn in folders :
     std_angle_adv.append( np.std( adv ) )
     avg_angle_rec.append( np.mean( rec ) )
     std_angle_rec.append( np.std( rec ) )
+    std_cos_adv.append( np.std(cos(avg_theta_0)-cos(adv))/np.sqrt(len(tl)/n_decorr) )
+    std_cos_rec.append( np.std(cos(avg_theta_0)-cos(rec))/np.sqrt(len(tl)/n_decorr) )
 avg_angle_adv = np.array( avg_angle_adv )
 avg_angle_rec = np.array( avg_angle_rec )
 std_angle_adv = np.array( std_angle_adv )
 std_angle_rec = np.array( std_angle_rec )
+std_cos_adv = np.array( std_cos_adv )
+std_cos_rec = np.array( std_cos_rec )
 
 # Cosine difference
 capillary_number = np.concatenate( (-capillary_number, capillary_number), axis=None )
@@ -84,7 +109,9 @@ mu_f_therm = mu_th_fun_vec(angle_absolute)
 
 # Consistency check
 capillary_from_mkt = delta_cosine / mu_f_shear
+delta_from_mkt = capillary_from_mkt-(delta_cosine+np.concatenate((std_cos_rec,std_cos_adv),axis=None)) / mu_f_shear
 capillary_from_thr = delta_cosine / mu_f_therm
+delta_from_thr = capillary_from_thr-(delta_cosine+np.concatenate((std_cos_rec,std_cos_adv),axis=None)) / mu_f_therm
 
 print("Ca (original) = "+str(capillary_number))
 print("Ca (estimate) = "+str(capillary_from_mkt))
@@ -122,7 +149,7 @@ ax1.set_ylim([0.0, 1.25*muf0])
 ############################################
 
 ######### Line friction plot (P&B) #########
-t_range = np.linspace(50.0, 120.0, 500)
+t_range = np.linspace(30.0, 110.0, 500)
 # fig, ax = plt.subplots()
 ax2.set_title('Johansson & Hess 2018', fontsize=30.0)
 ax2.plot(t_range, mu_th_fun(t_range), 'k-', linewidth=2.75, label=r'$Johansson&Hess2018$')
@@ -156,13 +183,22 @@ plt.show()
 ####### Capillary number plot ########
 xi_range = np.linspace(-2.0, 2.0, 500)
 fig, ax = plt.subplots()
-ax.set_title('Capillary number', fontsize=30.0)
-ax.plot(delta_cosine, capillary_number, 'gs', markersize=10.0, label='imposed')
-ax.plot(delta_cosine, capillary_from_mkt, 'mD', markersize=10.0, label='estimate from MKT')
-ax.plot(delta_cosine, capillary_from_thr, 'cH', markersize=12.5, label='estimate from J&H')
-ax.set_xlabel(r'$\delta\cos$ [1]', fontsize=30.0)
-ax.set_ylabel(r'$Ca$ [1]', fontsize=30.0)
-ax.legend(fontsize=25.0)
+ax.set_title('Predicted capillary number', fontsize=35.0)
+ax.plot(delta_cosine, capillary_number, 'gs', markersize=12.5, \
+        markeredgewidth=2, markeredgecolor='black', label='imposed')
+# ax.plot(delta_cosine, capillary_from_mkt, 'mD', markersize=12.5, label='estimate from MKT')
+# ax.plot(delta_cosine, capillary_from_thr, 'cH', markersize=15.0, label='estimate from J&H')
+eb1=ax.errorbar(delta_cosine, capillary_from_mkt, yerr=delta_from_mkt, fmt='mD', \
+        markersize=12.5, capthick=2.5, capsize=5, linewidth=2.5, markerfacecolor="None", \
+        markeredgewidth=3, label='estimate from MKT')
+eb1[-1][0].set_linestyle('--')
+eb2=ax.errorbar(delta_cosine, capillary_from_thr, yerr=delta_from_thr, fmt='cH', \
+        markersize=15.0, capthick=2.5, capsize=5, linewidth=2.5, markerfacecolor="None", \
+        markeredgewidth=3, label='estimate from J&H')
+eb2[-1][0].set_linestyle(':')
+ax.set_xlabel(r'$\delta\cos$ [1]', fontsize=32.5)
+ax.set_ylabel(r'$\widehat{Ca}$ [1]', fontsize=32.5)
+ax.legend(fontsize=30.0)
 ax.tick_params(axis='x', labelsize=plot_tcksize)
 ax.tick_params(axis='y', labelsize=plot_tcksize)
 plt.show()

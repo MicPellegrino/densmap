@@ -535,70 +535,72 @@ class shear_data :
             'tr' = top right
     """
 
-    def __init__(shear_data):
+    def __init__(self):
         print("[densmap] Initializing contour data structure")
-        shear_data.time = []
-        shear_data.contour = []
-        shear_data.branch = dict()
-        shear_data.branch['bl'] = []
-        shear_data.branch['br'] = []
-        shear_data.branch['tl'] = []
-        shear_data.branch['tr'] = []
-        shear_data.foot = dict()
-        shear_data.foot['bl'] = []
-        shear_data.foot['br'] = []
-        shear_data.foot['tl'] = []
-        shear_data.foot['tr'] = []
-        shear_data.angle = dict()
-        shear_data.angle['bl'] = []
-        shear_data.angle['br'] = []
-        shear_data.angle['tl'] = []
-        shear_data.angle['tr'] = []
-        shear_data.cotangent = dict()
-        shear_data.cotangent['bl'] = []
-        shear_data.cotangent['br'] = []
-        shear_data.cotangent['tl'] = []
-        shear_data.cotangent['tr'] = []
-        shear_data.circle_rad_l = []
-        shear_data.circle_xc_l = []
-        shear_data.circle_zc_l = []
-        shear_data.circle_res_l = []
-        shear_data.circle_rad_r = []
-        shear_data.circle_xc_r = []
-        shear_data.circle_zc_r = []
-        shear_data.circle_res_r = []
-        shear_data.xcom = []
-        shear_data.zcom = []
+        self.time = []
+        self.contour = []
+        self.branch = dict()
+        self.branch['bl'] = []
+        self.branch['br'] = []
+        self.branch['tl'] = []
+        self.branch['tr'] = []
+        self.foot = dict()
+        self.foot['bl'] = []
+        self.foot['br'] = []
+        self.foot['tl'] = []
+        self.foot['tr'] = []
+        self.angle = dict()
+        self.angle['bl'] = []
+        self.angle['br'] = []
+        self.angle['tl'] = []
+        self.angle['tr'] = []
+        self.cotangent = dict()
+        self.cotangent['bl'] = []
+        self.cotangent['br'] = []
+        self.cotangent['tl'] = []
+        self.cotangent['tr'] = []
+        self.circle_rad_l = []
+        self.circle_xc_l = []
+        self.circle_zc_l = []
+        self.circle_res_l = []
+        self.circle_rad_r = []
+        self.circle_xc_r = []
+        self.circle_zc_r = []
+        self.circle_res_r = []
+        self.xcom = []
+        self.zcom = []
+        self.angle_circle_mean = []
 
-    def save_to_file(shear_data, save_dir):
+    def save_to_file(self, save_dir):
         print("[densmap] Saving to .txt files")
-        np.savetxt(save_dir+'/time.txt', np.array(shear_data.time))
-        radius_upper = np.abs( np.array(shear_data.foot['tr']) - np.array(shear_data.foot['tl']) )
-        radius_lower = np.abs( np.array(shear_data.foot['br']) - np.array(shear_data.foot['bl']) )
-        position_upper = 0.5*np.abs( np.array(shear_data.foot['tr']) + np.array(shear_data.foot['tl']) )
-        position_lower = 0.5*np.abs( np.array(shear_data.foot['br']) + np.array(shear_data.foot['bl']) )
+        np.savetxt(save_dir+'/time.txt', np.array(self.time))
+        radius_upper = np.abs( np.array(self.foot['tr']) - np.array(self.foot['tl']) )
+        radius_lower = np.abs( np.array(self.foot['br']) - np.array(self.foot['bl']) )
+        position_upper = 0.5*np.abs( np.array(self.foot['tr']) + np.array(self.foot['tl']) )
+        position_lower = 0.5*np.abs( np.array(self.foot['br']) + np.array(self.foot['bl']) )
         np.savetxt(save_dir+'/radius_upper.txt', radius_upper[:,0])
         np.savetxt(save_dir+'/radius_lower.txt', radius_lower[:,0])
         np.savetxt(save_dir+'/position_upper.txt', position_upper[:,0])
         np.savetxt(save_dir+'/position_lower.txt', position_lower[:,0])
-        np.savetxt(save_dir+'/angle_bl.txt', shear_data.angle['bl'])
-        np.savetxt(save_dir+'/angle_br.txt', shear_data.angle['br'])
-        np.savetxt(save_dir+'/angle_tl.txt', shear_data.angle['tl'])
-        np.savetxt(save_dir+'/angle_tr.txt', shear_data.angle['tr'])
-        np.savetxt(save_dir+'/xcom.txt', shear_data.xcom)
-        np.savetxt(save_dir+'/zcom.txt', shear_data.zcom)
+        np.savetxt(save_dir+'/angle_bl.txt', self.angle['bl'])
+        np.savetxt(save_dir+'/angle_br.txt', self.angle['br'])
+        np.savetxt(save_dir+'/angle_tl.txt', self.angle['tl'])
+        np.savetxt(save_dir+'/angle_tr.txt', self.angle['tr'])
+        np.savetxt(save_dir+'/xcom.txt', self.xcom)
+        np.savetxt(save_dir+'/zcom.txt', self.zcom)
+        np.savetxt(save_dir+'/angle_circle.txt', self.angle_circle_mean)
 
-    def plot_radius(shear_data, fig_name='spreading_radius.eps'):
+    def plot_radius(self, fig_name='spreading_radius.eps'):
         mpl.use("Agg")
         print("[densmap] Producing plot for spreading radius")
-        radius_upper = np.abs( np.array(shear_data.foot['tr']) - np.array(shear_data.foot['tl']) )
-        radius_lower = np.abs( np.array(shear_data.foot['br']) - np.array(shear_data.foot['bl']) )
+        radius_upper = np.abs( np.array(self.foot['tr']) - np.array(self.foot['tl']) )
+        radius_lower = np.abs( np.array(self.foot['br']) - np.array(self.foot['bl']) )
         plt.figure()
         """
             Change once the upper half tracking is added
         """
-        plt.plot(shear_data.time, radius_upper[:,0], 'k-', label='upper')
-        plt.plot(shear_data.time, radius_lower[:,0], 'g-', label='lower')
+        plt.plot(self.time, radius_upper[:,0], 'k-', label='upper')
+        plt.plot(self.time, radius_lower[:,0], 'g-', label='lower')
         plt.title('Spreading radius', fontsize=20.0)
         plt.xlabel('t [ps]', fontsize=20.0)
         plt.ylabel('R(t) [nm]', fontsize=20.0)
@@ -607,14 +609,14 @@ class shear_data :
         plt.savefig(fig_name)
         mpl.use("TkAgg")
 
-    def plot_angles(shear_data, fig_name='contact_angles.eps'):
+    def plot_angles(self, fig_name='contact_angles.eps'):
         mpl.use("Agg")
         print("[densmap] Producing plot for contact angles")
         plt.figure()
-        plt.plot(shear_data.time, shear_data.angle['bl'], 'b-', label='bottom left')
-        plt.plot(shear_data.time, shear_data.angle['br'], 'r-', label='bottom right')
-        plt.plot(shear_data.time, shear_data.angle['tl'], 'c-', label='top left')
-        plt.plot(shear_data.time, shear_data.angle['tr'], 'm-', label='top right')
+        plt.plot(self.time, self.angle['bl'], 'b-', label='bottom left')
+        plt.plot(self.time, self.angle['br'], 'r-', label='bottom right')
+        plt.plot(self.time, self.angle['tl'], 'c-', label='top left')
+        plt.plot(self.time, self.angle['tr'], 'm-', label='top right')
         plt.title('Contact angle', fontsize=20.0)
         plt.xlabel('t [ps]', fontsize=20.0)
         plt.ylabel('theta(t) [deg]', fontsize=20.0)
@@ -623,7 +625,7 @@ class shear_data :
         plt.savefig(fig_name)
         mpl.use("TkAgg")
 
-    def movie_contour(shear_data, crop_x, crop_z, dz, circle=True, contact_line=True):
+    def movie_contour(self, crop_x, crop_z, dz, circle=True, contact_line=True):
         mpl.use("Agg")
         print("[densmap] Producing movie of the interface dynamics")
         FFMpegWriter = manimation.writers['ffmpeg']
@@ -650,41 +652,41 @@ class shear_data :
         plt.ylabel('z [nm]')
         s = np.linspace(0,2*np.pi,250)
         with writer.saving(fig, "contour_movie.mp4", 250):
-            for i in range( len(shear_data.contour) ):
-                dx_bl = dz * shear_data.cotangent['bl'][i]
-                dx_br = dz * shear_data.cotangent['br'][i]
-                dx_tl = dz * shear_data.cotangent['tl'][i]
-                dx_tr = dz * shear_data.cotangent['tr'][i]
+            for i in range( len(self.contour) ):
+                dx_bl = dz * self.cotangent['bl'][i]
+                dx_br = dz * self.cotangent['br'][i]
+                dx_tl = dz * self.cotangent['tl'][i]
+                dx_tr = dz * self.cotangent['tr'][i]
                 if circle :
-                    circle_x_l = shear_data.circle_xc_l[i] + shear_data.circle_rad_l[i]*np.cos(s)
-                    circle_z_l = shear_data.circle_zc_l[i] + shear_data.circle_rad_l[i]*np.sin(s)
-                    circle_x_r = shear_data.circle_xc_r[i] + shear_data.circle_rad_r[i]*np.cos(s)
-                    circle_z_r = shear_data.circle_zc_r[i] + shear_data.circle_rad_r[i]*np.sin(s)
-                fig_cont.set_data(shear_data.contour[i][0,:], shear_data.contour[i][1,:])
-                fig_com.set_data(shear_data.xcom[i], shear_data.zcom[i])
-                t_label = str(shear_data.time[i])+' ps'
+                    circle_x_l = self.circle_xc_l[i] + self.circle_rad_l[i]*np.cos(s)
+                    circle_z_l = self.circle_zc_l[i] + self.circle_rad_l[i]*np.sin(s)
+                    circle_x_r = self.circle_xc_r[i] + self.circle_rad_r[i]*np.cos(s)
+                    circle_z_r = self.circle_zc_r[i] + self.circle_rad_r[i]*np.sin(s)
+                fig_cont.set_data(self.contour[i][0,:], self.contour[i][1,:])
+                fig_com.set_data(self.xcom[i], self.zcom[i])
+                t_label = str(self.time[i])+' ps'
                 """
                     The position of the time label should be an input (or at leat a macro)
                 """
                 textvar = plt.text(1.5, 14.0, t_label)
                 if contact_line :
-                    fig_fbl.set_data([shear_data.foot['bl'][i][0], shear_data.foot['bl'][i][0]+dx_bl],
-                        [shear_data.foot['bl'][i][1], shear_data.foot['bl'][i][1]+dz])
-                    fig_fbr.set_data([shear_data.foot['br'][i][0], shear_data.foot['br'][i][0]+dx_br],
-                        [shear_data.foot['br'][i][1], shear_data.foot['br'][i][1]+dz])
-                    fig_pbl.set_data(shear_data.foot['bl'][i][0], shear_data.foot['bl'][i][1])
-                    fig_pbr.set_data(shear_data.foot['br'][i][0], shear_data.foot['br'][i][1])
+                    fig_fbl.set_data([self.foot['bl'][i][0], self.foot['bl'][i][0]+dx_bl],
+                        [self.foot['bl'][i][1], self.foot['bl'][i][1]+dz])
+                    fig_fbr.set_data([self.foot['br'][i][0], self.foot['br'][i][0]+dx_br],
+                        [self.foot['br'][i][1], self.foot['br'][i][1]+dz])
+                    fig_pbl.set_data(self.foot['bl'][i][0], self.foot['bl'][i][1])
+                    fig_pbr.set_data(self.foot['br'][i][0], self.foot['br'][i][1])
                     # Flipping again to the upper wall
-                    fig_ftl.set_data([shear_data.foot['tl'][i][0], shear_data.foot['tl'][i][0]+dx_tl],
-                        [crop_z-shear_data.foot['tl'][i][1], crop_z-shear_data.foot['tl'][i][1]-dz])
-                    fig_ftr.set_data([shear_data.foot['tr'][i][0], shear_data.foot['tr'][i][0]+dx_tr],
-                        [crop_z-shear_data.foot['tr'][i][1], crop_z-shear_data.foot['tr'][i][1]-dz])
-                    fig_ptl.set_data(shear_data.foot['tl'][i][0], crop_z-shear_data.foot['tl'][i][1])
-                    fig_ptr.set_data(shear_data.foot['tr'][i][0], crop_z-shear_data.foot['tr'][i][1])
-                    fig_pos_up.set_data( 0.5*(shear_data.foot['tl'][i][0]+shear_data.foot['tr'][i][0]), \
-                        0.5*(crop_z-shear_data.foot['tl'][i][1]+crop_z-shear_data.foot['tr'][i][1]) )
-                    fig_pos_lw.set_data( 0.5*(shear_data.foot['bl'][i][0]+shear_data.foot['br'][i][0]), \
-                        0.5*(shear_data.foot['bl'][i][1]+shear_data.foot['br'][i][1]) )
+                    fig_ftl.set_data([self.foot['tl'][i][0], self.foot['tl'][i][0]+dx_tl],
+                        [crop_z-self.foot['tl'][i][1], crop_z-self.foot['tl'][i][1]-dz])
+                    fig_ftr.set_data([self.foot['tr'][i][0], self.foot['tr'][i][0]+dx_tr],
+                        [crop_z-self.foot['tr'][i][1], crop_z-self.foot['tr'][i][1]-dz])
+                    fig_ptl.set_data(self.foot['tl'][i][0], crop_z-self.foot['tl'][i][1])
+                    fig_ptr.set_data(self.foot['tr'][i][0], crop_z-self.foot['tr'][i][1])
+                    fig_pos_up.set_data( 0.5*(self.foot['tl'][i][0]+self.foot['tr'][i][0]), \
+                        0.5*(crop_z-self.foot['tl'][i][1]+crop_z-self.foot['tr'][i][1]) )
+                    fig_pos_lw.set_data( 0.5*(self.foot['bl'][i][0]+self.foot['br'][i][0]), \
+                        0.5*(self.foot['bl'][i][1]+self.foot['br'][i][1]) )
                 if circle :
                     fig_cir_left.set_data(circle_x_l, circle_z_l)
                     fig_cir_right.set_data(circle_x_r, circle_z_r)
@@ -695,10 +697,10 @@ class shear_data :
                 textvar.remove()
         mpl.use("TkAgg")
 
-    def save_xvg(shear_data, folder, mode='contour') :
+    def save_xvg(self, folder, mode='contour') :
         if mode=='contour' :
-            for k in range(len(shear_data.contour)) : 
-                output_interface_xmgrace(shear_data.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
+            for k in range(len(self.contour)) : 
+                output_interface_xmgrace(self.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
         elif mode=='interface' :
             """
             shear_data.branch['bl'] = []
@@ -706,20 +708,20 @@ class shear_data :
             shear_data.branch['tl'] = []
             shear_data.branch['tr'] = []
             """
-            for k in range(len(shear_data.branch['bl'])) :
-                output_interface_xmgrace(shear_data.branch['bl'][k], folder+"/int_l_"+str(k+1).zfill(5)+".xvg")
-            for k in range(len(shear_data.branch['br'])) :
-                output_interface_xmgrace(shear_data.branch['br'][k], folder+"/int_r_"+str(k+1).zfill(5)+".xvg")
+            for k in range(len(self.branch['bl'])) :
+                output_interface_xmgrace(self.branch['bl'][k], folder+"/int_l_"+str(k+1).zfill(5)+".xvg")
+            for k in range(len(self.branch['br'])) :
+                output_interface_xmgrace(self.branch['br'][k], folder+"/int_r_"+str(k+1).zfill(5)+".xvg")
 
-    def plot_contact_line_pdf(shear_data, N_in=0,  fig_name='cl_pdf.eps') :
-        signal_tr = np.array(shear_data.foot['tr'])[:,0]
+    def plot_contact_line_pdf(self, N_in=0,  fig_name='cl_pdf.eps') :
+        signal_tr = np.array(self.foot['tr'])[:,0]
         N = len(signal_tr)
         sign_mean_tr, sign_std_tr, bin_vector_tr, distribution_tr = position_distribution( signal_tr[N_in:], int(np.sqrt(N-N_in)) ) 
-        signal_tl = np.array(shear_data.foot['tl'])[:,0]
+        signal_tl = np.array(self.foot['tl'])[:,0]
         sign_mean_tl, sign_std_tl, bin_vector_tl, distribution_tl = position_distribution( signal_tl[N_in:], int(np.sqrt(N-N_in)) ) 
-        signal_br = np.array(shear_data.foot['br'])[:,0]
+        signal_br = np.array(self.foot['br'])[:,0]
         sign_mean_br, sign_std_br, bin_vector_br, distribution_br = position_distribution( signal_br[N_in:], int(np.sqrt(N-N_in)) ) 
-        signal_bl = np.array(shear_data.foot['bl'])[:,0]
+        signal_bl = np.array(self.foot['bl'])[:,0]
         sign_mean_bl, sign_std_bl, bin_vector_bl, distribution_bl = position_distribution( signal_bl[N_in:], int(np.sqrt(N-N_in)) )
         mpl.use("Agg")
         print("[densmap] Producing plot for contact angles")
@@ -1639,6 +1641,18 @@ def shear_tracking (
     CD.xcom.append(x_com)
     CD.zcom.append(z_com)
 
+    # ANGLE FROM CAP FITTING
+    h = fit_param.substrate_location
+    Lz = fit_param.lenght_z
+    cot_circle_bl = (h-zc_l)/np.sqrt(R_l*R_l-(h-zc_l)**2)
+    cot_circle_tl = (zc_l+h-Lz)/np.sqrt(R_l*R_l-(zc_l+h-Lz)**2)
+    cot_circle_br = (h-zc_r)/np.sqrt(R_r*R_r-(h-zc_r)**2)
+    cot_circle_tr = (zc_r+h-Lz)/np.sqrt(R_r*R_r-(zc_r+h-Lz)**2)
+    cot_circle = 0.25*(cot_circle_bl+cot_circle_tl+cot_circle_br+cot_circle_tr)
+    theta_circle = np.rad2deg( 0.5*math.pi+np.arctan( cot_circle ) )
+    theta_circle = theta_circle + 180*(theta_circle<=0)
+    CD.angle_circle_mean.append(theta_circle)
+
     for k in range(k_init+1, k_end+1) :
         file_name = folder_name+file_root+str(k).zfill(5)+'.dat'
         if k % K_INFO == 0 :
@@ -1768,6 +1782,18 @@ def shear_tracking (
         CD.circle_res_r.append(residue_r)
         CD.xcom.append(x_com)
         CD.zcom.append(z_com)
+
+        # ANGLE FROM CAP FITTING
+        h = fit_param.substrate_location
+        Lz = fit_param.lenght_z
+        cot_circle_bl = (h-zc_l)/np.sqrt(R_l*R_l-(h-zc_l)**2)
+        cot_circle_tl = (zc_l+h-Lz)/np.sqrt(R_l*R_l-(zc_l+h-Lz)**2)
+        cot_circle_br = (h-zc_r)/np.sqrt(R_r*R_r-(h-zc_r)**2)
+        cot_circle_tr = (zc_r+h-Lz)/np.sqrt(R_r*R_r-(zc_r+h-Lz)**2)
+        cot_circle = 0.25*(cot_circle_bl+cot_circle_tl+cot_circle_br+cot_circle_tr)
+        theta_circle = np.rad2deg( 0.5*math.pi+np.arctan( cot_circle ) )
+        theta_circle = theta_circle + 180*(theta_circle<=0)
+        CD.angle_circle_mean.append(theta_circle)
 
     return CD
 

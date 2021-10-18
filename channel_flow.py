@@ -8,8 +8,10 @@ file_root = 'flow_'
 
 FP = dm.fitting_parameters( par_file='parameters_test.txt' )
 
-folder_poiseuille = FP.folder_name+'LJPoiseuille/Flow_epsilon03_f6'
-folder_couette    = FP.folder_name+'LJCouette/Flow_epsilon03'
+# folder_poiseuille = FP.folder_name+'LJPoiseuille/Flow_epsilon03_f6'
+# folder_couette    = FP.folder_name+'LJCouette/Flow_epsilon03'
+folder_poiseuille = FP.folder_name+'ConfinedPoiseuille_Q1_match/Flow'
+folder_couette    = FP.folder_name+'ConfinedCouette_Q1/Flow'
 Lx = FP.lenght_x
 Lz = FP.lenght_z
 
@@ -59,9 +61,13 @@ p_couette, p_couette_cov     = opt.curve_fit(fun_couette, z[n_exclude:-n_exclude
         velocity_profile_couette[n_exclude:-n_exclude])
 # p_poiseuille = np.polyfit(z[n_exclude:-n_exclude], velocity_profile_poiseuille[n_exclude:-n_exclude], 2)
 # p_couette = np.polyfit(z[n_exclude:-n_excludefp], velocity_profile_couette[n_exclude:-n_exclude], 1)
-U = 0.05
+
+# LJ
+# U = 0.05
+
 # U = 2.3241174*0.05
-# U = 0.066
+U = 0.066
+
 # print("Coeff. value")
 # print("p_1 = "+str(p_couette[0]))
 # print("p_2 = "+str(p_poiseuille[0]))
