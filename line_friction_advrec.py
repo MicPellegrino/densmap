@@ -355,7 +355,8 @@ xi_range = np.linspace(-2.0, 2.0, 500)
 fig2, ((ax3, ax4), (ax33, ax44)) = plt.subplots(2, 2)
 ### MKT FORMULA ###
 # ax3.set_title('MKT expression fit', fontsize=25.0)
-ax3.plot(reduced_cosine_micro[0::plot_sampling], reduced_velocity_micro[0::plot_sampling], 'k.', markerfacecolor="None", markersize=20.0, markeredgewidth=1.75, label='MD')
+ax3.plot(reduced_cosine_micro[0::plot_sampling], reduced_velocity_micro[0::plot_sampling], 'k.', \
+        markerfacecolor="None", markersize=20.0, markeredgewidth=1.75)
 ax3.plot(cos_range, mkt_3(cos_range, *popt), 'm-.', linewidth=3.0, label=r'fit: $U\sim a_1 x + a_3 x^3$')
 ax3.plot(cos_range, popt[0]*cos_range, 'g--', linewidth=3.0, label=r'linear limit for $\delta\cos\rightarrow 0$')
 ax3.set_xlabel(r'$\cos\theta_0-\cos\theta$ [1]', fontsize=25.0)
@@ -376,7 +377,8 @@ ax4.set_ylim([0.0, 1.25*mu_st])
 ###################
 
 ### P&B FORMULA ###
-ax33.plot(angle_micro[0::plot_sampling], reduced_velocity_micro[0::plot_sampling], 'k.', markerfacecolor="None", markersize=20.0, markeredgewidth=1.75)
+ax33.plot(angle_micro[0::plot_sampling], reduced_velocity_micro[0::plot_sampling], 'k.', markerfacecolor="None", \
+        markersize=20.0, markeredgewidth=1.75, label='MD')
 theta_thermo = np.linspace(min(angle_micro), max(angle_micro), 250)
 # theta_thermo = np.linspace(0.0, 180.0, 250)
 ax33.plot(theta_thermo, therm_fun(theta_thermo, *popt_therm), 'c-', linewidth=2.5, label='Johansson & Hess 2018')

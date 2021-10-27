@@ -31,19 +31,17 @@ plt.plot(np.rad2deg(theta), ca_cr_est, 'k--', linewidth=2.5, label=r'$Ca_{cr}\si
 
 d_cr_egg = np.zeros(theta.shape)
 for i in range(len(theta)):
-    d_cr_egg[i] = opt.fsolve(lambda x : func_impl(x, theta[i], g0), x0=a*theta[i]**3)
-    # d_cr_egg[i] = opt.bisect(lambda x : func_impl(x, theta[i], g0), a=0.1, b=1.0) 
+    # d_cr_egg[i] = opt.fsolve(lambda x : func_impl(x, theta[i], g0), x0=a*theta[i]**3)
+    d_cr_egg[i] = opt.bisect(lambda x : func_impl(x, theta[i], g0), a=0.1, b=1.0) 
 ca_cr_egg = d_cr_egg*(theta**3)/9.0
 plt.plot(np.rad2deg(theta), ca_cr_egg, 'k--', label='Eggers (2004)')
 
-"""
 plt.plot( equil_contact_angles, first_unsteady, \
         'o', color='orange', markersize=12.0, label='first unsteady' )
 plt.plot( equil_contact_angles, last_steady, \
         'o', color='green', markersize=12.0, label='last steady' )
 plt.plot( equil_contact_angles, critical_estimate, \
         'x', color='black', markersize=17.5, markeredgewidth=2.5 )
-"""
 plt.plot( np.rad2deg(equil_contact_angles), first_unsteady, \
         'x', color='red', markersize=17.5, markeredgewidth=3.5, label='first unsteady' )
 plt.plot( np.rad2deg(equil_contact_angles), last_steady, \

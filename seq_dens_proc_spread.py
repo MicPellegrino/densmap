@@ -45,5 +45,5 @@ CD.movie_contour([0, FP.lenght_x], [0, FP.lenght_z], dz,  \
         circle=True, contact_line=True)
 
 # Saving data
-CD.save_to_file('SpreadingData/FlatQ1REC2')
+CD.save_to_file('SpreadingData/FlatQ2REC')
 
