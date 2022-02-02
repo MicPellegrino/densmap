@@ -14,50 +14,88 @@ plot_tcksize = 25
 
 # From droplet spreading simulations:
 
-"""
-muf0 = 7.106528285687076
-beta = 4.45979718788757
-muth = 2.6810468850069893
-expa = 2.0189965532077703
-"""
-"""
-muf0 = 7.826477525728069
-beta = 3.887523096076031
-muth = 3.472570598923394
-expa = 0.7013225308250497
-"""
-"""
-muf0 = 5.022451046269512
-beta = 3.1945412208177566
-muth = 1.7798311811670215
-expa = 1.0226149350876883
-"""
-"""
-muf0 = 5.490595931179681
-beta = 4.001367517106868
-muth = 3.403975947252455
-expa = 0.6356135670182949
+# Q3
 """
 muf0 = 5.587731071215932
 beta = 4.570032390160676
 muth = 3.403975947252455
 expa = 0.6356135670182949
+"""
+
+# Q1
+"""
+muf0 = 17.012277623298132
+beta = -6.873152476756783
+muth = 2.081558441596227
+expa = 22.20633669018187
+"""
+
+# Q2
+"""
+muf0 = 4.032070329599339
+beta = -0.9180475806340669
+muth = 3.2360276804303605
+expa = 1.2229516937357185
+"""
+
+# Q4
+muf0 = 9.680838206012817
+beta = 1.1001398419317803
+muth = 4.5852352174300045
+expa = 0.8779220442126517
 
 sin = lambda t : np.sin(np.deg2rad(t))
 cos = lambda t : np.cos(np.deg2rad(t))
 mu_st_fun = lambda xi : muf0 / (1.0 + beta*xi**2 )
 mu_th_fun = lambda t :  muth * np.exp(expa*(0.5*sin(t)+cos(t))**2)
 
-# Theta0 = 68.8deg
-# avg_theta_0 = 71.65334344790341
-avg_theta_0 = 72.29215275895473
-folders = [ 'ShearDynamic/Q3_Ca005',
+# Q3
+"""
+avg_theta_0 = 72.34125045506745
+folders = [ 'ShearDynamic/Q3_Ca003',
+            'ShearDynamic/Q3_Ca005',
             'ShearDynamic/Q3_Ca006',
             'ShearDynamic/Q3_Ca008',
             'ShearDynamic/Q3_Ca010' ]
-capillary_number = 0.5*np.array([ 0.05, 0.06, 0.08, 0.10])
+capillary_number = 0.5*np.array([ 0.03, 0.05, 0.06, 0.08, 0.10])
 # Init averaging
 t_0 = 10000
+"""
+
+# Q1
+"""
+avg_theta_0 = 129.7410333158549
+folders = [ 'ShearDynamic/Q1_Ca005',
+            'ShearDynamic/Q1_Ca010',
+            'ShearDynamic/Q1_Ca030',
+            'ShearDynamic/Q1_Ca060' ]
+capillary_number = 0.5*np.array([ 0.05, 0.10, 0.30, 0.60])
+# Init averaging
+t_0 = 10000
+"""
+
+# Q2
+"""
+avg_theta_0 = 96.2560395806863
+folders = [ 'ShearDynamic/Q2_Ca005',
+            'ShearDynamic/Q2_Ca010',
+            'ShearDynamic/Q2_Ca015',
+            'ShearDynamic/Q2_Ca020',
+            'ShearDynamic/Q2_Ca025' ]
+capillary_number = 0.5*np.array([ 0.05, 0.10, 0.15, 0.20, 0.25])
+# Init averaging
+t_0 = 10000
+"""
+
+# Q4
+avg_theta_0 = 72.34125045506745
+folders = [ 'ShearDynamic/Q4_Ca001',
+            'ShearDynamic/Q4_Ca0015',
+            'ShearDynamic/Q4_Ca002']
+capillary_number = 0.5*np.array([ 0.01, 0.015, 0.02])
+# Init averaging
+t_0 = 10000
+
 adv_collect = []
 rec_collect = []
 avg_angle_adv = []
@@ -113,6 +151,8 @@ delta_from_mkt = capillary_from_mkt-(delta_cosine+np.concatenate((std_cos_rec,st
 capillary_from_thr = delta_cosine / mu_f_therm
 delta_from_thr = capillary_from_thr-(delta_cosine+np.concatenate((std_cos_rec,std_cos_adv),axis=None)) / mu_f_therm
 
+print("theta (advancing) = "+str(avg_angle_adv))
+print("theta (receding) = "+str(avg_angle_rec))
 print("Ca (original) = "+str(capillary_number))
 print("Ca (estimate) = "+str(capillary_from_mkt))
 

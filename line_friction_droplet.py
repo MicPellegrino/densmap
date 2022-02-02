@@ -5,7 +5,7 @@ import scipy.signal as sgn
 import scipy.optimize as opt
 
 # Plotting params
-plot_sampling = 30
+plot_sampling = 1
 plot_tcksize = 17.5
 
 # Reference units
@@ -44,28 +44,60 @@ def rational_4_2(x, p0, p1, p2, p4, q1):
 
 # Key: input file name
 # Value: advancing/receding
-# Use datafrrames instead?
+# Use dataframes instead?
+input_files = dict()
 # Q1
-"""
-input_files = { 'SpreadingData/FlatQ1REC' : ('rec', True),
+input_files['Q1'] = { 'SpreadingData/FlatQ1' : ('adv', True),
+                'SpreadingData/FlatQ1REC' : ('rec', False),
                 'SpreadingData/FlatQ1REC2' : ('rec', False)}
-"""
 # Q2
-"""
-input_files = { 'SpreadingData/FlatQ2ADV' : ('adv', True), 
-                'SpreadingData/FlatQ2REC' : ('rec', True)}
-"""
+input_files['Q2'] = { 'SpreadingData/FlatQ2' : ('adv', True),
+                'SpreadingData/FlatQ2ADV' : ('adv', False), 
+                'SpreadingData/FlatQ2REC' : ('rec', False)}
 # Q3
-"""
-input_files = { 'SpreadingData/FlatQ3ADV' : ('adv', True), 
-                'SpreadingData/FlatQ3REC' : ('rec', True), 
+input_files['Q3'] = { 'SpreadingData/FlatQ3' : ('adv', True),
+                'SpreadingData/FlatQ3ADV' : ('adv', False), 
+                'SpreadingData/FlatQ3REC' : ('rec', False), 
                 'SpreadingData/FlatQ3CAP' : ('adv', False), 
                 'SpreadingData/FlatQ3REC2': ('rec', False)}
-"""
 # Q4
-input_files = { 'SpreadingData/FlatQ4ADV' : ('adv', True), 
-                'SpreadingData/FlatQ4REC' : ('rec', True) }
+input_files['Q4'] = { 'SpreadingData/FlatQ4' : ('adv', True),
+                'SpreadingData/FlatQ4ADV' : ('adv', False), 
+                'SpreadingData/FlatQ4REC' : ('rec', False) }
 
+equilibrium_contact_angle = dict()
+equilibrium_contact_angle['Q1'] = 126.01
+equilibrium_contact_angle['Q2'] = 94.9
+equilibrium_contact_angle['Q3'] = 70.5
+equilibrium_contact_angle['Q4'] = 39.2
+
+substrate_color = dict()
+substrate_color['Q1'] = 'c'
+substrate_color['Q2'] = 'g'
+substrate_color['Q3'] = 'r'
+substrate_color['Q4'] = 'm'
+
+# Shear droplet data
+
+theta = dict()
+ca = dict()
+U = dict()
+
+theta['Q1'] = np.array([130.88, 131.49, 137.93, 142.13, 129.7410333158549, 126.65, 126.06, 124.32, 125.42])
+ca['Q1'] = 0.5*np.array([0.15, 0.30, 0.60, 0.90, 0.0, -0.15, -0.30, -0.60, -0.90])
+
+theta['Q2'] = np.array([101.21042472, 104.01678041, 106.17731627, 108.88678425, 111.04525937, 97.7792911518621, 94.95432237, 92.13575175, 88.46459205, 84.38834944, 79.88718327])
+ca['Q2'] = 0.5*np.array([0.05, 0.10, 0.15, 0.20, 0.25, 0.0, -0.05, -0.10, -0.15, -0.20, -0.25])
+
+# theta['Q3'] = np.array([77.18496895, 77.85253598, 78.84062248, 81.5119225, 84.13935051, 72.34125045506745, 65.86140487, 63.75901713, 61.81662731, 58.91360746, 54.28781229])
+theta['Q3'] = np.array([78.32, 81.25, 84.77, 86.10, 87.19, 70.5, 67.04, 64.84, 62.39, 55.35, 50.16])
+ca['Q3'] = np.array([0.015,  0.025,  0.03 ,  0.04 ,  0.05 , 0.0, -0.015 ,-0.025 ,-0.03 , -0.04 , -0.05])
+
+theta['Q4'] = np.array([42.51470603, 45.30519045, 45.4518236, 39.093364496646906, 37.05776924, 33.47130752, 29.93002039])
+ca['Q4'] = 0.5*np.array([0.010, 0.015, 0.020, 0.0, -0.010, -0.015, -0.020])
+
+for k in ca.keys() :
+    U[k] = ca[k]*U_ref
 
 class ContactLine :
 
@@ -110,7 +142,7 @@ class ContactLine :
 class ContactLineModel :
 
     def __init__(self, input_files, 
-        model_function=None, fit_cos=False, vmin=1e-4, delta_t_avg=880, T_off=500, dt=10.0, frac_steady=0.667) :
+        model_function=None, fit_cos=False, vmin=1e-4, delta_t_avg=880, T_off=500, dt=10.0, frac_steady=0.667, theta0=None) :
 
         self.vmin = vmin
         self.delta_t_avg = delta_t_avg
@@ -126,7 +158,7 @@ class ContactLineModel :
 
         self.set_contact_line_data(input_files, N_avg, n_avg, frac_steady)
 
-        self.compute_reduced_quantities(N_avg)
+        self.compute_reduced_quantities(N_avg, theta0)
 
     def __str__(self) :
         return "Average theta0 = "+str(self.avg_theta0)
@@ -165,7 +197,9 @@ class ContactLineModel :
         self.N_avg = N_avg
         self.n_avg = n_avg
 
-    def compute_reduced_quantities(self, N_avg) :
+    def compute_reduced_quantities(self, N_avg, theta0=None) :
+        if not(theta0==None) :
+            self.avg_theta0 = theta0
         self.reduced_velocity_micro = []
         self.reduced_cosine_micro = []
         self.angle_micro = []
@@ -191,7 +225,8 @@ class ContactLineModel :
             self.popt, self.pcov = opt.curve_fit(self.model_function, self.angle_micro, self.reduced_velocity_micro)
         print("Fitting contact line model: "+self.model_function.__name__)
         print(self.popt)
-        print(self.pcov)
+        # print(self.pcov)
+        return self.popt
 
     def plot_data(self) :
         plt.plot(self.reduced_cosine_micro, self.reduced_velocity_micro, 'k.')
@@ -216,22 +251,80 @@ class ContactLineModel :
 
 def main() :
 
-    clm = ContactLineModel(input_files, vmin=1e-4, delta_t_avg=880)
-    
-    print(clm)
-    clm.plot_data()
-
-    # Models for contact line friction
-    theta_0 = clm.avg_theta0
-    def mkt_3(x, a1, a3) :
-        return a1*x + a3*(x**3)
-    def therm_fun(t, b0, b1) :
-        return b0 * np.exp(-b1*(0.5*sin(t)+cos(t))**2) * (cos(theta_0)-cos(t))
-    
-    clm.model_function = therm_fun
-
-    clm.fit_model()
-    clm.plot_models()
+    clm = dict()
+    N_sample_plot = plot_sampling
+    min_cos = 2
+    max_cos = -2
+    min_vel = 100
+    max_vel = -100
+    for k in input_files.keys() :
+        clm[k] = ContactLineModel(input_files[k], vmin=1e-4, delta_t_avg=10, frac_steady=0.75)
+        print(clm[k])
+        if max(clm[k].reduced_cosine_micro) > max_cos :
+            max_cos = max(clm[k].reduced_cosine_micro)
+        if min(clm[k].reduced_cosine_micro) < min_cos :
+            min_cos = min(clm[k].reduced_cosine_micro)
+        if max(clm[k].reduced_velocity_micro) > max_vel :
+            max_vel = max(clm[k].reduced_velocity_micro)
+        if min(clm[k].reduced_velocity_micro) < min_vel :
+            min_vel = min(clm[k].reduced_velocity_micro)
+        sparse_x = clm[k].angle_micro[::N_sample_plot]
+        sparse_y = clm[k].reduced_velocity_micro[::N_sample_plot]*U_ref
+        """
+        plt.plot(sparse_x, sparse_y, 'o', \
+            label=k+r" - $\theta_0 = $"+"{:.2f}".format(clm[k].avg_theta0)+" deg", \
+            markersize=17.5, markerfacecolor='None', markeredgewidth=2.5)
+        """
+        # plt.plot(sparse_x, sparse_y, '.', \
+        #     markersize=20, markerfacecolor='None', markeredgewidth=1.5, alpha=0.6, color=substrate_color[k])
+        t0lab = ""
+        if k =="Q1" :
+            t0lab = r'$\theta_0=127^\circ$'
+        if k =="Q2" :
+            t0lab = r'$\theta_0=95^\circ$'
+        if k =="Q3" :
+            t0lab = r'$\theta_0=69^\circ$'
+        if k =="Q4" :
+            t0lab = r'$\theta_0=38^\circ$'
+        plt.plot(sparse_x, sparse_y, '.', \
+            markersize=37.5, markeredgecolor='None', alpha=0.125, color=substrate_color[k])
+        """
+        plt.plot(theta[k], ca[k], 'D', \
+            label=t0lab, markersize=17.5, markeredgecolor='k', markeredgewidth=4, color=substrate_color[k])
+        """
+        plt.plot(theta[k], U[k], 'D', \
+            label=t0lab, markersize=17.5, markeredgecolor='k', markeredgewidth=4, color=substrate_color[k])
+        # Models for contact line friction
+        def therm_fun(t, b0, b1) :
+            return b0 * np.exp(-b1*(0.5*sin(t)+cos(t))**2) * (cos(clm[k].avg_theta0)-cos(t))
+        def mkt_fun(t, a1, a3) :
+            return a1*t + a3*(t**3)
+        clm[k].model_function = therm_fun
+        p_thermo = clm[k].fit_model()
+        clm[k].fit_cos = True
+        clm[k].model_function = mkt_fun
+        p_mkt = clm[k].fit_model()
+        mu_st = 1.0/p_mkt[0]
+        mu_th = 1.0/p_thermo[0]
+        beta = p_mkt[1] * mu_st
+        print("mu* (mkt)   = "+str( mu_st ))
+        print("mu* (therm) = "+str( mu_th ))
+        print("beta = "+str(beta))
+        print("expa = "+str(p_thermo[1]))
+        print("---------------------------------------------")
+        # clm.plot_models()
+    plt.plot([20, 150], [0.0, 0.0], 'k--', linewidth=3.0)
+    # plt.plot([0.0, 0.0], [min_vel, max_vel], 'k--', linewidth=2.0)
+    plt.xlabel(r'$\theta$ [deg]', fontsize=50)
+    # plt.ylabel('Ca [1]', fontsize=50)
+    plt.ylabel(r'$U$ [nm/ps]', fontsize=50)
+    plt.xticks(fontsize=40)
+    plt.yticks(fontsize=40)
+    plt.legend(fontsize=40)
+    plt.ylim([-0.035, 0.035])
+    # plt.text(70, -0.3, 'receding', fontsize=45, weight='bold')
+    # plt.text(40, 0.3, 'advancing', fontsize=45, weight='bold')
+    plt.show()
 
 if __name__ == "__main__" :
     main()

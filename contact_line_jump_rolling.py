@@ -42,16 +42,17 @@ def find_local_maxima( x ) :
 
 infty_norm = lambda x1, x2 : np.max(np.abs(x1-x2))
 
-input_folder = '/home/michele/densmap/ContactLineProfiles/Ca002BL'
-gro_folder = '/home/michele/BeskowDiag/Select_Q4_C0020/TrjGroBL'
+input_folder = '/home/michele/densmap/ContactLineProfiles/EquilBL'
+gro_folder = '/home/michele/BeskowDiag/Select_Q4_Equil/TrjGroBL'
 
-y = array_from_file(input_folder+'/cly.txt')
-
+# y = array_from_file(input_folder+'/cly.txt')
 Ly = 4.67650
+y = np.linspace(0.0, Ly, 100)
+
 pbcz = 0.0
 # pbcz = 30.63400
-xmin = 48.618700000000004-5.0*0.4229010640800045-0.4989684091837756
-xmax = 48.618700000000004+5.0*0.4229010640800045+0.4989684091837756
+xmin = 52.2545-5.0*0.18429527937524576-0.4989684091837756
+xmax = 52.2545+5.0*0.18429527937524576+0.4989684091837756
 left_int = 1
 
 hx = 0.01
@@ -66,7 +67,7 @@ z_thresh = 0.15
 epsilon_0 = 0.05
 
 frame_init = 1
-frame_fin = 100
+frame_fin = 3999
 
 xold = array_from_file(input_folder+'/cl'+str(frame_init).zfill(4)+'.txt')
 
@@ -322,42 +323,57 @@ print("f_down = "+str(n_h2o_down/len(dipole_orient)) )
 print("-- ------------------- --")
 # print(np.sum(np.isnan(dipole_orient)))
 p_dipole, bin_edges = np.histogram(dipole_orient, bins=n_bin, range=(-1.0, 1.0))
-p_dipole = p_dipole/np.sum(p_dipole)
+p_dipole = p_dipole/np.sum(p_dipole*(bin_edges[1]-bin_edges[0]))
+err = np.std(dipole_orient)/np.sqrt(len(dipole_orient)*p_dipole)
 u_dipole = -np.log(p_dipole)
+u_dipole_p = -np.log(p_dipole+err)
+u_dipole_m = -np.log(p_dipole-err)
 # plt.plot(np.linspace(-1.0, 1.0, len(u_dipole)), u_dipole)
 # plt.show()
 
 # np.savetxt('p_dipole.txt', p_dipole)
 # np.savetxt('bin_edges.txt', bin_edges)
 
-"""
 fig2, (ax1, ax2) = plt.subplots(1,2)
 
 p_replica = array_from_file('p_dipole.txt')
-u_replica = -np.log(0.5*(p_dipole+p_replica))
+# u_replica = -np.log(0.5*(p_dipole+p_replica))
+u_replica = -np.log(0.5*(p_dipole))
 
 vec = np.linspace(-1.0, 1.0, len(u_replica))
 pord = np.polyfit(vec, u_replica, deg=6)
 
-ax1.plot(vec, u_replica, 'k.', markersize=7.5)
+ax1.plot(vec, u_replica, 'b.', markersize=12.5)
+# ax1.errorbar(vec, u_replica, yerr=[u_dipole_p, u_dipole_m], fmt='b.', markersize=12.5, capsize=None)
+ax1.plot(vec, np.polyval(pord, vec), 'k-', linewidth=2.75)
+# plt.title("Free energy landascape of absorbed water molecules", fontsize=25)
+ax1.set_xlabel(r"$\cos($dipole orientation$)$", fontsize=30)
+ax1.set_ylabel("$U$ [$k_BT$]", fontsize=30)
+ax1.tick_params(axis='x', labelsize=25.0)
+ax1.tick_params(axis='y', labelsize=25.0)
+
+"""
+ax1.fill_between(vec, p_replica, color='blue', step="pre", alpha=0.4)
+# ax1.plot(vec, p_replica, 'k.', markersize=7.5)
 ax1.plot(vec, np.polyval(pord, vec), 'k-', linewidth=2.75)
 # plt.title("Free energy landascape of absorbed water molecules", fontsize=25)
 ax1.set_xlabel("dipole orientation", fontsize=20)
-ax1.set_ylabel("$U$ [$k_BT$]", fontsize=20)
+ax1.set_ylabel("$rho$ [1]", fontsize=20)
 ax1.tick_params(axis='x', labelsize=15.0)
 ax1.tick_params(axis='y', labelsize=15.0)
+"""
 
 x = np.linspace(xmin, xmax, int((xmax-xmin)/hx)+1)
 y = np.linspace(0.0, Ly, int(Ly/hy)+1)
 X, Y = np.meshgrid(x,y, indexing='ij')
-adsorb_density /= np.sum(np.sum(adsorb_density))
+adsorb_density /= np.sum(np.sum(adsorb_density))*hy*hx
 plt_colormap = ax2.pcolormesh(X, Y, adsorb_density, cmap=cm.gist_yarg)
-fig.colorbar(plt_colormap, ax=ax2)
+cb = fig.colorbar(plt_colormap, ax=ax2)
+cb.ax.tick_params(labelsize=20) 
 # plt.title("Overview of adsorption sites", fontsize=25)
-ax2.set_xlabel("x [nm]", fontsize=20)
-ax2.set_ylabel("y [nm]", fontsize=20)
-ax2.tick_params(axis='x', labelsize=15.0)
-ax2.tick_params(axis='y', labelsize=15.0)
+ax2.set_xlabel("x [nm]", fontsize=30)
+ax2.set_ylabel("y [nm]", fontsize=30)
+ax2.tick_params(axis='x', labelsize=25.0)
+ax2.tick_params(axis='y', labelsize=25.0)
 ax2.axis("scaled")
 plt.show()
-"""

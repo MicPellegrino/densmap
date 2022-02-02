@@ -5,13 +5,13 @@ from matplotlib import cm
 import os
 
 # User inputs
-folder_name = 'Q4Ca002'
-ni = 683
-nf = 1183
+folder_name = 'Q1Ca030_double'
+nf = 1236
+ni = max(0,nf-400)
 Lx = 159.75000
 Lz = 30.63400
 nbins = 4
-ref_order = 7
+ref_order = 11
 
 # Generate meshgrid
 file_root = 'flow_'
@@ -125,8 +125,8 @@ for d in range(-2,3):
     if theta_adv > theta_adv_max :
         theta_adv_max = theta_adv
 
-print("theta_adv = "+str([theta_adv_min,theta_adv_max])+" -> err_adv = "+str(0.5*(theta_adv_max-theta_adv_min)))
-print("theta_rec = "+str([theta_rec_min,theta_rec_max])+" -> err_rec = "+str(0.5*(theta_rec_max-theta_rec_min)))
+print("theta_adv = "+str([theta_adv_min,theta_adv_max])+" -> err_adv = "+"{:.4f}".format(0.5*(theta_adv_max-theta_adv_min)))
+print("theta_rec = "+str([theta_rec_min,theta_rec_max])+" -> err_rec = "+"{:.4f}".format(0.5*(theta_rec_max-theta_rec_min)))
 
 """
 plt.plot(lb, zint, 'r:')
