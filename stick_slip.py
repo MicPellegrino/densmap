@@ -91,11 +91,11 @@ vdw_spce = 0.3166
 
 
 ax0.errorbar(ca, rmsf, yerr=err, fmt='ko', markersize=15, elinewidth=3.0, capsize=12.5, capthick=2.5)
-ax0.plot([-0.015, 0.275], [0.45, 0.45], 'b--', linewidth=2.75, label=r'SiO$_2$ lattice spacing')
-ax0.plot([-0.015, 0.275], [vdw_spce, vdw_spce], 'r-.', linewidth=2.75, label='SPC/E vdW diameter')
-ax0.plot([-0.015, 0.275], [l_th, l_th], 'g:', linewidth=3.0, label='thermal length scale')
+ax0.plot([-0.015, 0.275], [0.45, 0.45], 'b--', linewidth=2.75, label=r'$d_{hex}$ : SiO$_2$ lattice spacing')
+ax0.plot([-0.015, 0.275], [vdw_spce, vdw_spce], 'r-.', linewidth=2.75, label=r'$\sigma_{SPC/E}$ : SPC/E vdW diameter')
+ax0.plot([-0.015, 0.275], [l_th, l_th], 'g:', linewidth=3.0, label=r'$l_{th}$ : thermal length scale')
 ax0.text(0.01, 0.9, r"$\theta_0=95^\circ$", fontsize=30)
-ax0.legend(fontsize=27.5)
+ax0.legend(fontsize=25.0)
 ax0.set_xlim([-0.015, 0.275])
 ax0.set_ylim([0.0, 1.25])
 ax0.set_ylabel('RMSF [nm]', fontsize=32.5)

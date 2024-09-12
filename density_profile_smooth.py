@@ -6,10 +6,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
-folder_name = 'ShearChar/Q2/'
-file_name = 'flow_00300.dat'
-Lx = 159.75000
-Lz = 30.36600
+folder_name = 'Ca010q65'
+file_name = 'flow_SOL_00300.dat'
+Lx = 83.70000
+Lz = 22.93078
 
 density_array = dm.read_density_file(folder_name+'/'+file_name, bin='y')
 

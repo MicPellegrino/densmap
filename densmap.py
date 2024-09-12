@@ -443,16 +443,6 @@ class droplet_data :
         fig_right, = plt.plot([], [], 'b-', linewidth=1.0)
         fig_pl, = plt.plot([], [], 'r.', linewidth=1.5)
         fig_pr, = plt.plot([], [], 'b.', linewidth=1.5)
-        """
-        fig_pl, = plt.plot([], [], 'b.', linewidth=1.5)
-        fig_pr, = plt.plot([], [], 'b.', linewidth=1.5) 
-        fig_cl_slope_l, = plt.plot([], [], 'b-', linewidth=1.0)
-        fig_cl_slope_r, = plt.plot([], [], 'b-', linewidth=1.0)
-        fig_fit_l, = plt.plot([], [], 'm-', linewidth=1.0)
-        fig_fit_r, = plt.plot([], [], 'm-', linewidth=1.0)
-        fig_fit_slope_l, = plt.plot([], [], 'm-', linewidth=1.0)
-        fig_fit_slope_r, = plt.plot([], [], 'm-', linewidth=1.0)
-        """
         if not(fun_sub==None) :
             x_eval = np.linspace(crop_x[0], crop_x[1], 500)
             fig_substrate, = plt.plot([], [], 'm-', linewidth=1.0)
@@ -481,36 +471,6 @@ class droplet_data :
                         [droplet_data.foot_right[i][1], droplet_data.foot_right[i][1]+dz])
                     fig_pl.set_data(droplet_data.foot_left[i][0], droplet_data.foot_left[i][1])
                     fig_pr.set_data(droplet_data.foot_right[i][0], droplet_data.foot_right[i][1])
-                    """
-                    idx_cll, idx_clr = detect_contact_rough( droplet_data.contour[i], 0.6, fun_sub )
-                    xl = droplet_data.contour[i][0,idx_cll]
-                    xr = droplet_data.contour[i][0,idx_clr]
-                    zl = droplet_data.contour[i][1,idx_cll]
-                    zr = droplet_data.contour[i][1,idx_clr]
-                    fig_pl.set_data(xl, zl)
-                    fig_pr.set_data(xr, zr)
-                    sp_xl = xl + np.linspace(-3.0,3.0, 3)
-                    sp_xr = xr + np.linspace(-3.0,3.0, 3)
-                    sp_zl = zl + dfun_sub(xl)*np.linspace(-3.0,3.0, 3)
-                    sp_zr = zr + dfun_sub(xr)*np.linspace(-3.0,3.0, 3)
-                    fig_cl_slope_l.set_data(sp_xl, sp_zl)
-                    fig_cl_slope_r.set_data(sp_xr, sp_zr)
-                    local_l, local_r = retrace_local_profile(droplet_data.contour[i], 2.0, idx_cll, idx_clr)
-                    p_l = np.polyfit( local_l[1,:] , local_l[0,:] , 2 )
-                    p_r = np.polyfit( local_r[1,:] , local_r[0,:] , 2 )
-                    fit_l = np.stack( ( np.polyval( p_l, local_l[1,:] ), local_l[1,:] ) )
-                    fit_r = np.stack( ( np.polyval( p_r, local_r[1,:] ), local_r[1,:] ) )
-                    fig_fit_l.set_data(fit_l[0,:], fit_l[1,:])
-                    fig_fit_r.set_data(fit_r[0,:], fit_r[1,:])
-                    dxdz_l = 2*p_l[0]*zl+p_l[1]
-                    dxdz_r = 2*p_r[0]*zr+p_r[1]
-                    sp_xl = xl + dxdz_l*np.linspace(-3.0,3.0, 3)
-                    sp_xr = xr + dxdz_r*np.linspace(-3.0,3.0, 3)
-                    sp_zl = zl + np.linspace(-3.0,3.0, 3)
-                    sp_zr = zr + np.linspace(-3.0,3.0, 3)
-                    fig_fit_slope_l.set_data( sp_xl, sp_zl )
-                    fig_fit_slope_r.set_data( sp_xr, sp_zr )
-                    """
                     #########################################################
                 if circle :
                     fig_cir.set_data(circle_x, circle_z)
@@ -702,12 +662,6 @@ class shear_data :
             for k in range(len(self.contour)) : 
                 output_interface_xmgrace(self.contour[k], folder+"/interface_"+str(k+1).zfill(5)+".xvg")
         elif mode=='interface' :
-            """
-            shear_data.branch['bl'] = []
-            shear_data.branch['br'] = []
-            shear_data.branch['tl'] = []
-            shear_data.branch['tr'] = []
-            """
             for k in range(len(self.branch['bl'])) :
                 output_interface_xmgrace(self.branch['bl'][k], folder+"/int_l_"+str(k+1).zfill(5)+".xvg")
             for k in range(len(self.branch['br'])) :
@@ -1002,7 +956,7 @@ def detect_contour (
         "No contour line found for the target density value"
 
     if len(contour)>1 :
-        print( "[densmap] More than one contour found for the target density value (returning the one with most points)" )
+        # print( "[densmap] More than one contour found for the target density value (returning the one with most points)" )
         contour = sorted(contour, key=lambda x : len(x))
 
     # From indices space to physical space
@@ -1128,15 +1082,24 @@ def detect_interface_int (
 
     return left_branch, right_branch
 
+"""
+    Aux. function to find the mean local bulk density for a horizontal 'slice' of water
+"""
+
+def mean_density_loc(density_slice, x, nwin) :
+    xcom = np.sum(density_slice*x)/np.sum(density_slice)
+    icom = np.abs(x-xcom).argmin()
+    return np.mean(density_slice[icom-nwin:icom+nwin+1])
+
 def detect_interface_loc (
     density_array,
-    density_target,
     hx,
     hz,
     z0,
     zmax,
     offset = 0.5,
-    wall = 'l'
+    wall = 'l',
+    nwin = 25
     ) :
     
     Nx = density_array.shape[0]
@@ -1150,17 +1113,18 @@ def detect_interface_loc (
     if wall=='l' :
         i0 = np.abs(z-z0).argmin()
         imax = np.abs(z-zmax).argmin()
-        left_branch = np.zeros( (2,imax-i0), dtype=float )
-        right_branch = np.zeros( (2,imax-i0), dtype=float )
-        for j in range(i0, imax) :
+        left_branch = np.zeros( (2,imax-i0+1), dtype=float )
+        right_branch = np.zeros( (2,imax-i0+1), dtype=float )
+        for j in range(i0, imax+1) :
             left_branch[1,j-i0] = z[j]
             right_branch[1,j-i0] = z[j]
-            for i in range(0,M) :
+            density_target = 0.5*mean_density_loc(density_array[:,j], x, nwin)
+            for i in range(1,M) :
                 if density_array[i,j] > density_target :
                     left_branch[0,j-i0] = \
                             ((density_array[i,j]-density_target)*x[i-1]+(density_target-density_array[i-1,j])*x[i])/(density_array[i,j]-density_array[i-1,j])
                     break
-            for i in range(Nx-1, Nx-M+1, -1) :
+            for i in range(Nx-2, Nx-M+1, -1) :
                 if density_array[i,j] > density_target :
                     right_branch[0,j-i0] = \
                             ((density_array[i,j]-density_target)*x[i+1]+(density_target-density_array[i+1,j])*x[i])/(density_array[i,j]-density_array[i+1,j])
@@ -1173,12 +1137,13 @@ def detect_interface_loc (
         for j in range(i0, imax) :
             left_branch[1,j-i0] = z[j]
             right_branch[1,j-i0] = z[j]
-            for i in range(0,M) :
+            density_target = 0.5*mean_density_loc(density_array[:,j], x, nwin)
+            for i in range(1,M) :
                 if density_array[i,j] > density_target :
                     left_branch[0,j-i0] = \
                             ((density_array[i,j]-density_target)*x[i-1]+(density_target-density_array[i-1,j])*x[i])/(density_array[i,j]-density_array[i-1,j])
                     break
-            for i in range(Nx-1, Nx-M+1, -1) :
+            for i in range(Nx-2, Nx-M+1, -1) :
                 if density_array[i,j] > density_target :
                     right_branch[0,j-i0] = \
                             ((density_array[i,j]-density_target)*x[i+1]+(density_target-density_array[i+1,j])*x[i])/(density_array[i,j]-density_array[i+1,j])
@@ -1247,8 +1212,6 @@ def detect_contact_angle (
     foot_l = ( np.polyval( p_l, points_l[1,0] ), points_l[1,0] )
     foot_r = ( np.polyval( p_r, points_r[1,0] ), points_r[1,0] )
 
-    cot_l = (p_l[1]+2.0*p_l[0]*points_l[1,0])
-    cot_r = (p_r[1]+2.0*p_r[0]*points_r[1,0])
     cot_l = 0.0
     cot_r = 0.0
     for n in range(1,order+1) :
@@ -1276,7 +1239,8 @@ def droplet_tracking (
     contact_line = True,
     f_sub = None,
     df_sub = None,
-    mode = 'sk'
+    mode = 'sk',
+    comshift=False
     ) :
 
     # Modes for obtaining the L/R interfaces
@@ -1297,6 +1261,14 @@ def droplet_tracking (
     Nz = density_array.shape[1]
     hx = fit_param.lenght_x/Nx
     hz = fit_param.lenght_z/Nz
+    x = hx*(np.arange(0.0,Nx,1.0, dtype=float)+0.5)
+    z = hz*(np.arange(0.0,Nz,1.0, dtype=float)+0.5)
+    X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
+    x_com, z_com = detect_com(density_array, X, Z)
+    x_ref = hx*(Nx//2+0.5)
+    offset_ix = Nx//2-int(x_com/hx)
+    density_array = np.roll(density_array,offset_ix*comshift,axis=0)
+
     print("[densmap] Initialize smoothing kernel")
     smoother = smooth_kernel(fit_param.r_mol, hx, hz)
 
@@ -1322,7 +1294,7 @@ def droplet_tracking (
             else :
                 z0 = fit_param.substrate_location
                 zmax = fit_param.bulk_location
-                left_branch, right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax)
+                left_branch, right_branch = detect_interface_loc(density_array, hx, hz, z0, zmax)
                 # Take the first 10 points (change -> make it generic!)
                 points_l = left_branch[:,:]
                 points_r = right_branch[:,:]
@@ -1360,6 +1332,10 @@ def droplet_tracking (
         cot_l = np.NaN
         cot_r = np.NaN
     xc, zc, R, residue = circle_fit_droplet(intf_contour, z_th=fit_param.substrate_location)
+
+    foot_l = (foot_l[0]+comshift*(x_com-x_ref),foot_l[1])
+    foot_r = (foot_r[0]+comshift*(x_com-x_ref),foot_r[1])
+
     CD.time.append( fit_param.time_step*k_init )
     CD.contour.append( intf_contour )
     CD.branch_left.append( left_branch )
@@ -1392,6 +1368,16 @@ def droplet_tracking (
             print("[densmap] Reading "+file_name)
         # Loop
         density_array = read_density_file(file_name, bin='y')
+
+        ### COM RE-CENTERING
+        x = hx*(np.arange(0.0,Nx,1.0, dtype=float)+0.5)
+        z = hz*(np.arange(0.0,Nz,1.0, dtype=float)+0.5)
+        X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
+        x_com, z_com = detect_com(density_array, X, Z)
+        x_ref = hx*(Nx//2+0.5)
+        offset_ix = Nx//2-int(x_com/hx)
+        density_array = np.roll(density_array,offset_ix*comshift,axis=0)
+
         smooth_density_array = convolute(density_array, smoother)
         bulk_density = detect_bulk_density(smooth_density_array, density_th=fit_param.max_vapour_density)
         intf_contour = detect_contour(smooth_density_array, 0.5*bulk_density, hx, hz)
@@ -1409,7 +1395,7 @@ def droplet_tracking (
                 else :
                     z0 = fit_param.substrate_location
                     zmax = fit_param.bulk_location
-                    left_branch, right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax)
+                    left_branch, right_branch = detect_interface_loc(density_array, hx, hz, z0, zmax)
                     # Take the first 10 points (change -> make it generic!)
                     points_l = left_branch[:,:]
                     points_r = right_branch[:,:]
@@ -1447,6 +1433,10 @@ def droplet_tracking (
             cot_l = np.NaN
             cot_r = np.NaN
         xc, zc, R, residue = circle_fit_droplet(intf_contour, z_th=fit_param.substrate_location)
+
+        foot_l = (foot_l[0]+comshift*(x_com-x_ref),foot_l[1])
+        foot_r = (foot_r[0]+comshift*(x_com-x_ref),foot_r[1])
+
         CD.time.append( fit_param.time_step*k )
         CD.contour.append( intf_contour )
         CD.branch_left.append( left_branch )
@@ -1486,6 +1476,7 @@ def shear_tracking (
     fit_param,
     file_root = '/flow_',
     contact_line = True,
+    fit_ca = True,
     mode = 'sk',
     ens = 0
     ) :
@@ -1519,8 +1510,9 @@ def shear_tracking (
     hx = fit_param.lenght_x/Nx
     hz = fit_param.lenght_z/Nz
     # For c.o.m. computation #
-    x = hx*np.arange(0.0,Nx,1.0, dtype=float)
-    z = hz*np.arange(0.0,Nz,1.0, dtype=float)
+    # Cell-centered
+    x = hx*(np.arange(0.0,Nx,1.0, dtype=float)+0.5)
+    z = hz*(np.arange(0.0,Nz,1.0, dtype=float)+0.5)
     X, Z = np.meshgrid(x, z, sparse=False, indexing='ij')
     x_com, z_com = detect_com(density_array, X, Z)
     # ###################### #
@@ -1539,21 +1531,26 @@ def shear_tracking (
     else :
         bulk_density = detect_bulk_density(density_array, density_th=fit_param.max_vapour_density)
         intf_contour = detect_contour(density_array, 0.5*bulk_density, hx, hz)
+
     if contact_line :
         if mode == 'sk' :
+            """
+                Obtain contour using scikit image processing
+                More roboust, less precise
+            """
             b_left_branch, b_right_branch, b_points_l, b_points_r = \
                 detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
                 z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
-                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
             # Flip interface contour
             intf_contour_flip = np.stack((intf_contour[0,:], fit_param.lenght_z-intf_contour[1,:]))
             t_left_branch, t_right_branch, t_points_l, t_points_r = \
                 detect_contact_line(intf_contour_flip, z_min=fit_param.substrate_location,
                 z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
-                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
         elif mode == 'int' :
+            """
+                Span-wise interpolation on the global bulk density value
+                Less robust, more precise
+            """
             z0 = fit_param.substrate_location
             b_left_branch, b_right_branch = detect_interface_int(density_array, 0.5*bulk_density, hx, hz, z0)
             t_left_branch = np.stack( (np.flip(b_left_branch[0,:]), \
@@ -1567,51 +1564,78 @@ def shear_tracking (
                 fit_param.lenght_z-t_left_branch[1,0:15:3] ) )
             t_points_r = np.stack( (t_right_branch[0,0:15:3], \
                 fit_param.lenght_z-t_right_branch[1,0:15:3] ) )
-            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
-                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
-            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
-                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
         else :
+            """
+                Same as above, but local to the water slice along x
+                Captures the layering region better
+            """
             z0 = fit_param.substrate_location
             zmax = fit_param.bulk_location
-            b_left_branch, b_right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax, wall='l')
+            b_left_branch, b_right_branch = detect_interface_loc(density_array, hx, hz, z0, zmax, wall='l')
             b_points_l = b_left_branch[:,:]
             b_points_r = b_right_branch[:,:]
-            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
-                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
             # Add top wall measurement
-            t_left_branch, t_right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax, wall='u')
+            t_left_branch, t_right_branch = detect_interface_loc(density_array, hx, hz, z0, zmax, wall='u')
             t_left_branch = np.stack( (np.flip(t_left_branch[0,:]), np.flip(t_left_branch[1,:])) )
             t_right_branch = np.stack( (np.flip(t_right_branch[0,:]), np.flip(t_right_branch[1,:])) )
             t_points_l = np.stack( (t_left_branch[0,:], \
                 fit_param.lenght_z-t_left_branch[1,:] ) )
             t_points_r = np.stack( (t_right_branch[0,:], \
                 fit_param.lenght_z-t_right_branch[1,:] ) )
-            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
-                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
     else :
+        b_foot_l = np.NaN
+        b_foot_r = np.NaN
+        t_foot_l = np.NaN
+        t_foot_r = np.NaN
         b_left_branch = np.NaN
         b_right_branch = np.NaN
         b_points_l = np.NaN
         b_points_r = np.NaN
-        b_foot_l = np.NaN
-        b_foot_r = np.NaN
-        b_theta_l = np.NaN
-        b_theta_r = np.NaN
-        b_cot_l = np.NaN
-        b_cot_r = np.NaN
         t_left_branch = np.NaN
         t_right_branch = np.NaN
         t_points_l = np.NaN
         t_points_r = np.NaN
-        t_foot_l = np.NaN
-        t_foot_r = np.NaN
+        b_theta_l = np.NaN
+        b_theta_r = np.NaN
+        b_cot_l = np.NaN
+        b_cot_r = np.NaN
         t_theta_l = np.NaN
         t_theta_r = np.NaN
         t_cot_l = np.NaN
         t_cot_r = np.NaN
-    xc_l, zc_l, R_l, residue_l = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='l')
-    xc_r, zc_r, R_r, residue_r = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='r')
+
+    if fit_ca :
+        b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+            detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+        t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+            detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+    elif contact_line :
+        b_foot_l = ( b_points_l[0,0], b_points_l[1,0] )
+        b_foot_r = ( b_points_r[0,0], b_points_r[1,0] )
+        t_foot_l = ( t_points_l[0,0], t_points_l[1,0] )
+        t_foot_r = ( t_points_r[0,0], t_points_r[1,0] )
+        b_theta_l = np.NaN
+        b_theta_r = np.NaN
+        b_cot_l = np.NaN
+        b_cot_r = np.NaN
+        t_theta_l = np.NaN
+        t_theta_r = np.NaN
+        t_cot_l = np.NaN
+        t_cot_r = np.NaN
+
+    xc_l, zc_l, R_l, residue_l = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, 
+        Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='l')
+    xc_r, zc_r, R_r, residue_r = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, 
+        Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='r')
+    CD.circle_rad_l.append(R_l)
+    CD.circle_xc_l.append(xc_l)
+    CD.circle_zc_l.append(zc_l)
+    CD.circle_res_l.append(residue_l)
+    CD.circle_rad_r.append(R_r)
+    CD.circle_xc_r.append(xc_r)
+    CD.circle_zc_r.append(zc_r)
+    CD.circle_res_r.append(residue_r)
+
     CD.time.append( fit_param.time_step*k_init )
     CD.contour.append( intf_contour )
     CD.branch['bl'].append( b_left_branch )
@@ -1630,14 +1654,6 @@ def shear_tracking (
     CD.angle['tr'].append( t_theta_r )
     CD.cotangent['tl'].append( t_cot_l )
     CD.cotangent['tr'].append( t_cot_r )
-    CD.circle_rad_l.append(R_l)
-    CD.circle_xc_l.append(xc_l)
-    CD.circle_zc_l.append(zc_l)
-    CD.circle_res_l.append(residue_l)
-    CD.circle_rad_r.append(R_r)
-    CD.circle_xc_r.append(xc_r)
-    CD.circle_zc_r.append(zc_r)
-    CD.circle_res_r.append(residue_r)
     CD.xcom.append(x_com)
     CD.zcom.append(z_com)
 
@@ -1650,7 +1666,7 @@ def shear_tracking (
     cot_circle_tr = (zc_r+h-Lz)/np.sqrt(R_r*R_r-(zc_r+h-Lz)**2)
     cot_circle = 0.25*(cot_circle_bl+cot_circle_tl+cot_circle_br+cot_circle_tr)
     theta_circle = np.rad2deg( 0.5*math.pi+np.arctan( cot_circle ) )
-    theta_circle = theta_circle + 180*(theta_circle<=0)
+    theta_circle = (180-theta_circle)*(cot_circle>-1) + theta_circle*(cot_circle<=-1)
     CD.angle_circle_mean.append(theta_circle)
 
     for k in range(k_init+1, k_end+1) :
@@ -1680,20 +1696,17 @@ def shear_tracking (
         else :
             bulk_density = detect_bulk_density(density_array, density_th=fit_param.max_vapour_density)
             intf_contour = detect_contour(density_array, 0.5*bulk_density, hx, hz)
+
         if contact_line :
             if mode == 'sk' :
                 b_left_branch, b_right_branch, b_points_l, b_points_r = \
                     detect_contact_line(intf_contour, z_min=fit_param.substrate_location,
                     z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-                b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
-                    detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
                 # Flip interface contour
                 intf_contour_flip = np.stack((intf_contour[0,:], fit_param.lenght_z-intf_contour[1,:]))
                 t_left_branch, t_right_branch, t_points_l, t_points_r = \
                     detect_contact_line(intf_contour_flip, z_min=fit_param.substrate_location,
                     z_max=fit_param.bulk_location, x_half=fit_param.simmetry_plane)
-                t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
-                    detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
             elif mode == 'int' :
                 z0 = fit_param.substrate_location
                 b_left_branch, b_right_branch = detect_interface_int(density_array, \
@@ -1709,51 +1722,74 @@ def shear_tracking (
                     fit_param.lenght_z-t_left_branch[1,0:15:3] ) )
                 t_points_r = np.stack( (t_right_branch[0,0:15:3], \
                     fit_param.lenght_z-t_right_branch[1,0:15:3] ) )
-                b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
-                    detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
-                t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
-                    detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
             else :
                 z0 = fit_param.substrate_location
                 zmax = fit_param.bulk_location
-                b_left_branch, b_right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax, wall='l')
+                b_left_branch, b_right_branch = detect_interface_loc(density_array, hx, hz, z0, zmax, wall='l')
                 b_points_l = b_left_branch[:,:]
                 b_points_r = b_right_branch[:,:]
-                b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
-                    detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
                 # Add top wall measurement
-                t_left_branch, t_right_branch = detect_interface_loc(density_array, 0.5*bulk_density, hx, hz, z0, zmax, wall='u')
+                t_left_branch, t_right_branch = detect_interface_loc(density_array, hx, hz, z0, zmax, wall='u')
                 t_left_branch = np.stack( (np.flip(t_left_branch[0,:]), np.flip(t_left_branch[1,:])) )
                 t_right_branch = np.stack( (np.flip(t_right_branch[0,:]), np.flip(t_right_branch[1,:])) )
                 t_points_l = np.stack( (t_left_branch[0,:], \
                     fit_param.lenght_z-t_left_branch[1,:] ) )
                 t_points_r = np.stack( (t_right_branch[0,:], \
                     fit_param.lenght_z-t_right_branch[1,:] ) )
-                t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
-                    detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)  
         else :
+            b_foot_l = np.NaN
+            b_foot_r = np.NaN
+            t_foot_l = np.NaN
+            t_foot_r = np.NaN
             b_left_branch = np.NaN
             b_right_branch = np.NaN
             b_points_l = np.NaN
             b_points_r = np.NaN
-            b_foot_l = np.NaN
-            b_foot_r = np.NaN
-            b_theta_l = np.NaN
-            b_theta_r = np.NaN
-            b_cot_l = np.NaN
-            b_cot_r = np.NaN
             t_left_branch = np.NaN
             t_right_branch = np.NaN
             t_points_l = np.NaN
             t_points_r = np.NaN
-            t_foot_l = np.NaN
-            t_foot_r = np.NaN
+            b_theta_l = np.NaN
+            b_theta_r = np.NaN
+            b_cot_l = np.NaN
+            b_cot_r = np.NaN
             t_theta_l = np.NaN
             t_theta_r = np.NaN
             t_cot_l = np.NaN
             t_cot_r = np.NaN
-        xc_l, zc_l, R_l, residue_l = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='l')
-        xc_r, zc_r, R_r, residue_r = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='r')
+
+        if fit_ca :
+            b_foot_l, b_foot_r, b_theta_l, b_theta_r, b_cot_l, b_cot_r = \
+                detect_contact_angle(b_points_l, b_points_r, order=fit_param.interpolation_order)
+            t_foot_l, t_foot_r, t_theta_l, t_theta_r, t_cot_l, t_cot_r = \
+                detect_contact_angle(t_points_l, t_points_r, order=fit_param.interpolation_order)
+        elif contact_line :
+            b_foot_l = ( b_points_l[0,0], b_points_l[1,0] )
+            b_foot_r = ( b_points_r[0,0], b_points_r[1,0] )
+            t_foot_l = ( t_points_l[0,0], t_points_l[1,0] )
+            t_foot_r = ( t_points_r[0,0], t_points_r[1,0] )
+            b_theta_l = np.NaN
+            b_theta_r = np.NaN
+            b_cot_l = np.NaN
+            b_cot_r = np.NaN
+            t_theta_l = np.NaN
+            t_theta_r = np.NaN
+            t_cot_l = np.NaN
+            t_cot_r = np.NaN
+
+        xc_l, zc_l, R_l, residue_l = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, 
+            Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='l')
+        xc_r, zc_r, R_r, residue_r = circle_fit_meniscus(intf_contour, z_th=fit_param.substrate_location, 
+            Lz=fit_param.lenght_z, Midx=0.5*fit_param.lenght_x, wing='r')
+        CD.circle_rad_l.append(R_l)
+        CD.circle_xc_l.append(xc_l)
+        CD.circle_zc_l.append(zc_l)
+        CD.circle_res_l.append(residue_l)
+        CD.circle_rad_r.append(R_r)
+        CD.circle_xc_r.append(xc_r)
+        CD.circle_zc_r.append(zc_r)
+        CD.circle_res_r.append(residue_r)
+
         CD.time.append( fit_param.time_step*k )
         CD.contour.append( intf_contour )
         CD.branch['bl'].append( b_left_branch )
@@ -1772,14 +1808,6 @@ def shear_tracking (
         CD.angle['tr'].append( t_theta_r )
         CD.cotangent['tl'].append( t_cot_l )
         CD.cotangent['tr'].append( t_cot_r )
-        CD.circle_rad_l.append(R_l)
-        CD.circle_xc_l.append(xc_l)
-        CD.circle_zc_l.append(zc_l)
-        CD.circle_res_l.append(residue_l)
-        CD.circle_rad_r.append(R_r)
-        CD.circle_xc_r.append(xc_r)
-        CD.circle_zc_r.append(zc_r)
-        CD.circle_res_r.append(residue_r)
         CD.xcom.append(x_com)
         CD.zcom.append(z_com)
 
@@ -1792,7 +1820,7 @@ def shear_tracking (
         cot_circle_tr = (zc_r+h-Lz)/np.sqrt(R_r*R_r-(zc_r+h-Lz)**2)
         cot_circle = 0.25*(cot_circle_bl+cot_circle_tl+cot_circle_br+cot_circle_tr)
         theta_circle = np.rad2deg( 0.5*math.pi+np.arctan( cot_circle ) )
-        theta_circle = theta_circle + 180*(theta_circle<=0)
+        theta_circle = (180-theta_circle)*(cot_circle>-1) + theta_circle*(cot_circle<=-1)
         CD.angle_circle_mean.append(theta_circle)
 
     return CD
@@ -1936,6 +1964,34 @@ def export_scalar_vtk(x, z, hx, hz, Ly, array, file_name="flow_output.vtk"):
     fvtk.close()
 
 """
+    To compare with Phase Field
+"""
+def export_scalarxy_vtk(x, y, hx, hy, Lz, array, file_name="flow_output.vtk"):
+    
+    fvtk = open(file_name, 'w')
+
+    fvtk.write("# vtk DataFile Version 3.0\n")
+    fvtk.write("Vtk output for binned flow configurations (metric in Ångström)\n")
+    fvtk.write("ASCII\n")
+    fvtk.write("DATASET STRUCTURED_POINTS\n")
+    
+    fvtk.write("DIMENSIONS "+str(len(x))+" "+str(len(y))+" 2\n")
+    fvtk.write("ORIGIN "+str(x[0])+" "+str(y[0])+" 0.0\n")
+    fvtk.write("SPACING "+str(hx)+" "+str(hy)+" "+str(Lz)+"\n")
+    
+    fvtk.write("CELL_DATA "+str((len(x)-1)*(len(y)-1))+"\n")
+    fvtk.write("POINT_DATA "+str(2*len(x)*len(y))+"\n")
+    fvtk.write("SCALARS density float 1\n")
+    fvtk.write("LOOKUP_TABLE default\n")
+
+    for j in range(2) :
+        for k in range(len(y)) :
+            for i in range(len(x)) :
+                fvtk.write( str( array[i,k] )+"\n" )
+
+    fvtk.close()
+
+"""
     Vectors (e.g. velocity)
 """
 def export_vector_vtk(x, z, hx, hz, Ly, array_x, array_z, file_name="flow_output.vtk"):
@@ -1961,5 +2017,34 @@ def export_vector_vtk(x, z, hx, hz, Ly, array_x, array_z, file_name="flow_output
                 vx_str = str(array_x[i,k])
                 vz_str = str(array_z[i,k])
                 fvtk.write(vx_str+" 0.00000 "+vz_str+"\n")
+
+    fvtk.close()
+
+"""
+    To compare with Phase Field
+"""
+def export_vectorxy_vtk(x, y, hx, hy, Lz, array_x, array_y, file_name="flow_output.vtk"):
+    
+    fvtk = open(file_name, 'w')
+
+    fvtk.write("# vtk DataFile Version 3.0\n")
+    fvtk.write("Vtk output for binned flow configurations (metric in Ångström)\n")
+    fvtk.write("ASCII\n")
+    fvtk.write("DATASET STRUCTURED_POINTS\n")
+    
+    fvtk.write("DIMENSIONS "+str(len(x))+" "+str(len(y))+" 2\n")
+    fvtk.write("ORIGIN "+str(x[0])+" "+str(y[0])+" 0.0\n")
+    fvtk.write("SPACING "+str(hx)+" "+str(hy)+" "+str(Lz)+"\n")
+    
+    fvtk.write("CELL_DATA "+str((len(x)-1)*(len(y)-1))+"\n")
+    fvtk.write("POINT_DATA "+str(2*len(x)*len(y))+"\n")
+    fvtk.write("VECTORS velocity float\n")
+
+    for j in range(2) :
+        for k in range(len(y)) :
+            for i in range(len(x)) :
+                vx_str = str(array_x[i,k])
+                vy_str = str(array_y[i,k])
+                fvtk.write(vx_str+" "+vy_str+" 0.00000\n")
 
     fvtk.close()

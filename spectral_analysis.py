@@ -84,11 +84,7 @@ for interface_point in ifps :
     # ax[nax][1].set_xscale('log')
     ax[nax][1].loglog(freqs['EquilDpQ2'][interface_point], X_norm['EquilDpQ2'][interface_point], 'r-', label='Equil.')
     ax[nax][1].loglog(freqs['Q2Ca025'][interface_point], X_norm['Q2Ca025'][interface_point], 'b-', label='Ca=0.25')
-    if nax == 1 :
-        ax[nax][1].loglog([7.3e-5, 0.0003], [204.06, 204.06], 'r--', linewidth=3.0)
-        ax[nax][1].loglog([7.3e-5, 0.0003], [912.06, 912.06], 'b--', linewidth=3.0)
-        ax[nax][1].text(1e-4, 119.06, '204.82',  fontsize=17.5, fontweight='bold')
-        ax[nax][1].text(1e-4, 1050.06, '912.06', fontsize=17.5, fontweight='bold')
+
     if nax == 1 :
         ax[nax][1].set_xlabel(r'$\omega$ [1/ps]', fontsize=30.0)
     ax[nax][1].set_ylabel(r'$|FFT(\tilde{x})|$ [1]', fontsize=30.0)
@@ -101,5 +97,17 @@ for interface_point in ifps :
         ax[nax][1].set_title('(d)', fontsize=30.0, x=-0.015)
 
     nax+=1
+
+"""
+ax[0][1].loglog([7.3e-5, 0.0003], [475.88, 475.88], 'r--', linewidth=3.0)
+ax[0][1].loglog([7.3e-5, 0.0003], [1250.1, 1250.1], 'b--', linewidth=3.0)
+ax[0][1].text(1e-4, 275.06, '475.88',  fontsize=17.5, fontweight='bold')
+ax[0][1].text(1e-4, 1450.06, '1250.1', fontsize=17.5, fontweight='bold')
+
+ax[1][1].loglog([7.3e-5, 0.0003], [204.06, 204.06], 'r--', linewidth=3.0)
+ax[1][1].loglog([7.3e-5, 0.0003], [912.06, 912.06], 'b--', linewidth=3.0)
+ax[1][1].text(1e-4, 119.06, '204.82',  fontsize=17.5, fontweight='bold')
+ax[1][1].text(1e-4, 1050.06, '912.06', fontsize=17.5, fontweight='bold')
+"""
 
 plt.show()

@@ -232,13 +232,29 @@ print("err(rmsf["+max_k+"]) = ", err_max )
 # PLOTS #
 # ### ###
 
+fig, ax = plt.subplots()
+
 time = np.linspace(0.0, dt*(n_fin-n_transient+1), len(X_int['ml']))
+
+ax.plot(right_intf_mean[0,:], right_intf_mean[1,:], 'k-', linewidth=4.0, label='Average')
+ax.fill_betweenx(right_intf_mean[1,:], right_intf_mean[0,:]-np.sqrt(right_intf_msd), right_intf_mean[0,:]+np.sqrt(right_intf_msd), \
+    facecolor='mediumaquamarine', label='RMSF')
+# ax.legend(fontsize=52.5)
+ax.set_xlabel('x [nm]', fontsize=52.5)
+ax.set_ylabel('z [nm]', fontsize=52.5)
+ax.set_xlim([6.2,32.2])
+ax.tick_params(labelsize=42.5)
+ax.set_aspect(0.6)
+
+plt.show()
+
+"""
 
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
 
 # MEAN INTERFACE +/- STD #
-ax1.plot(left_intf_mean[0,:], left_intf_mean[1,:], 'k-', linewidth=2.0, label=r'$<x>$')
-ax2.plot(right_intf_mean[0,:], right_intf_mean[1,:], 'k-', linewidth=2.0)
+ax1.plot(left_intf_mean[0,:], left_intf_mean[1,:], 'k-', linewidth=3.0, label=r'$<x>$')
+ax2.plot(right_intf_mean[0,:], right_intf_mean[1,:], 'k-', linewidth=3.0)
 ax1.fill_betweenx(left_intf_mean[1,:], left_intf_mean[0,:]-np.sqrt(left_intf_msd), left_intf_mean[0,:]+np.sqrt(left_intf_msd), \
     facecolor='lightblue', label=r'$\pm$RMSF')
 ax2.fill_betweenx(right_intf_mean[1,:], right_intf_mean[0,:]-np.sqrt(right_intf_msd), right_intf_mean[0,:]+np.sqrt(right_intf_msd), facecolor='lightblue')
@@ -298,8 +314,13 @@ ax4.set_xlabel(r'$t$ [ns]', fontsize=30.0)
 ax4.set_ylabel(r'$\frac{<\Delta x(0)\Delta x(t)>}{<\Delta x(0)^2>}$ [1]', fontsize=30.0)
 plt.show()
 
+
+"""
+
 # Saving interface and c.l. series over time
+"""
 save_folder = 'ContactLinesSignals/Q2Ca020'
 FP.folder_name
 for l in X_int.keys() :
     np.savetxt(save_folder+'/'+FP.folder_name+'_'+l+'.txt', X_int[l])
+"""

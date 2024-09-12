@@ -147,3 +147,4 @@ sn.heatmap(covMatrix, annot=True, fmt='.3g', cmap="YlGnBu")
 plt.title('Covariance matrix for equilibrium c. a. [deg^2]', fontsize=40.0)
 plt.axis('equal')
 plt.show()
+"""

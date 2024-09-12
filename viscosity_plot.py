@@ -13,7 +13,7 @@ mean_p = (1e3)/(mean_m1-err_m1)
 err_visc = [(mean_visc-mean_m), (mean_p-mean_visc)]
 
 plt.errorbar(forcing, mean_visc, yerr=err_visc, fmt='ko', ecolor='k', markersize=7.5)
-plt.xscale("log", nonposx='clip')
+plt.xscale("log")
 plt.title("Viscosity estimate (300K, 1bar) (semilogx)", fontsize=25.0)
 plt.xlabel("Forcing [nm/ps^2]", fontsize=20.0)
 plt.ylabel("Viscosity [mPa*s]", fontsize=20.0)

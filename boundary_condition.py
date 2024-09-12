@@ -1,3 +1,7 @@
+"""
+    A stupid attempt to directly verify GNBC boundary conditions ...
+"""
+
 import densmap as dm
 
 import numpy as np

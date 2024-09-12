@@ -1,3 +1,7 @@
+"""
+    Density of confined nanochannel
+"""
+
 import densmap as dm
 
 import numpy as np

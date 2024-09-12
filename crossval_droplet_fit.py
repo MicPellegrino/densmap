@@ -121,9 +121,9 @@ T_pin_1 = 23000
 N_pin_0 = int( T_pin_0 / dt )
 N_pin_1 = int( T_pin_1 / dt )
 
-min_deg_sg = 3
+min_deg_sg = 1
 max_deg_sg = 3
-max_win_sg = int(5000/dt)
+max_win_sg = int(2500/dt)
 delta_win  = int(100/dt)
 vector_win = np.linspace(delta_win, max_win_sg, int(max_win_sg/delta_win))
 
@@ -216,6 +216,7 @@ ax5.tick_params(axis='x', labelsize=plot_tcksize)
 ax5.tick_params(axis='y', labelsize=plot_tcksize)
 plt.show()
 
+"""
 plt.plot(time_ns, init_center-foot_l, 'b-', linewidth=3.0)
 plt.plot(time_ns, foot_r-init_center, 'r-', linewidth=3.0)
 plt.plot(time_ns, init_center-foot_l_sg, 'b--', linewidth=3.5)
@@ -223,16 +224,21 @@ plt.plot(time_ns, foot_r_sg-init_center, 'r--', linewidth=3.5)
 plt.ylim([42.0, 50.0])
 plt.xlim([9.5, 11.5])
 plt.show()
+"""
 
-plt.plot(time_ns[N_avg:-N_avg], 1e3*velocity_l_filter[N_avg:-N_avg], 'b-', linewidth=2.5, label='left (filter)')
-plt.plot(time_ns[N_avg:-N_avg], 1e3*velocity_r_filter[N_avg:-N_avg], 'r-', linewidth=2.5, label='right (filter)')
-plt.plot(time_ns[N_avg:-N_avg], np.zeros(time_ns[N_avg:-N_avg].shape), 'k--', linewidth=1.5)
-plt.xlabel('t [ns]', fontsize=30.0)
-plt.ylabel('dx/dt [nm/ns]', fontsize=30.0)
-plt.xlim([time_ns[N_avg], time_ns[-N_avg]])
-plt.legend(fontsize=20.0)
-plt.xticks(fontsize=plot_tcksize)
-plt.yticks(fontsize=plot_tcksize)
+fig = plt.figure()
+ax = plt.subplot(111)
+
+ax.plot(time_ns[N_avg:-N_avg], velocity_l_filter[N_avg:-N_avg], 'b-', linewidth=3, label='left c.l.')
+ax.plot(time_ns[N_avg:-N_avg], velocity_r_filter[N_avg:-N_avg], 'r-', linewidth=3, label='right c.l.')
+ax.plot(time_ns[N_avg:-N_avg], np.zeros(time_ns[N_avg:-N_avg].shape), 'k--', linewidth=1.5)
+ax.set_xlabel(r'$t$ [ns]', fontsize=47.5)
+ax.set_ylabel(r'$U_{cl}$ [nm/ps]', fontsize=47.5)
+ax.set_xlim([time_ns[N_avg], time_ns[-N_avg]])
+ax.legend(fontsize=30.0)
+ax.tick_params(axis='both', labelsize=37.5)
+ax.set_box_aspect(1)
+
 plt.show()
 
 print("############################################################################")
