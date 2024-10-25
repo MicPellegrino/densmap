@@ -6,12 +6,19 @@ from matplotlib import rc
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-def array_from_file( filename ):
+def array_from_file(filename):
     my_list = []
     with open(filename, 'r') as f:
         for line in f:
             my_list.append(float(line.split()[0]))
     return np.array(my_list)
+
+def rolling_average(v,n) :
+    n += n%2-1
+    v_ext = np.concatenate((v[0]*np.ones(n//2),v,v[-1]*np.ones(n//2)),axis=None)
+    a = np.ones(n)
+    av = np.convolve(v_ext,a,mode='valid')/n
+    return av
 
 """
 folder_root = "/home/michele/densmap/ShearWatPen/"
@@ -44,7 +51,15 @@ tag_capillary['Q65'] = ['C008','C007','C005','C003',]
 num_capillary['Q65'] = np.array([0.08,0.07,0.05,0.03])
 cl_speed['Q65'] = 10*U0*num_capillary['Q65']
 
-fig, (ax1, ax2) = plt.subplots(2, 1)
+# fig, (ax1, ax2) = plt.subplots(2, 1)
+# fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+ax1 = plt.subplot2grid((2, 4), (0, 0), colspan=2)
+ax2 = plt.subplot2grid((2, 4), (0, 2), colspan=2)
+ax3 = plt.subplot2grid((2, 4), (1, 0), colspan=1)
+ax4 = plt.subplot2grid((2, 4), (1, 1), colspan=1)
+ax5 = plt.subplot2grid((2, 4), (1, 2), colspan=1)
+ax6 = plt.subplot2grid((2, 4), (1, 3), colspan=1)
+
 std_disp = dict()
 
 ### TEMPORARY ###
@@ -53,6 +68,11 @@ PFM_steady_displacement_q65 = []
 U_q65 = cl_speed['Q65']
 
 L_ref_pf = 18.35
+
+CMAP_SCALE = 1.0
+
+n_roll = 51
+tmax = 50
 
 for tag in tags_angle :
 
@@ -74,14 +94,27 @@ for tag in tags_angle :
             'DataParvathyHydrophilic/statsU1d86.txt',
             'DataParvathyHydrophilic/statsU1d12.txt']
 
-    tmax = 0
     std_disp[tag] = []
 
     for i in range(Mdata) :
 
         folder_name = folder_root+tag_capillary[tag][i]+tag
 
+        # Time
         t = (1e-3)*array_from_file(folder_name+'/time.txt')
+
+        #Angles 
+        abl = array_from_file(folder_name+'/angle_bl.txt')
+        abr = array_from_file(folder_name+'/angle_br.txt')
+        atl = array_from_file(folder_name+'/angle_tl.txt')
+        atr = array_from_file(folder_name+'/angle_tr.txt')
+
+        angle_advancing = 0.5*(atl+abr)
+        angle_advancing = rolling_average(angle_advancing,n_roll)
+        angle_receding = 0.5*(atr+abl)
+        angle_receding = rolling_average(angle_receding,n_roll)
+
+        # Contact lines
         rl = array_from_file(folder_name+'/radius_lower.txt')
         ru = array_from_file(folder_name+'/radius_upper.txt')
         pl = array_from_file(folder_name+'/position_lower.txt')
@@ -100,22 +133,27 @@ for tag in tags_angle :
         std_disp[tag].append(np.std(avg_disp[len(avg_disp)//2:]))
 
         t = t-t[0]
-        if t[-1] > tmax :
-            tmax = t[-1]
         avg_disp = avg_disp-avg_disp[0]
 
         pf_data = np.loadtxt(pf_data_path[i])
         pf_data_t = pf_data[:,0]
         pf_data_x = pf_data[:,1]
+        pf_data_a1 = pf_data[:,2]
+        pf_data_a2 = pf_data[:,3]
+
+        print("U_ref_pf ", U_ref_pf[i])
+        print("tag", tag)
+        print("theta_1 ", pf_data_a1[-1])
+        print("theta_2 ", pf_data_a2[-1])
 
         if tag == 'Q60' :
-            ax1.plot(pf_data_t*L_ref_pf/U_ref_pf[i], pf_data_x*L_ref_pf, '--', linewidth=3, c=cm.winter(i/(1.5*Mdata)))
-            ax1.plot(t, avg_disp, linewidth=3, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.winter(i/(1.5*Mdata)))
+            ax1.plot(pf_data_t*L_ref_pf/U_ref_pf[i], pf_data_x*L_ref_pf, '--', linewidth=3.5, c=cm.winter(i/(CMAP_SCALE*Mdata)))
+            ax1.plot(t, avg_disp, linewidth=2.5, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.winter(i/(CMAP_SCALE*Mdata)))
             ax1.set_xlim([0,tmax])
 
         if tag == 'Q65' :
-            ax2.plot(pf_data_t*L_ref_pf/U_ref_pf[i], pf_data_x*L_ref_pf, '--', linewidth=3, c=cm.autumn(i/(1.5*Mdata)))
-            ax2.plot(t, avg_disp, linewidth=3, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.autumn(i/(1.5*Mdata)))
+            ax2.plot(pf_data_t*L_ref_pf/U_ref_pf[i], pf_data_x*L_ref_pf, '--', linewidth=3.5, c=cm.autumn(i/(CMAP_SCALE*Mdata)))
+            ax2.plot(t, avg_disp, linewidth=2.5, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.autumn(i/(CMAP_SCALE*Mdata)))
             ax2.set_xlim([0,tmax])
 
         ### TEMPORARY ###
@@ -128,25 +166,52 @@ for tag in tags_angle :
             pf_data = np.loadtxt(pf_data_path[i])
             pf_data_t = pf_data[:,0]
             pf_data_x = pf_data[:,1]
-            ax1.plot(pf_data_t*L_ref_pf/U_ref_pf, pf_data_x*L_ref_pf, '--', linewidth=3, c=cm.winter(i/(1.5*Mdata)))
-            ax1.plot(t, avg_disp, linewidth=3, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.winter(i/(1.5*Mdata)))
+            ax1.plot(pf_data_t*L_ref_pf/U_ref_pf, pf_data_x*L_ref_pf, '--', linewidth=3, c=cm.winter(i/(CMAP_SCALE*Mdata)))
+            ax1.plot(t, avg_disp, linewidth=3, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.winter(i/(CMAP_SCALE*Mdata)))
             ax1.set_xlim([0,tmax])
 
         if tag == 'Q65' :
-            ax2.plot(t, avg_disp, linewidth=3, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.autumn(i/(1.5*Mdata)))
+            ax2.plot(t, avg_disp, linewidth=3, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.autumn(i/(CMAP_SCALE*Mdata)))
             ax2.set_xlim([0,tmax])
         """
-    
+
+        if tag == 'Q60' :
+            ax3.plot(pf_data_t*L_ref_pf/U_ref_pf[i], pf_data_a1, '--', linewidth=3.5, c=cm.winter(i/(CMAP_SCALE*Mdata)))
+            ax3.plot(t, angle_advancing, linewidth=1.5, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.winter(i/(CMAP_SCALE*Mdata)))
+            ax3.set_xlim([0,tmax])
+            ax4.plot(pf_data_t*L_ref_pf/U_ref_pf[i], pf_data_a2, '--', linewidth=3.5, c=cm.winter(i/(CMAP_SCALE*Mdata)))
+            ax4.plot(t, angle_receding, linewidth=1.5, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.winter(i/(CMAP_SCALE*Mdata)))
+            ax4.set_xlim([0,tmax])
+
+        if tag == 'Q65' :
+            ax5.plot(t, angle_advancing, linewidth=1.5, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.autumn(i/(CMAP_SCALE*Mdata)))
+            ax5.plot(pf_data_t*L_ref_pf/U_ref_pf[i], pf_data_a1, '--', linewidth=3.5, c=cm.autumn(i/(CMAP_SCALE*Mdata)))
+            ax5.set_xlim([0,tmax])
+            ax6.plot(t, angle_receding, linewidth=1.5, label=r"$U_w=$"+str(np.round(cl_speed[tag][i],2))+"nm/ns", c=cm.autumn(i/(CMAP_SCALE*Mdata)))
+            ax6.plot(pf_data_t*L_ref_pf/U_ref_pf[i], pf_data_a2, '--', linewidth=3.5, c=cm.autumn(i/(CMAP_SCALE*Mdata)))
+            ax6.set_xlim([0,tmax])
+
     # plt.legend(fontsize=25)
 
-ax2.set_xlabel(r'$t$ [ns]',fontsize=35)
-ax1.set_ylabel(r'$\Delta x_{cl}$ [nm]',fontsize=35)
-ax2.set_ylabel(r'$\Delta x_{cl}$ [nm]',fontsize=35)
-ax1.tick_params(axis='both',labelsize=30)
-ax2.tick_params(axis='both',labelsize=30)
+# ax2.set_xlabel(r'$t$ [ns]',fontsize=35)
+# ax1.set_ylabel(r'$\Delta x_{cl}$ [nm]',fontsize=35)
+# ax2.set_ylabel(r'$\Delta x_{cl}$ [nm]',fontsize=35)
+# ax1.tick_params(axis='both',labelsize=30)
+# ax2.tick_params(axis='both',labelsize=30)
+
+ax3.set_xlabel(r'$t$ [ns]',fontsize=32.5)
+ax5.set_xlabel(r'$t$ [ns]',fontsize=32.5)
+ax1.set_ylabel(r'$\Delta x_{cl}$ [nm]',fontsize=32.5)
+ax3.set_ylabel(r'$\theta$ [deg]',fontsize=32.5)
+ax1.tick_params(axis='both',labelsize=27.5)
+ax2.tick_params(axis='both',labelsize=27.5)
+ax3.tick_params(axis='both',labelsize=27.5)
+ax4.tick_params(axis='both',labelsize=27.5)
+ax5.tick_params(axis='both',labelsize=27.5)
+ax6.tick_params(axis='both',labelsize=27.5)
+
 # plt.gca().set_xlim(left=0)
 # plt.gca().set_ylim(bottom=0)
-plt.xlim([0,80])
 
 plt.show()
 

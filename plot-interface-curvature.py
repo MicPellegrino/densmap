@@ -29,8 +29,8 @@ lb = ['03','04','05','06', '07', '08']
 nex = 2
 mdata = len(ca)
 
+"""
 for i in range(mdata) :
-
     # npzfile = np.load(fr+'ca0'+lb[i]+'-q60.npz')
     npzfile = np.load(fr+'ca0'+lb[i]+'-q65.npz')
     z = npzfile['arr_0']
@@ -41,17 +41,15 @@ for i in range(mdata) :
         c=cm.hot((i+1)/(1.5*mdata)))
     plt.plot(z[-nex-1],theta[-nex-1],'o',ms=8,
         c=cm.hot((i+1)/(1.5*mdata)))
-
 plt.plot(z[0],theta_0,'ks',ms=10)
 plt.plot(z[-1],180-theta_0,'ks',ms=10)
 plt.plot([z[0],z[-1]],[theta_0,180-theta_0],'k--',lw=3)
-
 plt.xlabel(r'$z$ [nm]',fontsize=30)
 plt.ylabel(r'$\theta$ [deg]',fontsize=30)
 plt.xticks(fontsize=25)
 plt.yticks(fontsize=25)
-
 plt.show()
+"""
 
 #######################################################
 
@@ -63,9 +61,9 @@ Lz = 21.15280
 # fig, (ax1,ax2,ax3) = plt.subplots(1,3)
 fig, ((ax1,ax2,ax3),(ax4,ax5,ax6)) = plt.subplots(2,3)
 
-ticksize = 25
-labelsize = 30
-legendsize = 27.5
+ticksize = 22.5
+labelsize = 27.5
+legendsize = 22.5
 
 theta_0 = 97.26240221727994
 theta_sup = 99
@@ -77,12 +75,12 @@ theta = npzfile['arr_1']
 pffile = np.genfromtxt(fp1+'contactangle_2d61.txt')
 zpf = pffile[:,0]
 tpf = pffile[:,1]
-ax1.plot(z[0],theta_0,'ko',ms=10)
-ax1.plot(z[-1],180-theta_0,'ko',ms=10)
-ax1.plot([z[0],z[-1]],[theta_0,180-theta_0],'k--',lw=3)
-ax1.plot(z,theta,'b-',lw=2.5,label='MD')
-ax1.plot(zpf,tpf,'b--',lw=2.5,label='PF')
-ax1.legend(fontsize=legendsize)
+# ax1.plot(z[0],theta_0,'ko',ms=10)
+# ax1.plot(z[-1],180-theta_0,'ko',ms=10)
+ax1.plot([z[0],z[-1]],[theta_0,180-theta_0],'k--',lw=3,label='Equilibrium')
+ax1.plot(z,theta,'b-',lw=2.5)
+ax1.plot(zpf,tpf,'b--',lw=2.5)
+ax1.legend(fontsize=legendsize,loc='lower left')
 ax1.set_ylabel(r'$\theta_I$ [deg]',fontsize=labelsize)
 ax1.tick_params(labelsize=ticksize)
 ax1.set_xlim([0,Lz])
@@ -94,11 +92,12 @@ theta = npzfile['arr_1']
 pffile = np.genfromtxt(fp1+'contactangle_3d35.txt')
 zpf = pffile[:,0]
 tpf = pffile[:,1]
-ax2.plot(z[0],theta_0,'ko',ms=10)
-ax2.plot(z[-1],180-theta_0,'ko',ms=10)
+# ax2.plot(z[0],theta_0,'ko',ms=10)
+# ax2.plot(z[-1],180-theta_0,'ko',ms=10)
 ax2.plot([z[0],z[-1]],[theta_0,180-theta_0],'k--',lw=3)
-ax2.plot(z,theta,'b-',lw=2.5)
+ax2.plot(z,theta,'b-',lw=2.5,label='MD')
 ax2.plot(zpf,tpf,'b--',lw=2.5)
+ax2.legend(fontsize=legendsize,loc='upper right')
 ax2.tick_params(labelsize=ticksize)
 ax2.set_xlim([0,Lz])
 ax2.set_ylim([theta_inf,theta_sup])
@@ -109,11 +108,12 @@ theta = npzfile['arr_1']
 pffile = np.genfromtxt(fp1+'contactangle_4d1.txt')
 zpf = pffile[:,0]
 tpf = pffile[:,1]
-ax3.plot(z[0],theta_0,'ko',ms=10)
-ax3.plot(z[-1],180-theta_0,'ko',ms=10)
+# ax3.plot(z[0],theta_0,'ko',ms=10)
+# ax3.plot(z[-1],180-theta_0,'ko',ms=10)
 ax3.plot([z[0],z[-1]],[theta_0,180-theta_0],'k--',lw=3)
 ax3.plot(z,theta,'b-',lw=2.5)
-ax3.plot(zpf,tpf,'b--',lw=2.5)
+ax3.plot(zpf,tpf,'b--',lw=2.5, label='CHNS')
+ax3.legend(fontsize=legendsize,loc='upper right')
 ax3.tick_params(labelsize=ticksize)
 ax3.set_xlim([0,Lz])
 ax3.set_ylim([theta_inf,theta_sup])
@@ -127,10 +127,10 @@ z = npzfile['arr_0']
 theta = npzfile['arr_1']
 pffile = np.genfromtxt(fp2+'contactangleU1d12.txt')
 zpf = pffile[:,0]
-print(pffile[:,1])
+# print(pffile[:,1])
 tpf = correct_ca(pffile[:,1])
-ax4.plot(z[0],theta_0,'ko',ms=10)
-ax4.plot(z[-1],180-theta_0,'ko',ms=10)
+# ax4.plot(z[0],theta_0,'ko',ms=10)
+# ax4.plot(z[-1],180-theta_0,'ko',ms=10)
 ax4.plot([z[0],z[-1]],[theta_0,180-theta_0],'k--',lw=3)
 ax4.plot(z,theta,'r-',lw=2.5)
 ax4.plot(zpf,tpf,'r--',lw=2.5)
@@ -139,23 +139,26 @@ ax4.set_xlabel(r'$z$ [nm]',fontsize=labelsize)
 ax4.tick_params(labelsize=ticksize)
 ax4.set_xlim([0,Lz])
 ax4.set_ylim([theta_inf,theta_sup])
+print("Ca = 0.03 : ",theta[0],theta[-1])
 
 npzfile = np.load(fr+'ca005-q65.npz')
 z = npzfile['arr_0']
 theta = npzfile['arr_1']
 pffile = np.genfromtxt(fp2+'contactangleU1d86.txt')
 zpf = pffile[:,0]
-print(pffile[:,1])
+# print(pffile[:,1])
 tpf = correct_ca(pffile[:,1])
-ax5.plot(z[0],theta_0,'ko',ms=10)
-ax5.plot(z[-1],180-theta_0,'ko',ms=10)
+# ax5.plot(z[0],theta_0,'ko',ms=10)
+# ax5.plot(z[-1],180-theta_0,'ko',ms=10)
 ax5.plot([z[0],z[-1]],[theta_0,180-theta_0],'k--',lw=3)
-ax5.plot(z,theta,'r-',lw=2.5)
+ax5.plot(z,theta,'r-',lw=2.5,label='MD')
 ax5.plot(zpf,tpf,'r--',lw=2.5)
+ax5.legend(fontsize=legendsize,loc='lower right')
 ax5.set_xlabel(r'$z$ [nm]',fontsize=labelsize)
 ax5.tick_params(labelsize=ticksize)
 ax5.set_xlim([0,Lz])
 ax5.set_ylim([theta_inf,theta_sup])
+print("Ca = 0.05 : ",theta[0],theta[-1])
 
 """
 npzfile = np.load(fr+'ca007-q65.npz')
@@ -163,7 +166,7 @@ z = npzfile['arr_0']
 theta = npzfile['arr_1']
 pffile = np.genfromtxt(fp2+'contactangleU2d61.txt')
 zpf = pffile[:,0]
-print(pffile[:,1])
+# print(pffile[:,1])
 tpf = correct_ca(pffile[:,1])
 ax6.plot(z[0],theta_0,'ko',ms=10)
 ax6.plot(z[-1],180-theta_0,'ko',ms=10)
@@ -181,16 +184,18 @@ z = npzfile['arr_0']
 theta = npzfile['arr_1']
 pffile = np.genfromtxt(fp2+'contactangleU2d98.txt')
 zpf = pffile[:,0]
-print(pffile[:,1])
+# print(pffile[:,1])
 tpf = correct_ca(pffile[:,1])
-ax6.plot(z[0],theta_0,'ko',ms=10)
-ax6.plot(z[-1],180-theta_0,'ko',ms=10)
+# ax6.plot(z[0],theta_0,'ko',ms=10)
+# ax6.plot(z[-1],180-theta_0,'ko',ms=10)
 ax6.plot([z[0],z[-1]],[theta_0,180-theta_0],'k--',lw=3)
 ax6.plot(z,theta,'r-',lw=2.5)
-ax6.plot(zpf,tpf,'r--',lw=2.5)
+ax6.plot(zpf,tpf,'r--',lw=2.5,label='CHNS')
+ax6.legend(fontsize=legendsize,loc='lower right')
 ax6.set_xlabel(r'$z$ [nm]',fontsize=labelsize)
 ax6.tick_params(labelsize=ticksize)
 ax6.set_xlim([0,Lz])
 ax6.set_ylim([theta_inf,theta_sup])
+print("Ca = 0.08 : ",theta[0],theta[-1])
 
 plt.show()

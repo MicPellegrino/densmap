@@ -9,22 +9,32 @@ import matplotlib.animation as manimation
 
 mpl.use("Agg")
 
-# Output file name
-output_file_name = "com.mp4"
-
-folder_name = 'Q4Ca005'
+folder_name = 'N16A02Ca25/'
 file_root = 'flow_'
 
-# PARAMETERS TO TUNE
-Lx = 159.75000
-Lz = 30.63400
+# Output file name
+output_file_name = "n16a02-ca25.mp4"
 
-n_init = 8626
-n_fin = 8628
+# SUBSTRATE
+a = 0.2
+n = 16
+Lx = 82.80000/4
+waven  = 2*np.pi*n/Lx
+height = a/waven
+phi_0  = 0
+h_0    = 3.0
+fun_sub = lambda x : height * np.sin(waven*x+phi_0) + h_0
+
+# PARAMETERS TO TUNE
+Lx = 82.80000
+Lz = 28.00000
+
+n_init = 1
+n_fin = 850
 
 # CREATING MESHGRID
 print("Creating meshgrid")
-density_array = dm.read_density_file(folder_name+'/'+file_root+'04000.dat', bin='y')
+density_array = dm.read_density_file(folder_name+'/'+file_root+'00001.dat', bin='y')
 Nx = density_array.shape[0]
 Nz = density_array.shape[1]
 hx = Lx/Nx
@@ -70,7 +80,9 @@ avg_dens = []
 print(np.sum(density_array))
 
 with writer.saving(fig, output_file_name, 250):
+
     t_label = '0.0'
+
     for idx in range(n_init, n_fin+1 ):
         plt.xlabel('x [nm]')
         plt.ylabel('z [nm]')
@@ -79,18 +91,22 @@ with writer.saving(fig, output_file_name, 250):
             t_label = str(dt*idx)+' ps'
         density_array = dm.read_density_file(folder_name+'/'+file_root+ \
             '{:05d}'.format(idx)+'.dat', bin='y')
+
         # PLOT ORIGINAL DENSITY
-        plt.pcolormesh(X, Z, density_array, cmap=cm.bone)
+        plt.pcolormesh(X, Z, density_array, cmap=cm.Blues, vmax=1000)
+
         # PLOT SMOOTHED DENSITY
         # smooth_density_array = dm.convolute(density_array, smoother)
         # plt.pcolormesh(X, Z, smooth_density_array, cmap=cm.bone)
         
+        # PLOT SUBSTRATE
+        fig_substrate, = plt.plot([], [], 'm-', linewidth=1.0)
+        fig_substrate.set_data(x, fun_sub(x))
+
         x_com.append( np.sum(np.multiply(density_array,X))/np.sum(density_array) )
         z_com.append( np.sum(np.multiply(density_array,Z))/np.sum(density_array) )
         t_com.append( (1e-3)*idx*dt )
-        avg_dens.append( np.mean(density_array) )
-        if idx%n_dump==0 :
-            print("Obtainig frame "+str(np.sum(density_array)))
+        # avg_dens.append( np.mean(density_array) )
 
         """
         bulk_density = dm.detect_bulk_density(smooth_density_array, delta_th)
@@ -117,14 +133,15 @@ with writer.saving(fig, output_file_name, 250):
 
 mpl.use("TkAgg")
 
+"""
 idx = n_fin
 density_array = dm.read_density_file(folder_name+'/'+file_root+'{:05d}'.format(idx)+'.dat', bin='y')
 # PLOT ORIGINAL DENSITY
 plt.pcolormesh(X, Z, density_array, cmap=cm.Blues)
 plt.axis('scaled')
 plt.show()
-
 """
+
 plt.plot(t_com, x_com, 'r-', linewidth=5.0, label='x')
 plt.plot(t_com, z_com, 'b-', linewidth=5.0, label='z')
 plt.legend(fontsize=40.0)
@@ -135,8 +152,8 @@ plt.xticks(fontsize=40.0)
 plt.yticks(fontsize=40.0)
 plt.xlim([t_com[0],t_com[-1]])
 plt.show()
-"""
 
+"""
 plt.plot(t_com, avg_dens, 'b-', linewidth=5.0)
 plt.ylabel("amu/nm^3", fontsize=42.5)
 plt.xlabel("ps", fontsize=42.5)
@@ -144,6 +161,7 @@ plt.xticks(fontsize=40.0)
 plt.yticks(fontsize=40.0)
 plt.xlim([t_com[0],t_com[-1]])
 plt.show()
+"""
 
 # Saving COM position
 """
