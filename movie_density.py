@@ -1,3 +1,6 @@
+import glob
+import os 
+
 import densmap as dm
 
 import numpy as np
@@ -9,17 +12,25 @@ import matplotlib.animation as manimation
 
 mpl.use("Agg")
 
-folder_name = 'N16A02Ca25/'
+workdir = 'WorkdirRoughMeniscus/'
 file_root = 'flow_'
 
-# Output file name
-output_file_name = "n16a02-ca25.mp4"
+# Exploration parameters
+a = 1.0
+n = 6
+ca = 0.25
 
-# SUBSTRATE
-a = 0.2
-n = 16
-Lx = 82.80000/4
-waven  = 2*np.pi*n/Lx
+a_tag = str(a).replace('.','').ljust(2,'0')
+n_tag = str(n).rjust(2,'0')
+c_tag = str(10*ca).replace('.','').ljust(3,'0')
+
+# Input and output files
+file_tag = 'N'+n_tag+'A'+a_tag+'C'+c_tag
+folder_name = workdir+file_tag+'/'
+output_file_name = workdir+file_tag+'.mp4'
+
+Lx4 = 82.80000/4
+waven  = 2*np.pi*n/Lx4
 height = a/waven
 phi_0  = 0
 h_0    = 3.0
@@ -29,8 +40,10 @@ fun_sub = lambda x : height * np.sin(waven*x+phi_0) + h_0
 Lx = 82.80000
 Lz = 28.00000
 
-n_init = 1
-n_fin = 850
+# Automagically finding the index of the first and last file
+dat_file_list = sorted([os.path.basename(x) for x in glob.glob(folder_name+'*.dat')])
+n_init = int(dat_file_list[0][5:10].lstrip("0"))
+n_fin = int(dat_file_list[-1][5:10].lstrip("0"))
 
 # CREATING MESHGRID
 print("Creating meshgrid")
